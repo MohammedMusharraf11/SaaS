@@ -4,19 +4,15 @@ import analyticsService from './analyticsService.js';
 const scoringService = {
   calculateHealthScore(data) {
     const { lighthouse, pagespeed, analytics } = data;
-
     console.log('🧮 Calculating health score...');
-
-    // Calculate individual component scores
     const technicalScore = this.calculateTechnicalScore(lighthouse, pagespeed);
     const userExperienceScore = this.calculateUserExperienceScore(analytics, pagespeed);
     const seoHealthScore = this.calculateSEOHealthScore(lighthouse);
 
-    // Calculate weighted overall score
     const weights = {
-      technical: 0.4,       // 40%
-      userExperience: 0.35, // 35%
-      seoHealth: 0.25       // 25%
+      technical: 0.4,
+      userExperience: 0.35,
+      seoHealth: 0.25
     };
 
     const validScores = [];
@@ -37,11 +33,9 @@ const scoringService = {
       scoreBreakdown.seoHealth = seoHealthScore;
     }
 
-    // Calculate overall score
     const overallScore = validScores.length > 0 ?
       Math.round(validScores.reduce((sum, score) => sum + score, 0)) : null;
 
-    // Data quality assessment
     const dataQuality = this.assessDataQuality(data);
 
     return {
@@ -54,15 +48,96 @@ const scoringService = {
     };
   },
 
+  calculateEnhancedHealthScore(data) {
+    const { lighthouse, pagespeed, analytics, searchConsole, technicalSEO } = data;
+    console.log('🧮 Calculating enhanced health score...');
+    const technicalScore = this.calculateTechnicalScore(lighthouse, pagespeed);
+    const userExperienceScore = this.calculateUserExperienceScore(analytics, pagespeed);
+    const seoHealthScore = this.calculateSEOHealthScore(lighthouse);
+    const searchVisibilityScore = this.calculateSearchVisibilityScore(searchConsole);
+    const technicalSEOScore = this.calculateTechnicalSEOScore(technicalSEO);
+
+    const weights = {
+      technical: 0.25,
+      userExperience: 0.20,
+      seoHealth: 0.20,
+      searchVisibility: 0.20,
+      technicalSEO: 0.15
+    };
+
+    const validScores = [];
+    const scoreBreakdown = {};
+
+    if (technicalScore !== null) {
+      validScores.push(technicalScore * weights.technical);
+      scoreBreakdown.technical = technicalScore;
+    }
+    if (userExperienceScore !== null) {
+      validScores.push(userExperienceScore * weights.userExperience);
+      scoreBreakdown.userExperience = userExperienceScore;
+    }
+    if (seoHealthScore !== null) {
+      validScores.push(seoHealthScore * weights.seoHealth);
+      scoreBreakdown.seoHealth = seoHealthScore;
+    }
+    if (searchVisibilityScore !== null) {
+      validScores.push(searchVisibilityScore * weights.searchVisibility);
+      scoreBreakdown.searchVisibility = searchVisibilityScore;
+    }
+    if (technicalSEOScore !== null) {
+      validScores.push(technicalSEOScore * weights.technicalSEO);
+      scoreBreakdown.technicalSEO = technicalSEOScore;
+    }
+
+    const overallScore = validScores.length > 0 ?
+      Math.round(validScores.reduce((sum, score) => sum + score, 0)) : null;
+
+    const dataQuality = this.assessDataQuality(data);
+
+    return {
+      overall: overallScore,
+      breakdown: scoreBreakdown,
+      dataQuality,
+      coreVitalsScore: this.calculateCoreVitalsScore(pagespeed)
+    };
+  },
+
+  getEnhancedRecommendations(data, scores) {
+    const recommendations = this.getRecommendations(data, scores);
+
+    // Search visibility recommendation
+    if (scores.searchVisibility && scores.searchVisibility < 70) {
+      recommendations.push({
+        category: 'search_visibility',
+        priority: 'medium',
+        title: 'Improve Search Visibility',
+        description: 'Increase keyword coverage, improve CTR, and enhance indexing.',
+        impact: 'medium'
+      });
+    }
+
+    // Technical SEO recommendation
+    if (scores.technicalSEO && scores.technicalSEO < 70) {
+      recommendations.push({
+        category: 'technical_seo',
+        priority: 'medium',
+        title: 'Fix technical SEO issues',
+        description: 'Review robots.txt, sitemaps, SSL, meta tags, and structured data.',
+        impact: 'medium'
+      });
+    }
+
+    const priorityOrder = { high: 3, medium: 2, low: 1 };
+    return recommendations
+      .sort((a, b) => priorityOrder[b.priority] - priorityOrder[a.priority])
+      .slice(0, 5);
+  },
+
   calculateTechnicalScore(lighthouse, pagespeed) {
     const scores = [];
-
-    // Lighthouse Performance Score (60% weight)
     if (lighthouse?.performance) {
       scores.push(lighthouse.performance * 0.6);
     }
-
-    // Core Web Vitals from PageSpeed (40% weight)
     if (pagespeed?.mobile) {
       const vitalsData = pagespeed.mobile.fieldData || pagespeed.mobile.labData;
       if (vitalsData) {
@@ -72,36 +147,30 @@ const scoringService = {
         }
       }
     }
-
-    return scores.length > 0 ? Math.round(scores.reduce((sum, score) => sum + score, 0)) : null;
+    return scores.length > 0 ?
+      Math.round(scores.reduce((sum, score) => sum + score, 0)) : null;
   },
 
   calculateCoreVitalsScore(pagespeed) {
     if (!pagespeed?.mobile) return null;
-
     const vitalsData = pagespeed.mobile.fieldData || pagespeed.mobile.labData;
     if (!vitalsData) return null;
-
     const vitalsScores = pagespeedService.convertCoreVitalsToScore(vitalsData);
     return vitalsScores?.average || null;
   },
 
   assessDataQuality(data) {
     const { lighthouse, pagespeed, analytics } = data;
-
     const sources = {
       lighthouse: !!lighthouse,
       pagespeed: !!pagespeed,
       analytics: !!analytics && analytics.totalSessions > 0
     };
-
     const availableSources = Object.values(sources).filter(Boolean).length;
     const totalSources = Object.keys(sources).length;
-
     let quality = 'limited';
     if (availableSources === totalSources) quality = 'high';
     else if (availableSources >= 2) quality = 'medium';
-
     return {
       level: quality,
       sources,
@@ -113,7 +182,6 @@ const scoringService = {
     const recommendations = [];
     const { lighthouse, pagespeed, analytics } = data;
 
-    // Technical recommendations
     if (scores.technical && scores.technical < 70) {
       if (lighthouse?.performance < 70) {
         recommendations.push({
@@ -124,7 +192,6 @@ const scoringService = {
           impact: 'high'
         });
       }
-
       if (pagespeed?.mobile?.labData?.lcp > 2500) {
         recommendations.push({
           category: 'performance',
@@ -135,8 +202,6 @@ const scoringService = {
         });
       }
     }
-
-    // User Experience recommendations
     if (scores.userExperience && scores.userExperience < 70) {
       const bounceRate = analytics?.organicBounceRate || analytics?.bounceRate;
       if (bounceRate > 60) {
@@ -148,7 +213,6 @@ const scoringService = {
           impact: 'medium'
         });
       }
-
       if (analytics?.avgSessionDuration < 60) {
         recommendations.push({
           category: 'user_experience',
@@ -159,8 +223,6 @@ const scoringService = {
         });
       }
     }
-
-    // SEO Health recommendations
     if (scores.seoHealth && scores.seoHealth < 80) {
       if (lighthouse?.seo < 80) {
         recommendations.push({
@@ -171,7 +233,6 @@ const scoringService = {
           impact: 'medium'
         });
       }
-
       if (lighthouse?.accessibility < 80) {
         recommendations.push({
           category: 'accessibility',
@@ -182,8 +243,6 @@ const scoringService = {
         });
       }
     }
-
-    // Data quality recommendations
     if (!analytics) {
       recommendations.push({
         category: 'setup',
@@ -194,7 +253,6 @@ const scoringService = {
       });
     }
 
-    // Sort by priority and return top 5
     const priorityOrder = { high: 3, medium: 2, low: 1 };
     return recommendations
       .sort((a, b) => priorityOrder[b.priority] - priorityOrder[a.priority])
@@ -203,50 +261,56 @@ const scoringService = {
 
   calculateUserExperienceScore(analytics, pagespeed) {
     if (!analytics) return null;
-
     const scores = [];
-
-    // Bounce Rate (60% weight) - prioritize organic traffic if available
-    const bounceRate = analytics.organicSessions > 10 ?
-      analytics.organicBounceRate : analytics.bounceRate;
-
+    const bounceRate = analytics.organicSessions > 10 ? analytics.organicBounceRate : analytics.bounceRate;
     if (bounceRate !== null) {
       const bounceScore = analyticsService.convertBounceRateToScore(bounceRate);
       if (bounceScore !== null) {
         scores.push(bounceScore * 0.6);
       }
     }
-
-    // Session Duration (40% weight)
     if (analytics.avgSessionDuration !== null) {
       const durationScore = analyticsService.convertSessionDurationToScore(analytics.avgSessionDuration);
       if (durationScore !== null) {
         scores.push(durationScore * 0.4);
       }
     }
-
     return scores.length > 0 ? Math.round(scores.reduce((sum, score) => sum + score, 0)) : null;
   },
 
   calculateSEOHealthScore(lighthouse) {
     if (!lighthouse) return null;
-
     const scores = [];
-
-    // SEO Score (60% weight)
     if (lighthouse.seo) {
       scores.push(lighthouse.seo * 0.6);
     }
-
-    // Accessibility Score (40% weight)
     if (lighthouse.accessibility) {
       scores.push(lighthouse.accessibility * 0.4);
     }
-
-    return scores.length > 0 ? Math.round(scores.reduce((sum, score) => score + sum, 0)) : null;
+    return scores.length > 0 ? Math.round(scores.reduce((sum, score) => sum + score, 0)) : null;
   },
 
-  // Helper method to get score interpretation
+  calculateSearchVisibilityScore(searchConsoleData) {
+    if (!searchConsoleData) return null;
+    return this.convertSearchMetricsToScore(searchConsoleData)?.average || null;
+  },
+
+  calculateTechnicalSEOScore(technicalSEOData) {
+    if (!technicalSEOData) return null;
+    const scores = [];
+    if (technicalSEOData.robotsTxt?.score) scores.push(technicalSEOData.robotsTxt.score * 0.2);
+    if (technicalSEOData.sitemap?.score) scores.push(technicalSEOData.sitemap.score * 0.2);
+    if (technicalSEOData.ssl?.score) scores.push(technicalSEOData.ssl.score * 0.25);
+    if (technicalSEOData.metaTags?.score) scores.push(technicalSEOData.metaTags.score * 0.25);
+    if (technicalSEOData.structuredData?.score) scores.push(technicalSEOData.structuredData.score * 0.1);
+    return scores.length > 0 ? Math.round(scores.reduce((sum, score) => sum + score, 0)) : null;
+  },
+
+  convertSearchMetricsToScore(searchConsoleData) {
+    // Replace with your logic
+    return { average: 75 };
+  },
+
   getScoreInterpretation(score) {
     if (score >= 90) return { level: 'excellent', description: 'Top 10% performance' };
     if (score >= 80) return { level: 'good', description: 'Above average with minor improvements needed' };

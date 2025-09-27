@@ -1,11 +1,11 @@
 // services/technicalSEOService.js - FREE additional technical checks
-const axios = require('axios');
+import axios from 'axios';
 
 const technicalSEOService = {
   async getTechnicalSEOData(domain) {
     try {
       let url = domain.startsWith('http') ? domain : `https://${domain}`;
-      
+
       const checks = await Promise.allSettled([
         this.checkRobotsTxt(url),
         this.checkSitemap(url),
@@ -34,7 +34,7 @@ const technicalSEOService = {
       const response = await axios.get(robotsUrl, { timeout: 5000 });
       return {
         exists: true,
-        content: response.data.substring(0, 500), // First 500 chars
+        content: response.data.substring(0, 500),
         hasUserAgent: response.data.includes('User-agent'),
         hasSitemap: response.data.toLowerCase().includes('sitemap'),
         score: response.data.includes('User-agent') ? 100 : 50
@@ -89,11 +89,11 @@ const technicalSEOService = {
   async checkSSL(url) {
     try {
       const isHttps = url.startsWith('https://');
-      const response = await axios.get(url, { 
+      const response = await axios.get(url, {
         timeout: 5000,
-        maxRedirects: 5 
+        maxRedirects: 5
       });
-      
+
       return {
         hasSSL: isHttps,
         redirectsToHttps: response.request.res.responseUrl?.startsWith('https://'),
@@ -115,8 +115,8 @@ const technicalSEOService = {
       const html = response.data;
 
       const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-      const descMatch = html.match(/<meta[^>]*name=["\']description["\'][^>]*content=["\']([^"']+)["\'][^>]*>/i);
-      const keywordsMatch = html.match(/<meta[^>]*name=["\']keywords["\'][^>]*content=["\']([^"']+)["\'][^>]*>/i);
+      const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["'][^>]*>/i);
+      const keywordsMatch = html.match(/<meta[^>]*name=["']keywords["'][^>]*content=["']([^"']+)["'][^>]*>/i);
       const h1Match = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
 
       const checks = {
@@ -151,10 +151,6 @@ const technicalSEOService = {
 
   async checkStructuredData(url) {
     try {
-      // Use Google's Rich Results Testing Tool API (free quota)
-      const testUrl = `https://searchconsole.googleapis.com/v1/urlTestingTools/richResults:run`;
-      
-      // This would require Google API setup, for now return basic check
       const response = await axios.get(url, { timeout: 10000 });
       const html = response.data;
 
@@ -182,3 +178,5 @@ const technicalSEOService = {
     }
   }
 };
+
+export default technicalSEOService;

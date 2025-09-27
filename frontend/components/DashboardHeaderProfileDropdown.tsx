@@ -17,7 +17,18 @@ import { generateStripeBillingPortalLink } from "@/utils/stripe/api"
 export default async function DashboardHeaderProfileDropdown() {
     const supabase = createClient()
     const { data: { user }, error } = await supabase.auth.getUser()
-    const billingPortalURL = await generateStripeBillingPortalLink(user!.email!)
+    
+    if (!user) {
+        return null
+    }
+    
+    let billingPortalURL = '/subscribe' // Default fallback
+    try {
+        billingPortalURL = await generateStripeBillingPortalLink(user.email!)
+    } catch (error) {
+        console.error('Error getting billing portal URL:', error)
+        // billingPortalURL already set to fallback
+    }
     return (
         <nav className="flex items-center">
             <Button variant="ghost" size="icon" className="mr-2">

@@ -14,52 +14,52 @@ import { Skeleton } from "@/components/ui/skeleton"
 export default async function DashboardHeader() {
     const supabase = createClient()
     const { data: { user }, error } = await supabase.auth.getUser()
+    
+    if (!user) {
+        return null
+    }
+    
     // Get the user's plan from Stripe
-    const stripePlan = getStripePlan(user!.email!)
+    const stripePlan = getStripePlan(user.email!)
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container flex h-14 max-w-screen-2xl items-center">
-                <div className="mr-4 hidden md:flex">
-                    <Link className="mr-2 flex items-center space-x-2" href="">
-                        <Image src="/logo.png" alt="logo" width={25} height={25} />
-                    </Link>
-                    <Suspense fallback={<Badge variant="outline" className="mr-2"><Skeleton className="w-[50px] h-[20px] rounded-full" /></Badge>}>
-                        <Badge variant="outline" className="mr-2">{stripePlan}</Badge>
-                    </Suspense>
-                    <nav className="flex items-center space-x-6 text-sm font-medium">
-                        <Link className="transition-colors hover:text-foreground/80 text-foreground" href="#">
-                            Home
-                        </Link>
-                        <Link className="transition-colors hover:text-foreground/80 text-foreground/60" href="#">
-                            Projects
-                        </Link>
-                        <Link className="transition-colors hover:text-foreground/80 text-foreground/60" href="#">
-                            Tasks
-                        </Link>
-                        <Link className="transition-colors hover:text-foreground/80 text-foreground/60" href="#">
-                            Reports
-                        </Link>
-                    </nav>
-                </div>
-                <Button variant="outline" size="icon" className="mr-2 md:hidden">
-                    <Menu className="h-5 w-5" />
-                    <span className="sr-only">Toggle Menu</span>
-                </Button>
-                <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-                    <div className="w-full flex-1 md:w-auto md:flex-none">
-                        <form>
-                            <div className="relative">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    type="search"
-                                    placeholder="Search..."
-                                    className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
-                                />
+        <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm">
+            <div className="flex h-16 items-center px-6">
+                <div className="flex flex-1 items-center justify-between">
+                    <div className="flex items-center space-x-6">
+                        <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                                <Image src="/logo.png" alt="logo" width={20} height={20} />
                             </div>
-                        </form>
+                            <div>
+                                <h1 className="text-lg font-semibold text-gray-900">Analytics Dashboard</h1>
+                                <p className="text-xs text-gray-500">Welcome back, {user.email}</p>
+                            </div>
+                        </div>
                     </div>
-                    <DashboardHeaderProfileDropdown />
+                    
+                    <div className="flex items-center space-x-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Input
+                                type="search"
+                                placeholder="Search domains, keywords..."
+                                className="pl-10 w-80 bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 transition-all duration-200"
+                            />
+                        </div>
+                        
+                        <Button variant="outline" size="icon" className="relative">
+                            <Bell className="h-5 w-5" />
+                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
+                        </Button>
+                        
+                        <Button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:shadow-lg">
+                            <span className="mr-2">+</span>
+                            Quick Add
+                        </Button>
+                        
+                        <DashboardHeaderProfileDropdown />
+                    </div>
                 </div>
             </div>
         </header>

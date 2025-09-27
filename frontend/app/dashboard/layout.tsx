@@ -19,25 +19,34 @@ export default async function DashboardLayout({
 }: Readonly<{
     children: React.ReactNode;
 }>) {
-    // Check if user has plan selected. If not redirect to subscibe
     const supabase = createClient()
 
     const {
         data: { user },
     } = await supabase.auth.getUser()
 
-    // check user plan in db
-    const checkUserInDB = await db.select().from(usersTable).where(eq(usersTable.email, user!.email!))
-    if (checkUserInDB[0].plan === "none") {
-        console.log("User has no plan selected")
-        return redirect('/subscribe')
+    // Redirect to login if no user
+    if (!user) {
+        redirect('/login')
     }
 
+    // Get user plan info but don't redirect - show dashboard with upgrade prompt
+    let userPlan = "none"
+    try {
+        const checkUserInDB = await db.select().from(usersTable).where(eq(usersTable.email, user.email!))
+        if (checkUserInDB.length > 0) {
+            userPlan = checkUserInDB[0].plan
+        }
+    } catch (error) {
+        console.log("Error fetching user plan:", error)
+    }
 
     return (
         <html lang="en">
-            <DashboardHeader />
-            {children}
+            <body className={inter.className}>
+                <DashboardHeader />
+                {children}
+            </body>
         </html>
     );
 }

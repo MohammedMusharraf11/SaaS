@@ -8,11 +8,26 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "http://localhost:3000"
 
 export async function getStripePlan(email: string) {
-    const user = await db.select().from(usersTable).where(eq(usersTable.email, email))
-    const subscription = await stripe.subscriptions.retrieve(user[0].plan);
-    const productId = subscription.items.data[0].plan.product as string
-    const product = await stripe.products.retrieve(productId)
-    return product.name
+    try {
+        const user = await db.select().from(usersTable).where(eq(usersTable.email, email))
+        if (user.length === 0) {
+            return "Free Plan"
+        }
+        
+        const userPlan = user[0].plan
+        if (userPlan === "none") {
+            return "Free Plan"
+        }
+        
+        // If user has a subscription, get the product name
+        const subscription = await stripe.subscriptions.retrieve(userPlan);
+        const productId = subscription.items.data[0].plan.product as string
+        const product = await stripe.products.retrieve(productId)
+        return product.name
+    } catch (error) {
+        console.error("Error getting Stripe plan:", error)
+        return "Free Plan"
+    }
 }
 
 export async function createStripeCustomer(id: string, email: string, name?: string) {
@@ -28,23 +43,42 @@ export async function createStripeCustomer(id: string, email: string, name?: str
 }
 
 export async function createStripeCheckoutSession(email: string) {
-    const user = await db.select().from(usersTable).where(eq(usersTable.email, email))
-    const customerSession = await stripe.customerSessions.create({
-        customer: user[0].stripe_id,
-        components: {
-            pricing_table: {
-                enabled: true,
+    try {
+        const user = await db.select().from(usersTable).where(eq(usersTable.email, email))
+        if (user.length === 0) {
+            throw new Error('User not found')
+        }
+        
+        const customerSession = await stripe.customerSessions.create({
+            customer: user[0].stripe_id,
+            components: {
+                pricing_table: {
+                    enabled: true,
+                },
             },
-        },
-    });
-    return customerSession.client_secret
+        });
+        return customerSession.client_secret
+    } catch (error) {
+        console.error("Error creating checkout session:", error)
+        throw new Error('Failed to create checkout session')
+    }
 }
 
 export async function generateStripeBillingPortalLink(email: string) {
-    const user = await db.select().from(usersTable).where(eq(usersTable.email, email))
-    const portalSession = await stripe.billingPortal.sessions.create({
-        customer: user[0].stripe_id,
-        return_url: `${PUBLIC_URL}/dashboard`,
-    });
-    return portalSession.url
+    try {
+        const user = await db.select().from(usersTable).where(eq(usersTable.email, email))
+        if (user.length === 0) {
+            throw new Error('User not found')
+        }
+        
+        const portalSession = await stripe.billingPortal.sessions.create({
+            customer: user[0].stripe_id,
+            return_url: `${PUBLIC_URL}/dashboard`,
+        });
+        return portalSession.url
+    } catch (error) {
+        console.error("Error generating billing portal link:", error)
+        // Return a fallback URL or handle gracefully
+        return `${PUBLIC_URL}/subscribe`
+    }
 }

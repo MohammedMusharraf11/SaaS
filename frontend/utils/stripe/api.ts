@@ -1,84 +1,78 @@
-import { Stripe } from 'stripe';
-import { db } from '../db/db';
-import { usersTable } from '../db/schema';
-import { eq } from "drizzle-orm";
+import Stripe from 'stripe'
+import { db } from '../db/db'
+import { usersTable } from '../db/schema'
+import { eq } from 'drizzle-orm'
 
+const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || 'http://localhost:3000'
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-const PUBLIC_URL = process.env.NEXT_PUBLIC_WEBSITE_URL || "http://localhost:3000"
+// Disable Stripe for development/testing
+const DISABLE_STRIPE = true // Set to false when you want to enable Stripe
 
-export async function getStripePlan(email: string) {
+// Initialize Stripe with error handling
+let stripe: Stripe | null = null
+if (!DISABLE_STRIPE) {
     try {
-        const user = await db.select().from(usersTable).where(eq(usersTable.email, email))
-        if (user.length === 0) {
-            return "Free Plan"
+        if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.startsWith('sk_test_')) {
+            stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+                apiVersion: '2024-06-20',
+            })
+            console.log('Stripe initialized successfully (TEST MODE)')
+        } else {
+            console.log('Stripe disabled - invalid or live mode key in development')
         }
-        
-        const userPlan = user[0].plan
-        if (userPlan === "none") {
-            return "Free Plan"
-        }
-        
-        // If user has a subscription, get the product name
-        const subscription = await stripe.subscriptions.retrieve(userPlan);
-        const productId = subscription.items.data[0].plan.product as string
-        const product = await stripe.products.retrieve(productId)
-        return product.name
     } catch (error) {
-        console.error("Error getting Stripe plan:", error)
-        return "Free Plan"
+        console.error('Stripe initialization failed:', error)
     }
 }
 
 export async function createStripeCustomer(id: string, email: string, name?: string) {
-    const customer = await stripe.customers.create({
-        name: name ? name : "",
-        email: email,
-        metadata: {
-            supabase_id: id
+    if (DISABLE_STRIPE || !stripe) {
+        console.log('Stripe disabled, skipping customer creation')
+        return `mock_customer_${id.substring(0, 8)}` // Return a mock customer ID
+    }
+
+    try {
+        const customer = await stripe.customers.create({
+            name: name || email.split('@')[0],
+            email: email,
+            metadata: {
+                supabase_id: id
+            }
+        })
+        console.log('Stripe customer created:', customer.id)
+        return customer.id
+    } catch (error) {
+        console.error('Stripe customer creation failed:', error)
+        return `mock_customer_${id.substring(0, 8)}` // Return a mock customer ID
+    }
+}
+
+export async function getStripePlan(email: string) {
+    if (!db) {
+        console.log('Database not available, returning default plan')
+        return 'free'
+    }
+
+    try {
+        const user = await db.select().from(usersTable).where(eq(usersTable.email, email))
+        if (user.length === 0) {
+            return 'free'
         }
-    });
-    // Create a new customer in Stripe
-    return customer.id
+        return user[0].plan || 'free'
+    } catch (error) {
+        console.log("Error getting Stripe plan:", error)
+        return 'free'
+    }
 }
 
 export async function createStripeCheckoutSession(email: string) {
-    try {
-        const user = await db.select().from(usersTable).where(eq(usersTable.email, email))
-        if (user.length === 0) {
-            throw new Error('User not found')
-        }
-        
-        const customerSession = await stripe.customerSessions.create({
-            customer: user[0].stripe_id,
-            components: {
-                pricing_table: {
-                    enabled: true,
-                },
-            },
-        });
-        return customerSession.client_secret
-    } catch (error) {
-        console.error("Error creating checkout session:", error)
-        throw new Error('Failed to create checkout session')
-    }
+    console.log('Stripe checkout disabled in development, returning fallback URL')
+    return `${PUBLIC_URL}/subscribe`
 }
 
 export async function generateStripeBillingPortalLink(email: string) {
-    try {
-        const user = await db.select().from(usersTable).where(eq(usersTable.email, email))
-        if (user.length === 0) {
-            throw new Error('User not found')
-        }
-        
-        const portalSession = await stripe.billingPortal.sessions.create({
-            customer: user[0].stripe_id,
-            return_url: `${PUBLIC_URL}/dashboard`,
-        });
-        return portalSession.url
-    } catch (error) {
-        console.error("Error generating billing portal link:", error)
-        // Return a fallback URL or handle gracefully
-        return `${PUBLIC_URL}/subscribe`
-    }
+    console.log('Stripe billing portal disabled in development, returning fallback URL')
+    return `${PUBLIC_URL}/subscribe`
 }
+
+export { stripe }

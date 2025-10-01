@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, Search, AlertCircle, CheckCircle, TrendingUp, TrendingDown } from 'lucide-react'
+import { Loader2, Search, AlertCircle, CheckCircle, TrendingUp, TrendingDown, BarChart3, ExternalLink } from 'lucide-react'
 
 interface AnalysisResult {
   domain: string
@@ -30,11 +30,90 @@ interface AnalysisResult {
   }
 }
 
-export default function WebsiteAnalyzer() {
+interface GoogleAnalyticsOAuthProps {
+  userEmail?: string
+}
+
+export default function WebsiteAnalyzer({ userEmail = 'test@example.com' }: GoogleAnalyticsOAuthProps) {
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [error, setError] = useState('')
+  
+  // Google Analytics OAuth states
+  const [googleConnected, setGoogleConnected] = useState(false)
+  const [checkingConnection, setCheckingConnection] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
+
+  // Function to get current user email
+  const getCurrentUserEmail = () => {
+    return userEmail || 'test@example.com'
+  }
+
+  // Check Google Analytics connection status
+  const checkGoogleConnection = async () => {
+    setCheckingConnection(true)
+    try {
+      const email = getCurrentUserEmail()
+      const response = await fetch(`http://localhost:3010/api/auth/google/status?email=${encodeURIComponent(email)}`)
+      if (response.ok) {
+        const data = await response.json()
+        setGoogleConnected(data.connected || false)
+      } else {
+        setGoogleConnected(false)
+      }
+    } catch (error) {
+      console.error('Error checking Google Analytics connection:', error)
+      setGoogleConnected(false)
+    } finally {
+      setCheckingConnection(false)
+    }
+  }
+
+  // Connect to Google Analytics
+  const connectGoogleAnalytics = () => {
+    setGoogleLoading(true)
+    const email = getCurrentUserEmail()
+    window.location.href = `http://localhost:3010/api/auth/google?email=${encodeURIComponent(email)}`
+  }
+
+  // Disconnect from Google Analytics
+  const disconnectGoogleAnalytics = async () => {
+    setGoogleLoading(true)
+    try {
+      const email = getCurrentUserEmail()
+      const response = await fetch(`http://localhost:3010/api/auth/google/disconnect?email=${encodeURIComponent(email)}`, {
+        method: 'POST'
+      })
+      if (response.ok) {
+        setGoogleConnected(false)
+      }
+    } catch (error) {
+      console.error('Error disconnecting Google Analytics:', error)
+    } finally {
+      setGoogleLoading(false)
+    }
+  }
+
+  // Check connection status on component mount and handle OAuth callback
+  useEffect(() => {
+    checkGoogleConnection()
+    
+    // Check for OAuth callback success/error parameters
+    const urlParams = new URLSearchParams(window.location.search)
+    const success = urlParams.get('success')
+    const error = urlParams.get('error')
+    
+    if (success) {
+      setGoogleConnected(true)
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname)
+    } else if (error) {
+      setError(`OAuth Error: ${error}`)
+      // Clean up URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+  }, [])
 
   const analyzeWebsite = async () => {
     if (!url.trim()) {
@@ -124,6 +203,113 @@ export default function WebsiteAnalyzer() {
         </CardContent>
       </Card>
 
+      {/* Google Analytics Integration Section */}
+      <Card className="border border-gray-200 bg-white">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center space-x-2 text-lg text-gray-900">
+            <BarChart3 className="h-5 w-5 text-green-600" />
+            <span>Google Analytics Integration</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Connection Status */}
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center space-x-3">
+                <div className={`w-3 h-3 rounded-full ${googleConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                <div>
+                  <div className="font-medium text-gray-900">
+                    {checkingConnection ? 'Checking connection...' : 
+                     googleConnected ? 'Connected' : 'Not connected'}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {googleConnected ? 
+                      'Your Google Analytics account is connected and ready to use.' :
+                      'Connect your Google Analytics account to get deeper insights about your website traffic and user behavior.'
+                    }
+                  </div>
+                </div>
+              </div>
+              
+              {/* Connection Status Badge */}
+              <Badge 
+                variant={googleConnected ? "default" : "secondary"}
+                className={googleConnected ? "bg-green-100 text-green-800" : ""}
+              >
+                {checkingConnection ? (
+                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                ) : googleConnected ? (
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                ) : (
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                )}
+                {checkingConnection ? 'Checking...' : googleConnected ? 'Connected' : 'Disconnected'}
+              </Badge>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              {!googleConnected ? (
+                <Button 
+                  onClick={connectGoogleAnalytics}
+                  disabled={googleLoading || checkingConnection}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {googleLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Connect Google Analytics
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <div className="flex gap-3">
+                  <Button 
+                    onClick={checkGoogleConnection}
+                    disabled={checkingConnection}
+                    variant="outline"
+                  >
+                    {checkingConnection ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Checking...
+                      </>
+                    ) : (
+                      'Refresh Status'
+                    )}
+                  </Button>
+                  <Button 
+                    onClick={disconnectGoogleAnalytics}
+                    disabled={googleLoading}
+                    variant="outline"
+                    className="text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    {googleLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Disconnecting...
+                      </>
+                    ) : (
+                      'Disconnect'
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* User Info */}
+            <div className="text-xs text-gray-500 pt-2 border-t border-gray-200">
+              Connected as: {getCurrentUserEmail()}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Error Display */}
       {error && (
         <Card className="border-red-200 bg-red-50">
@@ -198,6 +384,12 @@ export default function WebsiteAnalyzer() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-700">Google Analytics</span>
+                    <Badge variant={googleConnected ? "default" : "secondary"} className="text-xs">
+                      {googleConnected ? "Connected" : "Not Connected"}
+                    </Badge>
+                  </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium text-gray-700">PageSpeed Insights</span>
                     <Badge variant={result.data_quality.sources.pagespeed_available ? "default" : "secondary"} className="text-xs">

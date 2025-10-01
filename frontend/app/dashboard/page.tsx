@@ -21,7 +21,12 @@ export default async function Dashboard() {
                 {/* Dashboard Content */}
                 <div className="flex-1 overflow-y-auto p-8">
                     <div className="max-w-4xl mx-auto">
-                        <WebsiteAnalyzer />
+                        <div className="mb-6">
+                            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+                            <p className="text-gray-600">Welcome back, {data.user.user_metadata.full_name || data.user.email}!</p>
+                        </div>
+                        
+                        <WebsiteAnalyzer userEmail={data.user.email || 'test@example.com'} />
                     </div>
                 </div>
             </div>

@@ -1,25 +1,26 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from 'next/link'
 import Image from 'next/image'
+import ProviderSigninBlock from '@/components/ProviderSigninBlock'
 import SignupForm from "@/components/SignupForm"
-import ProviderSigninBlock from "@/components/ProviderSigninBlock"
 
 export default function Signup() {
     return (
-        <div className="flex items-center justify-center bg-muted min-h-screen">
-
-            <Card className="w-[350px] mx-auto">
-                <CardHeader className="space-y-1">
-                    <div className="flex justify-center py-4">
+        <div className="flex items-center justify-center bg-muted min-h-screen p-4">
+            <Card className="w-full max-w-[400px] mx-auto">
+                <CardHeader className="space-y-1 px-4 sm:px-6 pt-6">
+                    <div className="flex justify-center py-3 sm:py-4">
                         <Link href='/'>
-                            <Image src="/logo.png" alt="logo" width={50} height={50} />
+                            <Image src="/logo.png" alt="logo" width={50} height={50} className="w-10 h-10 sm:w-12 sm:h-12" />
                         </Link>
                     </div>
 
-                    <CardTitle className="text-2x\l font-bold">Signup</CardTitle>
-                    <CardDescription>Create your account now!</CardDescription>
+                    <CardTitle className="text-xl sm:text-2xl font-bold text-center">Create Account</CardTitle>
+                    <CardDescription className="text-center text-sm sm:text-base">
+                        Enter your details to get started
+                    </CardDescription>
                 </CardHeader>
-                <CardContent className="grid gap-4">
+                <CardContent className="grid gap-4 px-4 sm:px-6">
                     <SignupForm />
                     <div className="relative">
                         <div className="absolute inset-0 flex items-center">
@@ -31,13 +32,12 @@ export default function Signup() {
                     </div>
                     <ProviderSigninBlock />
                 </CardContent>
-                <CardFooter className="flex-col text-center">
-                    <Link className="w-full text-sm text-muted-foreground" href="/login">
-                        Have an account? Login
+                <CardFooter className="flex-col text-center px-4 sm:px-6 pb-6">
+                    <Link className="w-full text-sm text-muted-foreground hover:text-primary transition-colors" href="/login">
+                        Already have an account? Login
                     </Link>
                 </CardFooter>
             </Card>
-        </div >
-
+        </div>
     )
 }

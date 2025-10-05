@@ -1,13 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, BarChart3, Search, Share2, Users, Target, FileText, Globe, TrendingUp, Settings } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { ChevronDown, ChevronRight, BarChart3, Search, Share2, Users, Target, FileText, Globe, TrendingUp, Settings, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface MenuItem {
   id: string
   title: string
   icon: React.ReactNode
   submenu?: string[]
+}
+
+interface DashboardSidebarProps {
+  onClose?: () => void
 }
 
 const menuItems: MenuItem[] = [
@@ -33,92 +39,106 @@ const menuItems: MenuItem[] = [
     id: 'traffic',
     title: 'Traffic Analytics',
     icon: <TrendingUp className="h-5 w-5" />,
-    submenu: ['Traffic Overview', 'Sources', 'Behavior', 'Conversions']
+    submenu: ['Traffic Sources', 'Geographic Data', 'Audience Insights']
+  },
+  {
+    id: 'content',
+    title: 'Content Performance',
+    icon: <FileText className="h-5 w-5" />,
+    submenu: ['Top Pages', 'Content Gap', 'Optimization']
   },
   {
     id: 'social',
     title: 'Social Media',
     icon: <Share2 className="h-5 w-5" />,
-    submenu: ['Social Analytics', 'Engagement', 'Social Listening']
+    submenu: ['Social Insights', 'Engagement', 'Shares']
   },
   {
-    id: 'projects',
-    title: 'Projects',
-    icon: <FileText className="h-5 w-5" />,
-    submenu: ['My Projects', 'Create Project', 'Project Templates']
-  },
-  {
-    id: 'reports',
-    title: 'Reports',
+    id: 'local',
+    title: 'Local SEO',
     icon: <Target className="h-5 w-5" />,
-    submenu: ['Report Builder', 'Scheduled Reports', 'Export Data']
+    submenu: ['Local Rankings', 'Citations', 'Reviews']
+  },
+  {
+    id: 'international',
+    title: 'International SEO',
+    icon: <Globe className="h-5 w-5" />,
+    submenu: ['Geo-targeting', 'Hreflang', 'International Rankings']
   },
   {
     id: 'settings',
     title: 'Settings',
     icon: <Settings className="h-5 w-5" />,
-    submenu: ['Account', 'Notifications', 'Integrations', 'Billing']
+    submenu: ['Account', 'Integrations', 'API', 'Billing']
   }
 ]
 
-export default function DashboardSidebar() {
-  const [expandedItems, setExpandedItems] = useState<string[]>(['overview'])
+export default function DashboardSidebar({ onClose }: DashboardSidebarProps) {
+  const [openMenus, setOpenMenus] = useState<string[]>(['overview'])
+  const router = useRouter()
 
-  const toggleItem = (itemId: string) => {
-    setExpandedItems(prev => 
-      prev.includes(itemId) 
-        ? prev.filter(id => id !== itemId)
-        : [...prev, itemId]
+  const toggleMenu = (menuId: string) => {
+    setOpenMenus(prev =>
+      prev.includes(menuId)
+        ? prev.filter(id => id !== menuId)
+        : [...prev, menuId]
     )
   }
 
+  const handleUpgradeClick = () => {
+    router.push('/subscribe')
+  }
+
   return (
-    <div className="w-72 bg-slate-900 text-white h-full overflow-y-auto">
-      <div className="p-6">
-        <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <BarChart3 className="h-5 w-5 text-white" />
-            </div>
-            <h2 className="text-xl font-bold text-white">Analytics</h2>
-          </div>
-          <p className="text-slate-400 text-sm">Digital Marketing Platform</p>
+    <div className="h-full flex flex-col bg-slate-900 text-white">
+      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6">
+        {/* Close button for mobile */}
+        <div className="flex justify-between items-center mb-4 lg:hidden">
+          <h2 className="text-lg font-semibold text-white">Menu</h2>
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="text-slate-400 hover:text-white hover:bg-slate-800"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          )}
         </div>
-        
-        <nav className="space-y-2">
+
+        {/* Logo - hidden on mobile when sidebar is overlay */}
+        <div className="mb-6 sm:mb-8 hidden lg:block">
+          <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 text-transparent bg-clip-text">
+            SEO Dashboard
+          </h1>
+        </div>
+
+        {/* Navigation Menu */}
+        <nav className="space-y-1 sm:space-y-2">
           {menuItems.map((item) => (
             <div key={item.id}>
               <button
-                onClick={() => toggleItem(item.id)}
-                className={`w-full flex items-center justify-between px-4 py-3 text-left rounded-lg transition-all duration-200 ${
-                  expandedItems.includes(item.id) 
-                    ? 'bg-blue-600 text-white shadow-lg' 
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                }`}
+                onClick={() => toggleMenu(item.id)}
+                className="w-full flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-slate-200 hover:bg-slate-800 rounded-lg transition-all duration-200"
               >
-                <div className="flex items-center space-x-3">
-                  <div className={expandedItems.includes(item.id) ? 'text-white' : 'text-slate-400'}>
-                    {item.icon}
-                  </div>
-                  <span className="font-medium text-sm">
-                    {item.title}
-                  </span>
-                </div>
+                <span className="flex items-center space-x-2 sm:space-x-3">
+                  {item.icon}
+                  <span>{item.title}</span>
+                </span>
                 {item.submenu && (
-                  expandedItems.includes(item.id) ? (
-                    <ChevronDown className="h-4 w-4 text-white" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 text-slate-400" />
-                  )
+                  openMenus.includes(item.id) 
+                    ? <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />
+                    : <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                 )}
               </button>
               
-              {item.submenu && expandedItems.includes(item.id) && (
-                <div className="ml-8 mt-2 space-y-1 animate-in slide-in-from-top-2 duration-200">
+              {item.submenu && openMenus.includes(item.id) && (
+                <div className="mt-1 ml-6 sm:ml-8 space-y-1">
                   {item.submenu.map((subItem, index) => (
                     <button
                       key={index}
-                      className="block w-full text-left px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all duration-200"
+                      className="block w-full text-left px-3 sm:px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all duration-200"
                     >
                       {subItem}
                     </button>
@@ -129,14 +149,17 @@ export default function DashboardSidebar() {
           ))}
         </nav>
         
-        <div className="mt-8 pt-6 border-t border-slate-700">
-          <div className="bg-slate-800 rounded-lg p-4">
+        <div className="mt-6 sm:mt-8 pt-6 border-t border-slate-700">
+          <div className="bg-slate-800 rounded-lg p-3 sm:p-4">
             <div className="flex items-center space-x-3 mb-2">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <span className="text-sm font-medium text-white">Free Plan</span>
             </div>
             <p className="text-xs text-slate-400 mb-3">Upgrade to unlock advanced features</p>
-            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
+            <button 
+              onClick={handleUpgradeClick}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
+            >
               Upgrade Now
             </button>
           </div>

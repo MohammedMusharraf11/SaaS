@@ -5,7 +5,7 @@ export const usersTable = pgTable('users_table', {
     name: text('name').notNull(),
     email: text('email').notNull().unique(),
     plan: text('plan').notNull(),
-    stripe_id: text('stripe_id').notNull(),
+    stripe_id: text('stripe_id'), // Nullable by default (no .notNull())
 });
 
 export type InsertUser = typeof usersTable.$inferInsert;

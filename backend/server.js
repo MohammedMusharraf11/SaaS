@@ -4,20 +4,29 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 
 import healthRoutes from './routes/healthRoutes.js';
+import googleAuthRoutes from './routes/googleAuthRoutes.js';
+import lighthouseRoutes from './routes/lighthouseRoutes.js';
+import userAnalyticsRoutes from './routes/userAnalyticsRoutes.js';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3010;
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3002', 'http://localhost:3000'],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/health', healthRoutes);
+app.use('/api', googleAuthRoutes);
+app.use('/api', lighthouseRoutes);
+app.use('/api', userAnalyticsRoutes);
 
 // Health check endpoint
 app.get('/api/status', (req, res) => {
@@ -43,6 +52,7 @@ app.use('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 SEO Health Score API running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`📊 Lighthouse API available at http://localhost:${PORT}/api/lighthouse/:domain`);
+  console.log(`📈 User Analytics API available at http://localhost:${PORT}/api/analytics/*`);
 });

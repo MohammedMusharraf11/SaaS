@@ -1,15 +1,28 @@
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
 
-const analyticsClient = new BetaAnalyticsDataClient();
-
 const analyticsService = {
   async getAnalyticsData(domain) {
     try {
+      console.log('📊 Attempting to get Analytics data for:', domain);
+      
       const propertyId = process.env.GOOGLE_ANALYTICS_PROPERTY_ID;
       if (!propertyId) {
-        console.log('⚠️ GA4 Property ID not configured.');
-        return null;
+        console.log('⚠️ GA4 Property ID not configured, skipping Analytics');
+        return {
+          dataAvailable: false,
+          reason: 'No property ID configured',
+          bounceRate: null,
+          avgSessionDuration: null,
+          totalSessions: null,
+          organicSessions: null
+        };
       }
+
+      // FIXED: Initialize client with proper authentication
+      const analyticsClient = new BetaAnalyticsDataClient({
+        keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+        projectId: process.env.GOOGLE_CLOUD_PROJECT_ID
+      });
 
       // Query GA4 API for metrics last 30 days
       const [response] = await analyticsClient.runReport({
@@ -20,37 +33,81 @@ const analyticsService = {
           { name: 'averageSessionDuration' },
           { name: 'sessions' },
           { name: 'organicSessions' }
-        ]
+        ],
+        // FIXED: Add dimension to avoid empty response
+        dimensions: [{ name: 'date' }]
       });
 
-      const rows = response.rows || [];
+      console.log('✅ Analytics API response received');
 
-      // Example to extract metrics from response
-      const metrics = {};
-      for (const row of rows) {
-        for (let i = 0; i < row.metricValues.length; i++) {
-          const metricName = response.metricHeaders[i].name;
-          const metricValue = parseFloat(row.metricValues[i].value);
-          metrics[metricName] = metricValue;
-        }
-      }
+      // Process the response
+      const metrics = this.processAnalyticsResponse(response);
 
       return {
-        bounceRate: metrics.bounceRate || null,
-        avgSessionDuration: metrics.averageSessionDuration || null,
-        totalSessions: metrics.sessions || null,
-        organicSessions: metrics.organicSessions || null,
-        dataAvailable: true
+        bounceRate: metrics.bounceRate,
+        avgSessionDuration: metrics.averageSessionDuration,
+        totalSessions: metrics.sessions,
+        organicSessions: metrics.organicSessions,
+        dataAvailable: true,
+        lastUpdated: new Date().toISOString()
       };
 
     } catch (error) {
-      console.error('❌ Analytics API failed:', error);
-      return null; // Allow other services to run if analytics fails
+      console.error('❌ Analytics API failed:', error.message);
+      
+      // FIXED: Return null instead of throwing error so other services can continue
+      return {
+        dataAvailable: false,
+        reason: error.message.includes('UNAUTHENTICATED') ? 'Authentication failed' : 'API error',
+        bounceRate: null,
+        avgSessionDuration: null,
+        totalSessions: null,
+        organicSessions: null,
+        error: error.message
+      };
     }
   },
 
-  convertBounceRateToScore(bounceRate) { /* existing code */ },
-  convertSessionDurationToScore(duration) { /* existing code */ }
+  processAnalyticsResponse(response) {
+    const metrics = {
+      bounceRate: 0,
+      averageSessionDuration: 0,
+      sessions: 0,
+      organicSessions: 0
+    };
+
+    if (response.rows && response.rows.length > 0) {
+      // Aggregate metrics across all rows
+      response.rows.forEach(row => {
+        row.metricValues.forEach((metricValue, index) => {
+          const metricName = response.metricHeaders[index].name;
+          const value = parseFloat(metricValue.value) || 0;
+          
+          switch(metricName) {
+            case 'bounceRate':
+              metrics.bounceRate += value;
+              break;
+            case 'averageSessionDuration':
+              metrics.averageSessionDuration += value;
+              break;
+            case 'sessions':
+              metrics.sessions += value;
+              break;
+            case 'organicSessions':
+              metrics.organicSessions += value;
+              break;
+          }
+        });
+      });
+
+      // Calculate averages
+      const rowCount = response.rows.length;
+      metrics.bounceRate = metrics.bounceRate / rowCount;
+      metrics.averageSessionDuration = metrics.averageSessionDuration / rowCount;
+    }
+
+    return metrics;
+  }
 };
 
 export default analyticsService;

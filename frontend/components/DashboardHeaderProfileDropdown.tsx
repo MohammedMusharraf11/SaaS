@@ -1,3 +1,4 @@
+
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -9,7 +10,6 @@ import {
 import { Bell, ReceiptText, User, Settings, HelpCircle, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { } from "@supabase/supabase-js"
 import { createClient } from '@/utils/supabase/server'
 import { logout } from '@/app/auth/actions'
 import { generateStripeBillingPortalLink } from "@/utils/stripe/api"
@@ -22,13 +22,13 @@ export default async function DashboardHeaderProfileDropdown() {
         return null
     }
     
-    let billingPortalURL = '/subscribe' // Default fallback
+    let billingPortalURL = '/subscribe'
     try {
         billingPortalURL = await generateStripeBillingPortalLink(user.email!)
     } catch (error) {
         console.error('Error getting billing portal URL:', error)
-        // billingPortalURL already set to fallback
     }
+    
     return (
         <nav className="flex items-center">
             <Button variant="ghost" size="icon" className="mr-2">
@@ -57,10 +57,10 @@ export default async function DashboardHeaderProfileDropdown() {
                             <span>Settings</span>
                         </DropdownMenuItem>
                     </Link>
-                    <Link href="#">
+                    <Link href={billingPortalURL}>
                         <DropdownMenuItem>
                             <ReceiptText className="mr-2 h-4 w-4" />
-                            <Link href={billingPortalURL}>Billing</Link>
+                            <span>Billing</span>
                         </DropdownMenuItem>
                     </Link>
                     <Link href="#">
@@ -72,9 +72,9 @@ export default async function DashboardHeaderProfileDropdown() {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem>
                         <form action={logout} className="w-full">
-                            <button type="submit" className="w-full flex" >
+                            <button type="submit" className="w-full flex">
                                 <LogOut className="mr-2 h-4 w-4" />
-                                <span > Log out</span>
+                                <span>Log out</span>
                             </button>
                         </form>
                     </DropdownMenuItem>

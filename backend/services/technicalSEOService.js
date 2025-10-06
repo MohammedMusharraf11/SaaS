@@ -6,6 +6,8 @@ const technicalSEOService = {
     try {
       let url = domain.startsWith('http') ? domain : `https://${domain}`;
 
+      console.log(`🔧 Running technical SEO analysis for: ${url}`);
+
       const checks = await Promise.allSettled([
         this.checkRobotsTxt(url),
         this.checkSitemap(url),
@@ -15,35 +17,78 @@ const technicalSEOService = {
       ]);
 
       return {
-        robotsTxt: checks[0].status === 'fulfilled' ? checks[0].value : null,
-        sitemap: checks[1].status === 'fulfilled' ? checks[1].value : null,
-        ssl: checks[2].status === 'fulfilled' ? checks[2].value : null,
-        metaTags: checks[3].status === 'fulfilled' ? checks[3].value : null,
-        structuredData: checks[4].status === 'fulfilled' ? checks[4].value : null,
-        dataAvailable: true
+        robotsTxt: this.getCheckResult(checks[0]),
+        sitemap: this.getCheckResult(checks[1]),
+        ssl: this.getCheckResult(checks[2]),
+        metaTags: this.getCheckResult(checks[3]),
+        structuredData: this.getCheckResult(checks[4]),
+        overallScore: this.calculateTechnicalScore(checks),
+        checkCount: checks.length,
+        successfulChecks: checks.filter(check => check.status === 'fulfilled').length,
+        dataAvailable: true,
+        timestamp: new Date().toISOString()
       };
+
     } catch (error) {
-      console.error('Technical SEO checks failed:', error.message);
+      console.error('❌ Technical SEO analysis failed:', error.message);
       return null;
     }
+  },
+
+  getCheckResult(promiseResult) {
+    return promiseResult.status === 'fulfilled' ? promiseResult.value : null;
+  },
+
+  calculateTechnicalScore(checks) {
+    const weights = {
+      robotsTxt: 20,
+      sitemap: 25,
+      ssl: 25,
+      metaTags: 20,
+      structuredData: 10
+    };
+
+    let totalScore = 0;
+    let totalWeight = 0;
+
+    checks.forEach((check, index) => {
+      const checkNames = ['robotsTxt', 'sitemap', 'ssl', 'metaTags', 'structuredData'];
+      const checkName = checkNames[index];
+      
+      if (check.status === 'fulfilled' && check.value && checkName) {
+        const score = check.value.score || 0;
+        const weight = weights[checkName] || 0;
+        
+        totalScore += score * weight;
+        totalWeight += weight;
+      }
+    });
+
+    return totalWeight > 0 ? Math.round(totalScore / totalWeight) : 0;
   },
 
   async checkRobotsTxt(url) {
     try {
       const robotsUrl = `${url}/robots.txt`;
-      const response = await axios.get(robotsUrl, { timeout: 5000 });
+      const response = await axios.get(robotsUrl, { 
+        timeout: 10000,
+        headers: { 'User-Agent': 'SEO-Analyzer-Bot/1.0' }
+      });
+      
+      const content = response.data;
+      
       return {
         exists: true,
-        content: response.data.substring(0, 500),
-        hasUserAgent: response.data.includes('User-agent'),
-        hasSitemap: response.data.toLowerCase().includes('sitemap'),
-        score: response.data.includes('User-agent') ? 100 : 50
+        content: content.substring(0, 500),
+        hasUserAgent: content.includes('User-agent'),
+        hasSitemap: content.toLowerCase().includes('sitemap'),
+        score: content.includes('User-agent') ? 100 : 50
       };
     } catch (error) {
       return {
         exists: false,
         score: 0,
-        issue: 'No robots.txt found'
+        issue: 'No robots.txt found or inaccessible'
       };
     }
   },
@@ -53,21 +98,23 @@ const technicalSEOService = {
       const sitemapUrls = [
         `${url}/sitemap.xml`,
         `${url}/sitemap_index.xml`,
-        `${url}/sitemaps/sitemap.xml`
+        `${url}/sitemap1.xml`
       ];
 
       for (const sitemapUrl of sitemapUrls) {
         try {
-          const response = await axios.get(sitemapUrl, { timeout: 5000 });
-          if (response.data.includes('<?xml') && response.data.includes('sitemap')) {
-            return {
-              exists: true,
-              url: sitemapUrl,
-              isValid: response.data.includes('</urlset>') || response.data.includes('</sitemapindex>'),
-              score: 100
-            };
-          }
-        } catch (e) {
+          const response = await axios.get(sitemapUrl, { 
+            timeout: 10000,
+            headers: { 'User-Agent': 'SEO-Analyzer-Bot/1.0' }
+          });
+          
+          return {
+            exists: true,
+            url: sitemapUrl,
+            isXML: response.headers['content-type']?.includes('xml'),
+            score: 100
+          };
+        } catch (error) {
           continue;
         }
       }
@@ -75,105 +122,130 @@ const technicalSEOService = {
       return {
         exists: false,
         score: 0,
-        issue: 'No XML sitemap found'
+        issue: 'No sitemap found'
       };
     } catch (error) {
       return {
         exists: false,
         score: 0,
-        issue: 'Sitemap check failed'
+        issue: 'Error checking sitemap'
       };
     }
   },
 
   async checkSSL(url) {
     try {
-      const isHttps = url.startsWith('https://');
-      const response = await axios.get(url, {
-        timeout: 5000,
+      if (!url.startsWith('https://')) {
+        return {
+          hasSSL: false,
+          score: 0,
+          issue: 'Site not using HTTPS'
+        };
+      }
+
+      const response = await axios.get(url, { 
+        timeout: 10000,
         maxRedirects: 5
       });
 
       return {
-        hasSSL: isHttps,
-        redirectsToHttps: response.request.res.responseUrl?.startsWith('https://'),
-        score: isHttps ? 100 : 0,
-        certificate: isHttps ? 'Valid' : 'Not Found'
+        hasSSL: true,
+        score: 100,
+        status: 'SSL certificate valid'
       };
     } catch (error) {
       return {
         hasSSL: false,
         score: 0,
-        issue: 'SSL check failed'
+        issue: 'SSL certificate issue or site inaccessible'
       };
     }
   },
 
   async checkMetaTags(url) {
     try {
-      const response = await axios.get(url, { timeout: 10000 });
+      const response = await axios.get(url, { 
+        timeout: 15000,
+        headers: { 'User-Agent': 'SEO-Analyzer-Bot/1.0' }
+      });
+      
       const html = response.data;
-
+      
+      // Simple HTML parsing without JSDOM
       const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-      const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["'][^>]*>/i);
-      const keywordsMatch = html.match(/<meta[^>]*name=["']keywords["'][^>]*content=["']([^"']+)["'][^>]*>/i);
-      const h1Match = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
-
-      const checks = {
-        hasTitle: !!titleMatch,
-        titleLength: titleMatch ? titleMatch[1].length : 0,
-        hasDescription: !!descMatch,
-        descriptionLength: descMatch ? descMatch[1].length : 0,
-        hasH1: !!h1Match,
-        hasKeywords: !!keywordsMatch
-      };
-
+      const descMatch = html.match(/<meta\s+name="description"\s+content="([^"]+)"/i);
+      const viewportMatch = html.match(/<meta\s+name="viewport"/i);
+      
+      const title = titleMatch ? titleMatch[1].trim() : '';
+      const description = descMatch ? descMatch[1].trim() : '';
+      const hasViewport = !!viewportMatch;
+      
       let score = 0;
-      if (checks.hasTitle && checks.titleLength >= 30 && checks.titleLength <= 60) score += 30;
-      if (checks.hasDescription && checks.descriptionLength >= 120 && checks.descriptionLength <= 160) score += 30;
-      if (checks.hasH1) score += 20;
-      if (checks.hasKeywords) score += 10;
-      score += 10; // Base score for having HTML
-
+      if (title && title.length >= 30 && title.length <= 60) score += 40;
+      else if (title) score += 20;
+      
+      if (description && description.length >= 120 && description.length <= 160) score += 40;
+      else if (description) score += 20;
+      
+      if (hasViewport) score += 20;
+      
       return {
-        ...checks,
-        score: Math.min(score, 100),
-        title: titleMatch ? titleMatch[1].substring(0, 100) : null,
-        description: descMatch ? descMatch[1].substring(0, 200) : null
+        title: {
+          exists: !!title,
+          content: title,
+          length: title.length,
+          optimal: title.length >= 30 && title.length <= 60
+        },
+        metaDescription: {
+          exists: !!description,
+          content: description,
+          length: description.length,
+          optimal: description.length >= 120 && description.length <= 160
+        },
+        viewport: hasViewport,
+        score: score
       };
+      
     } catch (error) {
       return {
+        exists: false,
         score: 0,
-        issue: 'Meta tags check failed'
+        issue: 'Unable to fetch or parse page content'
       };
     }
   },
 
   async checkStructuredData(url) {
     try {
-      const response = await axios.get(url, { timeout: 10000 });
+      const response = await axios.get(url, { 
+        timeout: 15000,
+        headers: { 'User-Agent': 'SEO-Analyzer-Bot/1.0' }
+      });
+      
       const html = response.data;
-
-      const hasJsonLd = html.includes('application/ld+json');
-      const hasMicrodata = html.includes('itemscope') || html.includes('itemtype');
-      const hasRDFa = html.includes('typeof=') || html.includes('property=');
-
+      
+      // Check for JSON-LD structured data
+      const jsonLdMatch = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>([^<]+)<\/script>/gi);
+      const microdataMatch = html.match(/itemtype="/gi);
+      
       let score = 0;
-      if (hasJsonLd) score += 50;
-      if (hasMicrodata) score += 30;
-      if (hasRDFa) score += 20;
-
+      if (jsonLdMatch && jsonLdMatch.length > 0) score += 60;
+      if (microdataMatch && microdataMatch.length > 0) score += 40;
+      
       return {
-        hasStructuredData: hasJsonLd || hasMicrodata || hasRDFa,
-        jsonLd: hasJsonLd,
-        microdata: hasMicrodata,
-        rdfa: hasRDFa,
+        hasJsonLd: !!(jsonLdMatch && jsonLdMatch.length > 0),
+        hasMicrodata: !!(microdataMatch && microdataMatch.length > 0),
+        jsonLdCount: jsonLdMatch ? jsonLdMatch.length : 0,
+        microdataCount: microdataMatch ? microdataMatch.length : 0,
         score: Math.min(score, 100)
       };
+      
     } catch (error) {
       return {
+        hasJsonLd: false,
+        hasMicrodata: false,
         score: 0,
-        issue: 'Structured data check failed'
+        issue: 'Unable to check structured data'
       };
     }
   }

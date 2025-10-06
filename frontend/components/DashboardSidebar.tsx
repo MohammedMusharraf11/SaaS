@@ -1,170 +1,256 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { ChevronDown, ChevronRight, BarChart3, Search, Share2, Users, Target, FileText, Globe, TrendingUp, Settings, X } from 'lucide-react'
+import { useRouter, usePathname } from 'next/navigation'
+import { 
+  LayoutDashboard, 
+  Globe, 
+  Share2, 
+  Users, 
+  LineChart,
+  Brain,
+  Bell,
+  MessageCircle,
+  HelpCircle,
+  X,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import Image from 'next/image'
 
 interface MenuItem {
   id: string
   title: string
   icon: React.ReactNode
-  submenu?: string[]
+  href: string
 }
 
 interface DashboardSidebarProps {
   onClose?: () => void
+  collapsed: boolean
+  onToggle: () => void
 }
 
 const menuItems: MenuItem[] = [
   {
-    id: 'overview',
-    title: 'Dashboard Overview',
-    icon: <BarChart3 className="h-5 w-5" />,
-    submenu: ['Overview', 'Health Score', 'Quick Actions']
+    id: 'dashboard',
+    title: 'Dashboard',
+    icon: <LayoutDashboard className="h-5 w-5" />,
+    href: '/dashboard'
   },
   {
     id: 'seo',
-    title: 'SEO Tools',
-    icon: <Search className="h-5 w-5" />,
-    submenu: ['Keyword Research', 'Site Audit', 'Rankings', 'Backlinks']
-  },
-  {
-    id: 'competitors',
-    title: 'Competitor Analysis',
-    icon: <Users className="h-5 w-5" />,
-    submenu: ['Competitor Overview', 'Domain Comparison', 'Market Share']
-  },
-  {
-    id: 'traffic',
-    title: 'Traffic Analytics',
-    icon: <TrendingUp className="h-5 w-5" />,
-    submenu: ['Traffic Sources', 'Geographic Data', 'Audience Insights']
-  },
-  {
-    id: 'content',
-    title: 'Content Performance',
-    icon: <FileText className="h-5 w-5" />,
-    submenu: ['Top Pages', 'Content Gap', 'Optimization']
+    title: 'SEO & Website Performance',
+    icon: <Globe className="h-5 w-5" />,
+    href: '/dashboard/seo-performance'
   },
   {
     id: 'social',
-    title: 'Social Media',
+    title: 'Social Media Performance',
     icon: <Share2 className="h-5 w-5" />,
-    submenu: ['Social Insights', 'Engagement', 'Shares']
+    href: '/dashboard/social'
   },
   {
-    id: 'local',
-    title: 'Local SEO',
-    icon: <Target className="h-5 w-5" />,
-    submenu: ['Local Rankings', 'Citations', 'Reviews']
+    id: 'competitor',
+    title: 'Competitor Intelligence',
+    icon: <Users className="h-5 w-5" />,
+    href: '/dashboard/competitor'
   },
   {
-    id: 'international',
-    title: 'International SEO',
-    icon: <Globe className="h-5 w-5" />,
-    submenu: ['Geo-targeting', 'Hreflang', 'International Rankings']
+    id: 'lead',
+    title: 'Lead Funnel Diagnostics',
+    icon: <LineChart className="h-5 w-5" />,
+    href: '/dashboard/leads'
   },
   {
-    id: 'settings',
-    title: 'Settings',
-    icon: <Settings className="h-5 w-5" />,
-    submenu: ['Account', 'Integrations', 'API', 'Billing']
-  }
+    id: 'ai',
+    title: 'AI Insights Hub',
+    icon: <Brain className="h-5 w-5" />,
+    href: '/dashboard/ai-insights'
+  },
+  {
+    id: 'reports',
+    title: 'Reports & Alerts',
+    icon: <Bell className="h-5 w-5" />,
+    href: '/dashboard/reports'
+  },
 ]
 
-export default function DashboardSidebar({ onClose }: DashboardSidebarProps) {
-  const [openMenus, setOpenMenus] = useState<string[]>(['overview'])
-  const router = useRouter()
+const otherItems: MenuItem[] = [
+  {
+    id: 'chatbot',
+    title: 'Chatbot',
+    icon: <MessageCircle className="h-5 w-5" />,
+    href: '/dashboard/chatbot'
+  },
+  {
+    id: 'hire',
+    title: 'Hire Us',
+    icon: <HelpCircle className="h-5 w-5" />,
+    href: '/dashboard/hire'
+  },
+]
 
-  const toggleMenu = (menuId: string) => {
-    setOpenMenus(prev =>
-      prev.includes(menuId)
-        ? prev.filter(id => id !== menuId)
-        : [...prev, menuId]
-    )
-  }
+export default function DashboardSidebar({ onClose, collapsed, onToggle }: DashboardSidebarProps) {
+  const router = useRouter()
+  const pathname = usePathname()
 
   const handleUpgradeClick = () => {
     router.push('/subscribe')
   }
 
+  const handleMenuClick = (href: string) => {
+    router.push(href)
+    if (onClose) onClose()
+  }
+
   return (
-    <div className="h-full flex flex-col bg-slate-900 text-white">
-      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6">
+    <div className="h-full flex flex-col bg-white border-r border-gray-200 relative">
+      {/* Toggle Button */}
+      <button
+        onClick={onToggle}
+        className="hidden lg:flex absolute -right-3 top-20 z-50 w-6 h-6 bg-white border border-gray-200 rounded-full items-center justify-center hover:bg-gray-50 transition-colors shadow-sm"
+      >
+        {collapsed ? (
+          <ChevronRight className="w-4 h-4 text-gray-600" />
+        ) : (
+          <ChevronLeft className="w-4 h-4 text-gray-600" />
+        )}
+      </button>
+
+      <div className="flex-1 overflow-y-auto px-4 py-6">
         {/* Close button for mobile */}
-        <div className="flex justify-between items-center mb-4 lg:hidden">
-          <h2 className="text-lg font-semibold text-white">Menu</h2>
+        <div className="flex justify-between items-center mb-6 lg:hidden">
           {onClose && (
             <Button
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="text-slate-400 hover:text-white hover:bg-slate-800"
+              className="text-gray-500 hover:text-gray-900"
             >
               <X className="h-5 w-5" />
             </Button>
           )}
         </div>
 
-        {/* Logo - hidden on mobile when sidebar is overlay */}
-        <div className="mb-6 sm:mb-8 hidden lg:block">
-          <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 text-transparent bg-clip-text">
-            SEO Dashboard
-          </h1>
-        </div>
+        {/* Logo */}
+        {!collapsed && (
+          <div className="mb-8 px-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-sm">C</span>
+              </div>
+              <span className="text-xl font-bold text-gray-900">CLARYX</span>
+            </div>
+          </div>
+        )}
 
-        {/* Navigation Menu */}
-        <nav className="space-y-1 sm:space-y-2">
-          {menuItems.map((item) => (
-            <div key={item.id}>
+        {collapsed && (
+          <div className="mb-8 px-2 flex justify-center">
+            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-sm">C</span>
+            </div>
+          </div>
+        )}
+
+        {/* MENU Label */}
+        {!collapsed && (
+          <div className="mb-4 px-2">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              MENU
+            </span>
+          </div>
+        )}
+
+        {/* Main Navigation */}
+        <nav className="space-y-1 mb-8">
+          {menuItems.map((item) => {
+            const isActive = pathname === item.href
+            return (
               <button
-                onClick={() => toggleMenu(item.id)}
-                className="w-full flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-slate-200 hover:bg-slate-800 rounded-lg transition-all duration-200"
+                key={item.id}
+                onClick={() => handleMenuClick(item.href)}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  isActive
+                    ? 'bg-primary-50 text-primary border-l-4 border-primary'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                } ${collapsed ? 'justify-center' : ''}`}
+                title={collapsed ? item.title : undefined}
               >
-                <span className="flex items-center space-x-2 sm:space-x-3">
-                  {item.icon}
-                  <span>{item.title}</span>
-                </span>
-                {item.submenu && (
-                  openMenus.includes(item.id) 
-                    ? <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />
-                    : <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
-                )}
+                {item.icon}
+                {!collapsed && <span>{item.title}</span>}
               </button>
-              
-              {item.submenu && openMenus.includes(item.id) && (
-                <div className="mt-1 ml-6 sm:ml-8 space-y-1">
-                  {item.submenu.map((subItem, index) => (
-                    <button
-                      key={index}
-                      className="block w-full text-left px-3 sm:px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all duration-200"
-                    >
-                      {subItem}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+            )
+          })}
         </nav>
-        
-        <div className="mt-6 sm:mt-8 pt-6 border-t border-slate-700">
-          <div className="bg-slate-800 rounded-lg p-3 sm:p-4">
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-medium text-white">Free Plan</span>
+
+        {/* OTHER Label */}
+        {!collapsed && (
+          <div className="mb-4 px-2">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              OTHER
+            </span>
+          </div>
+        )}
+
+        {/* Other Items */}
+        <nav className="space-y-1 mb-8">
+          {otherItems.map((item) => {
+            const isActive = pathname === item.href
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleMenuClick(item.href)}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                  isActive
+                    ? 'bg-primary-50 text-primary'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                } ${collapsed ? 'justify-center' : ''}`}
+                title={collapsed ? item.title : undefined}
+              >
+                {item.icon}
+                {!collapsed && <span>{item.title}</span>}
+              </button>
+            )
+          })}
+        </nav>
+      </div>
+
+      {/* Upgrade Card */}
+      {!collapsed && (
+        <div className="p-4 border-t border-gray-200">
+          <div className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl p-4 space-y-3">
+            <div>
+              <h3 className="text-sm font-bold text-gray-900 mb-1">
+                Upgrade to Pro
+              </h3>
+              <p className="text-xs text-gray-600">
+                Get access to all premium features
+              </p>
             </div>
-            <p className="text-xs text-slate-400 mb-3">Upgrade to unlock advanced features</p>
-            <button 
+            <Button 
               onClick={handleUpgradeClick}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
+              className="w-full bg-primary hover:bg-primary-600 text-white font-semibold text-sm h-9"
             >
               Upgrade Now
-            </button>
+            </Button>
           </div>
         </div>
-      </div>
+      )}
+
+      {collapsed && (
+        <div className="p-4 border-t border-gray-200 flex justify-center">
+          <Button 
+            onClick={handleUpgradeClick}
+            size="icon"
+            className="bg-primary hover:bg-primary-600 text-white"
+            title="Upgrade to Pro"
+          >
+            <TrendingUp className="w-5 h-5" />
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

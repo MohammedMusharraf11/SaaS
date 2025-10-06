@@ -3,13 +3,13 @@
 import { useState } from 'react'
 import DashboardSidebar from './DashboardSidebar'
 import DashboardHeaderClient from './DashboardHeaderClient'
-import DashboardContent from './DashboardContent'
 
-interface DashboardLayoutProps {
+interface DashboardPageLayoutProps {
   user: any
+  children: React.ReactNode
 }
 
-export default function DashboardLayout({ user }: DashboardLayoutProps) {
+export default function DashboardPageLayout({ user, children }: DashboardPageLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
@@ -45,14 +45,9 @@ export default function DashboardLayout({ user }: DashboardLayoutProps) {
         <DashboardHeaderClient 
           user={user}
           onMenuClick={() => setSidebarOpen(true)}
-          onDownloadReport={() => {
-            alert('Please go to SEO & Website Performance page to analyze and download reports.')
-          }}
+          onDownloadReport={() => {}}
         />
-        <DashboardContent 
-          userEmail={user?.email}
-          userName={user?.user_metadata?.full_name || user?.user_metadata?.name}
-        />
+        {children}
       </div>
     </div>
   )

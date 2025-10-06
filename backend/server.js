@@ -26,7 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/health', healthRoutes);
 app.use('/api', googleAuthRoutes);
 app.use('/api', lighthouseRoutes);
-app.use('/api', userAnalyticsRoutes); // NEW: User Analytics route
+app.use('/api', userAnalyticsRoutes);
 
 // Health check endpoint
 app.get('/api/status', (req, res) => {

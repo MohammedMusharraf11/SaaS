@@ -3,296 +3,375 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { MoreVertical, ChevronDown, ArrowRight, CheckSquare, Square } from 'lucide-react'
-import { Line } from 'react-chartjs-2'
+import { Input } from '@/components/ui/input'
+import { BarChart3, TrendingUp, Users, Globe, ArrowRight, Search, Loader2, AlertCircle } from 'lucide-react'
 import GoogleAnalyticsCard from './GoogleAnalyticsCard'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-} from 'chart.js'
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-)
-
-interface QuickWin {
-  id: string
-  title: string
-  description: string
-  completed: boolean
-}
+import { useRouter } from 'next/navigation'
 
 interface DashboardContentProps {
   userEmail?: string
+  userName?: string
 }
 
-const quickWins: QuickWin[] = [
-  { id: '1', title: 'Optimize Page Title', description: 'Lorem ipsum dolor sit amet', completed: false },
-  { id: '2', title: 'Publish a new blog post targeting', description: 'Lorem ipsum dolor sit amet', completed: false },
-  { id: '3', title: 'Secure 2 new backlinks blogs', description: 'Lorem ipsum dolor sit amet', completed: false },
-]
+export default function DashboardContent({ userEmail, userName }: DashboardContentProps) {
+  const router = useRouter()
+  const [activeTab, setActiveTab] = useState<'website' | 'seo' | 'social'>('website')
+  const [url, setUrl] = useState('')
+  const [analyzing, setAnalyzing] = useState(false)
+  const [healthScore, setHealthScore] = useState<any>(null)
+  const [error, setError] = useState('')
 
-export default function DashboardContent({ userEmail }: DashboardContentProps) {
-  const [activeTab, setActiveTab] = useState('Social Metrics')
-  const [selectedCompetitor, setSelectedCompetitor] = useState('Select Competitor')
-  const [selectedDays, setSelectedDays] = useState('Last 7 days')
-
-  // Website Traffic Chart Data
-  const trafficData = {
-    labels: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13'],
-    datasets: [
-      {
-        label: 'Traffic 1',
-        data: [20, 35, 25, 45, 30, 50, 40, 55, 45, 60, 50, 65, 55],
-        borderColor: '#FF6B00',
-        backgroundColor: 'rgba(255, 107, 0, 0.1)',
-        tension: 0.4,
-        fill: true,
-      },
-      {
-        label: 'Traffic 2',
-        data: [30, 25, 40, 35, 50, 45, 55, 50, 60, 55, 65, 60, 70],
-        borderColor: '#4169E1',
-        backgroundColor: 'rgba(65, 105, 225, 0.1)',
-        tension: 0.4,
-        fill: true,
-      },
-    ],
+  // Extract first name from email or use full name
+  const getDisplayName = () => {
+    if (userName) {
+      return userName.split(' ')[0]
+    } else if (userEmail) {
+      const emailName = userEmail.split('@')[0]
+      return emailName.charAt(0).toUpperCase() + emailName.slice(1)
+    }
+    return 'User'
   }
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        backgroundColor: '#fff',
-        titleColor: '#000',
-        bodyColor: '#666',
-        borderColor: '#ddd',
-        borderWidth: 1,
-      },
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: {
-          stepSize: 20,
-        },
-        grid: {
-          color: '#f0f0f0',
-        },
-      },
-      x: {
-        grid: {
-          display: false,
-        },
-      },
-    },
+  const analyzeWebsite = async () => {
+    if (!url) return
+
+    setAnalyzing(true)
+    setError('')
+    setHealthScore(null)
+
+    try {
+      const cleanUrl = url.replace(/^https?:\/\//, '').replace(/\/$/, '')
+
+      const healthResponse = await fetch('http://localhost:3010/api/health/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain: cleanUrl })
+      })
+
+      if (!healthResponse.ok) throw new Error('Failed to analyze website')
+
+      const healthData = await healthResponse.json()
+      setHealthScore(healthData)
+
+    } catch (err: any) {
+      setError(err.message || 'Failed to analyze website')
+    } finally {
+      setAnalyzing(false)
+    }
   }
 
-  const competitorData = [
-    { metric: 'Domain Authority', yourSite: 55, competitorA: 62, competitorB: 58, competitorC: 78, competitorD: 43 },
-    { metric: 'Monthly Traffic', yourSite: 55, competitorA: 62, competitorB: 58, competitorC: 78, competitorD: 43 },
-    { metric: 'Social Followers', yourSite: 55, competitorA: 62, competitorB: 58, competitorC: 78, competitorD: 43 },
-  ]
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-600'
+    if (score >= 50) return 'text-orange-500'
+    return 'text-red-600'
+  }
+
+  const getScoreBgColor = (score: number) => {
+    if (score >= 80) return '#10b981'
+    if (score >= 50) return '#f59e0b'
+    return '#ef4444'
+  }
+
+  const getScoreLabel = (score: number) => {
+    if (score >= 80) return 'Good'
+    if (score >= 50) return 'Needs improvement'
+    return 'Poor'
+  }
 
   return (
     <div className="flex-1 overflow-y-auto bg-background">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
         {/* Welcome Header */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Welcome, John!</h2>
+          <h2 className="text-3xl font-bold text-gray-900">Welcome, {getDisplayName()}!</h2>
+          <p className="text-gray-600 mt-2">Monitor your marketing performance and get insights</p>
         </div>
 
+        {/* Tabs */}
+        <div className="flex items-center gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab('website')}
+            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'website'
+                ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Website
+          </button>
+          <button
+            onClick={() => setActiveTab('seo')}
+            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+              activeTab === 'seo'
+                ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            SEO
+          </button>
+          <button
+            onClick={() => setActiveTab('social')}
+            className={`px-6 py-2 rounded-full font-medium transition-colors border-2 ${
+              activeTab === 'social'
+                ? 'bg-orange-500 text-white border-orange-500'
+                : 'text-gray-600 border-gray-300 hover:border-orange-500'
+            }`}
+          >
+            Social Metrics
+          </button>
+        </div>
+
+        {/* Main Content Area */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content - Left & Center */}
+          {/* Left Column - Health Score */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Google Analytics Card */}
-            <GoogleAnalyticsCard userEmail={userEmail} />
+            {/* Search Bar */}
+            <Card className="border-gray-200">
+              <CardContent className="pt-6">
+                <div className="flex gap-3">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="Enter website URL (e.g., example.com)"
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && analyzeWebsite()}
+                      disabled={analyzing}
+                      className="pl-10 h-12 border-gray-300"
+                    />
+                  </div>
+                  <Button
+                    onClick={analyzeWebsite}
+                    disabled={analyzing || !url}
+                    className="h-12 px-6 bg-orange-500 hover:bg-orange-600 text-white"
+                  >
+                    {analyzing ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      'Analyze'
+                    )}
+                  </Button>
+                </div>
+
+                {error && (
+                  <div className="flex items-center gap-2 p-3 mt-4 bg-red-50 border border-red-200 rounded-lg">
+                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Health Score Card */}
-            <Card className="border-gray-200">
-              <CardHeader className="pb-4">
-                <div className="flex items-center gap-4 mb-4">
-                  <button
-                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100"
-                  >
-                    Website
-                  </button>
-                  <button
-                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100"
-                  >
-                    SEO
-                  </button>
-                  <button
-                    className="px-4 py-2 text-sm font-medium bg-primary-50 text-primary rounded-lg border border-primary"
-                  >
-                    Social Metrics
-                  </button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
-                  {/* Health Score Circle */}
-                  <div className="flex-shrink-0">
-                    <div className="relative w-48 h-48">
-                      <svg className="transform -rotate-90 w-48 h-48">
-                        <circle
-                          cx="96"
-                          cy="96"
-                          r="80"
-                          stroke="#e5e7eb"
-                          strokeWidth="12"
-                          fill="none"
-                        />
-                        <circle
-                          cx="96"
-                          cy="96"
-                          r="80"
-                          stroke="#10B981"
-                          strokeWidth="12"
-                          fill="none"
-                          strokeDasharray={`${82 * 5.024} ${100 * 5.024}`}
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-4xl font-bold text-gray-900">82</span>
-                        <span className="text-2xl text-gray-400">/100</span>
-                        <span className="text-sm font-medium text-green-600 mt-1">Good</span>
+            {healthScore ? (
+              <Card className="border-gray-200">
+                <CardContent className="pt-6">
+                  <div className="flex flex-col md:flex-row items-start gap-6">
+                    {/* Left side - Text */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-2xl font-bold text-gray-900 mb-4">Health Score</h3>
+                      <p className="text-gray-600 leading-relaxed mb-4">
+                        Your website's overall health score is calculated based on performance, 
+                        SEO optimization, accessibility, and technical best practices. 
+                        {healthScore.overall_score >= 80 && ' Your site is performing well!'}
+                        {healthScore.overall_score >= 50 && healthScore.overall_score < 80 && ' There are some areas that need improvement.'}
+                        {healthScore.overall_score < 50 && ' Your site needs significant optimization.'}
+                      </p>
+                      <Button
+                        onClick={() => router.push('/dashboard/seo-performance')}
+                        className="bg-orange-500 hover:bg-orange-600 text-white"
+                      >
+                        View Detailed Analysis
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </div>
+
+                    {/* Right side - Circular Progress */}
+                    <div className="flex-shrink-0 mx-auto md:mx-0">
+                      <div className="relative w-44 h-44">
+                        <svg className="w-full h-full transform -rotate-90">
+                          <circle
+                            cx="88"
+                            cy="88"
+                            r="72"
+                            stroke="#e5e7eb"
+                            strokeWidth="14"
+                            fill="none"
+                          />
+                          <circle
+                            cx="88"
+                            cy="88"
+                            r="72"
+                            stroke={getScoreBgColor(healthScore.overall_score)}
+                            strokeWidth="14"
+                            fill="none"
+                            strokeDasharray={`${(healthScore.overall_score / 100) * 452.39} 452.39`}
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className={`text-4xl font-bold ${getScoreColor(healthScore.overall_score)}`}>
+                            {healthScore.overall_score}/100
+                          </span>
+                          <span className="text-xs text-gray-600 mt-1">{getScoreLabel(healthScore.overall_score)}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Health Score Details */}
-                  <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Health Score</h3>
-                    <p className="text-sm text-gray-600 leading-relaxed">
-                      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
-                      incididunt ut labore et dolore magna aliqua.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  {/* Score Breakdown */}
+                  {healthScore.breakdown && (
+                    <div className="mt-8 pt-6 border-t border-gray-200">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4">Score Breakdown</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {Object.entries(healthScore.breakdown).map(([key, value]: [string, any]) => (
+                          <div key={key} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <span className="text-sm font-medium text-gray-700 capitalize">
+                              {key.replace(/_/g, ' ')}
+                            </span>
+                            <span className={`text-lg font-bold ${getScoreColor(value)}`}>
+                              {value}/100
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="border-2 border-dashed border-gray-300">
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Globe className="w-16 h-16 text-gray-300 mb-4" />
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Quick Health Check
+                  </h3>
+                  <p className="text-gray-600 text-center max-w-md">
+                    Enter your website URL above to get a quick health score overview
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
-            {/* Website Traffic Chart */}
-            <Card className="border-gray-200">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-gray-900">Website Traffic</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <button className="p-2 hover:bg-gray-100 rounded-lg">
-                      <MoreVertical className="h-5 w-5 text-gray-400" />
-                    </button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64">
-                  <Line data={trafficData} options={chartOptions} />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Competitor Benchmarking */}
-            <Card className="border-gray-200">
-              <CardHeader>
-                <div className="flex items-center justify-between mb-4">
-                  <CardTitle className="text-lg font-bold text-gray-900">Competitor Benchmarking</CardTitle>
-                  <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50">
-                    {selectedDays}
-                    <ChevronDown className="h-4 w-4" />
-                  </button>
-                </div>
-                <button className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                  {selectedCompetitor}
-                  <ChevronDown className="h-4 w-4" />
-                </button>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-600">Metric</th>
-                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-600">Your Site</th>
-                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-600">Competitor A</th>
-                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-600">Competitor B</th>
-                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-600">Competitor C</th>
-                        <th className="text-center py-3 px-4 text-sm font-semibold text-gray-600">Competitor D</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {competitorData.map((row, index) => (
-                        <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="py-3 px-4 text-sm font-medium text-gray-900">{row.metric}</td>
-                          <td className="py-3 px-4 text-center text-sm text-gray-700">{row.yourSite}</td>
-                          <td className="py-3 px-4 text-center text-sm text-gray-700">{row.competitorA}</td>
-                          <td className="py-3 px-4 text-center text-sm text-gray-700">{row.competitorB}</td>
-                          <td className="py-3 px-4 text-center text-sm text-gray-700">{row.competitorC}</td>
-                          <td className="py-3 px-4 text-center text-sm text-gray-700">{row.competitorD}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="mt-4">
-                  <Button className="bg-primary hover:bg-primary-600 text-white">
-                    View Full Report
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Google Analytics Card */}
+            <GoogleAnalyticsCard userEmail={userEmail} />
           </div>
 
-          {/* Right Sidebar - Quick Wins */}
-          <div className="lg:col-span-1">
-            <Card className="border-gray-200 sticky top-6">
+          {/* Right Column - Stats & Quick Actions */}
+          <div className="space-y-6">
+            {/* Quick Tips - Moved to Top */}
+            <Card className="border-gray-200">
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-bold text-gray-900">Top 10 Quick Wins</CardTitle>
-                  <button className="p-2 hover:bg-gray-100 rounded-lg">
-                    <MoreVertical className="h-5 w-5 text-gray-400" />
-                  </button>
-                </div>
+                <CardTitle className="text-lg font-bold text-gray-900">Quick Tips</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {quickWins.map((win) => (
-                    <div key={win.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                      <button className="mt-1 flex-shrink-0">
-                        {win.completed ? (
-                          <CheckSquare className="h-5 w-5 text-primary" />
-                        ) : (
-                          <Square className="h-5 w-5 text-gray-300" />
-                        )}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-semibold text-gray-900 mb-1">{win.title}</h4>
-                        <p className="text-xs text-gray-600">{win.description}</p>
-                      </div>
+                  <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                    <div className="w-6 h-6 bg-blue-200 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-blue-700">1</span>
                     </div>
-                  ))}
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900 mb-1">Quick Health Check</h4>
+                      <p className="text-xs text-gray-600">Use the search bar to get instant health score of any website.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
+                    <div className="w-6 h-6 bg-green-200 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-green-700">2</span>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900 mb-1">Deep Dive Analysis</h4>
+                      <p className="text-xs text-gray-600">Click "SEO & Website Performance" for comprehensive insights.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
+                    <div className="w-6 h-6 bg-purple-200 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-xs font-bold text-purple-700">3</span>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900 mb-1">Track Progress</h4>
+                      <p className="text-xs text-gray-600">Monitor your scores regularly to track improvements.</p>
+                    </div>
+                  </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Stats */}
+            <Card className="border-gray-200">
+              <CardHeader>
+                <CardTitle className="text-lg font-bold text-gray-900">Quick Stats</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Users className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-600">Visitors</p>
+                    <p className="text-lg font-bold text-gray-900">--</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <TrendingUp className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-600">SEO Score</p>
+                    <p className="text-lg font-bold text-gray-900">
+                      {healthScore ? `${healthScore.overall_score}/100` : '--'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <BarChart3 className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-600">Page Views</p>
+                    <p className="text-lg font-bold text-gray-900">--</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card className="border-gray-200">
+              <CardHeader>
+                <CardTitle className="text-lg font-bold text-gray-900">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button
+                  onClick={() => router.push('/dashboard/seo-performance')}
+                  className="w-full justify-start bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200"
+                >
+                  <Globe className="w-4 h-4 mr-2" />
+                  Full SEO Analysis
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-gray-500"
+                  disabled
+                >
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Social Analytics
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-gray-500"
+                  disabled
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Competitor Analysis
+                </Button>
               </CardContent>
             </Card>
           </div>

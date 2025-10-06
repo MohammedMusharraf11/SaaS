@@ -1,5 +1,6 @@
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
 import { google } from 'googleapis';
+import { GoogleAuth } from 'google-auth-library';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -32,10 +33,16 @@ const userAnalyticsService = {
       }
 
       // Create OAuth2 client with user's token
-      const oauth2Client = new google.auth.OAuth2();
+      const oauth2Client = new google.auth.OAuth2(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        process.env.GOOGLE_REDIRECT_URI
+      );
+      
       oauth2Client.setCredentials({
         access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token
+        refresh_token: tokens.refresh_token,
+        expiry_date: tokens.expires_at
       });
 
       // Get GA4 Admin API
@@ -50,16 +57,20 @@ const userAnalyticsService = {
       const properties = [];
       if (response.data.accounts) {
         for (const account of response.data.accounts) {
-          const propsResponse = await analyticsAdmin.properties.list({
-            filter: `parent:${account.name}`
-          });
-          
-          if (propsResponse.data.properties) {
-            properties.push(...propsResponse.data.properties.map(prop => ({
-              id: prop.name.split('/')[1],
-              displayName: prop.displayName,
-              account: account.displayName
-            })));
+          try {
+            const propsResponse = await analyticsAdmin.properties.list({
+              filter: `parent:${account.name}`
+            });
+            
+            if (propsResponse.data.properties) {
+              properties.push(...propsResponse.data.properties.map(prop => ({
+                id: prop.name.split('/')[1],
+                displayName: prop.displayName,
+                account: account.displayName
+              })));
+            }
+          } catch (propError) {
+            console.warn('⚠️ Error fetching properties for account:', account.name);
           }
         }
       }
@@ -70,7 +81,7 @@ const userAnalyticsService = {
       };
 
     } catch (error) {
-      console.error('❌ Error fetching user properties:', error);
+      console.error('❌ Error fetching user properties:', error.message);
       return {
         success: false,
         error: error.message
@@ -79,7 +90,7 @@ const userAnalyticsService = {
   },
 
   /**
-   * Get Analytics data from user's GA4 property
+   * Get Analytics data from user's GA4 property using REST API
    */
   async getUserAnalyticsData(email, propertyId = null) {
     try {
@@ -109,21 +120,10 @@ const userAnalyticsService = {
         console.log('📌 Using first available property:', propertyId);
       }
 
-      // Create OAuth2 client
-      const oauth2Client = new google.auth.OAuth2();
-      oauth2Client.setCredentials({
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token
-      });
-
-      // Initialize GA4 Data API client with user's credentials
-      const analyticsDataClient = new BetaAnalyticsDataClient({
-        auth: oauth2Client
-      });
-
-      // Query GA4 API for metrics (last 30 days)
-      const [response] = await analyticsDataClient.runReport({
-        property: `properties/${propertyId}`,
+      // Use REST API instead of gRPC client to avoid authentication issues
+      const reportUrl = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
+      
+      const requestBody = {
         dateRanges: [{ 
           startDate: '30daysAgo', 
           endDate: 'today' 
@@ -140,12 +140,38 @@ const userAnalyticsService = {
         dimensions: [
           { name: 'date' }
         ]
+      };
+
+      const response = await fetch(reportUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokens.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ GA API error:', response.status, errorText);
+        
+        // Check if token expired
+        if (response.status === 401) {
+          return {
+            dataAvailable: false,
+            reason: 'Authentication token expired. Please reconnect.',
+            connected: false
+          };
+        }
+        
+        throw new Error(`GA API returned ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
       console.log('✅ User Analytics data received');
 
       // Process the response
-      const metrics = this.processAnalyticsResponse(response);
+      const metrics = this.processAnalyticsResponse(data);
 
       return {
         propertyId,
@@ -166,7 +192,7 @@ const userAnalyticsService = {
       
       return {
         dataAvailable: false,
-        reason: error.message.includes('UNAUTHENTICATED') ? 'Token expired' : 'API error',
+        reason: error.message.includes('token') ? 'Authentication failed' : 'API error',
         connected: false,
         error: error.message
       };

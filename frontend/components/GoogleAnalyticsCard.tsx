@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { TrendingUp, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
+import { TrendingUp, AlertCircle, CheckCircle, Loader2, Users, MousePointerClick, Clock, Eye, Target, DollarSign } from 'lucide-react'
 
 interface GoogleAnalyticsCardProps {
   userEmail?: string
@@ -14,6 +14,8 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
   const [googleConnected, setGoogleConnected] = useState(false)
   const [checkingConnection, setCheckingConnection] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [analyticsData, setAnalyticsData] = useState<any>(null)
+  const [loadingData, setLoadingData] = useState(false)
 
   const checkGoogleConnection = async () => {
     setCheckingConnection(true)
@@ -33,6 +35,27 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
     }
   }
 
+  const fetchUserAnalytics = async () => {
+    setLoadingData(true)
+    try {
+      const response = await fetch(`http://localhost:3010/api/analytics/data?email=${encodeURIComponent(userEmail)}`)
+      const data = await response.json()
+      
+      if (data.dataAvailable) {
+        setAnalyticsData(data)
+        console.log('✅ Analytics data loaded:', data)
+      } else {
+        console.log('⚠️ No analytics data available:', data.reason)
+        setAnalyticsData(null)
+      }
+    } catch (error) {
+      console.error('Error fetching analytics data:', error)
+      setAnalyticsData(null)
+    } finally {
+      setLoadingData(false)
+    }
+  }
+
   const connectGoogleAnalytics = () => {
     setGoogleLoading(true)
     window.location.href = `http://localhost:3010/api/auth/google?email=${encodeURIComponent(userEmail)}`
@@ -46,6 +69,7 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
       })
       if (response.ok) {
         setGoogleConnected(false)
+        setAnalyticsData(null)
       }
     } catch (error) {
       console.error('Error disconnecting Google Analytics:', error)
@@ -68,6 +92,32 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
       window.history.replaceState({}, document.title, window.location.pathname)
     }
   }, [])
+
+  // Fetch analytics data when connected
+  useEffect(() => {
+    if (googleConnected && !loadingData && !analyticsData) {
+      fetchUserAnalytics()
+    }
+  }, [googleConnected])
+
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K'
+    return num.toFixed(0)
+  }
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins}m ${secs}s`
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount)
+  }
 
   return (
     <Card className="border-gray-200">
@@ -106,13 +156,134 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
               </div>
               <p className="text-sm text-gray-600">
                 {googleConnected 
-                  ? 'Your Google Analytics account is connected and ready to use.' 
+                  ? 'Your Google Analytics account is connected and syncing data.' 
                   : 'Connect your Google Analytics account to get deeper insights.'}
               </p>
             </div>
           </div>
 
-          {/* Benefits List */}
+          {/* Analytics Data Display */}
+          {googleConnected && (
+            <>
+              {loadingData ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <span className="ml-3 text-gray-600">Loading analytics data...</span>
+                </div>
+              ) : analyticsData?.dataAvailable ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold text-gray-900">Analytics Overview (Last 30 Days)</h4>
+                    <button
+                      onClick={fetchUserAnalytics}
+                      className="text-xs text-primary hover:text-primary-600 font-medium"
+                    >
+                      Refresh
+                    </button>
+                  </div>
+
+                  {/* Metrics Grid */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Active Users */}
+                    <div className="bg-white border border-gray-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Users className="w-4 h-4 text-blue-600" />
+                        <span className="text-xs text-gray-600">Active Users</span>
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {formatNumber(analyticsData.activeUsers || 0)}
+                      </p>
+                    </div>
+
+                    {/* Sessions */}
+                    <div className="bg-white border border-gray-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <MousePointerClick className="w-4 h-4 text-purple-600" />
+                        <span className="text-xs text-gray-600">Sessions</span>
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {formatNumber(analyticsData.sessions || 0)}
+                      </p>
+                    </div>
+
+                    {/* Bounce Rate */}
+                    <div className="bg-white border border-gray-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <TrendingUp className="w-4 h-4 text-orange-600" />
+                        <span className="text-xs text-gray-600">Bounce Rate</span>
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {((analyticsData.bounceRate || 0) * 100).toFixed(1)}%
+                      </p>
+                    </div>
+
+                    {/* Avg Session Duration */}
+                    <div className="bg-white border border-gray-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Clock className="w-4 h-4 text-green-600" />
+                        <span className="text-xs text-gray-600">Avg Duration</span>
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {formatDuration(analyticsData.avgSessionDuration || 0)}
+                      </p>
+                    </div>
+
+                    {/* Page Views */}
+                    <div className="bg-white border border-gray-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Eye className="w-4 h-4 text-indigo-600" />
+                        <span className="text-xs text-gray-600">Page Views</span>
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {formatNumber(analyticsData.pageViews || 0)}
+                      </p>
+                    </div>
+
+                    {/* Conversions */}
+                    <div className="bg-white border border-gray-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Target className="w-4 h-4 text-pink-600" />
+                        <span className="text-xs text-gray-600">Conversions</span>
+                      </div>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {formatNumber(analyticsData.conversions || 0)}
+                      </p>
+                    </div>
+
+                    {/* Revenue (if available) */}
+                    {analyticsData.revenue > 0 && (
+                      <div className="bg-white border border-gray-200 rounded-lg p-3 col-span-2">
+                        <div className="flex items-center gap-2 mb-1">
+                          <DollarSign className="w-4 h-4 text-emerald-600" />
+                          <span className="text-xs text-gray-600">Total Revenue</span>
+                        </div>
+                        <p className="text-2xl font-bold text-gray-900">
+                          {formatCurrency(analyticsData.revenue)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Last Updated */}
+                  <div className="text-xs text-gray-500 text-center pt-2 border-t border-gray-200">
+                    Last updated: {new Date(analyticsData.lastUpdated).toLocaleString()}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-8 text-center">
+                  <div>
+                    <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600">No analytics data available</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {analyticsData?.reason || 'Unable to fetch data'}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Benefits List (when not connected) */}
           {!googleConnected && (
             <div className="space-y-2">
               <p className="text-xs font-semibold text-gray-700 uppercase tracking-wider">

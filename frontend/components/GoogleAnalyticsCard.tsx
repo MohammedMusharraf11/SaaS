@@ -18,6 +18,10 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
   const [searchConsoleData, setSearchConsoleData] = useState<any>(null)
   const [loadingData, setLoadingData] = useState(false)
   const [activeTab, setActiveTab] = useState<'analytics' | 'search-console'>('analytics')
+  const [hasAttemptedFetch, setHasAttemptedFetch] = useState({
+    analytics: false,
+    searchConsole: false
+  })
 
   const checkGoogleConnection = async () => {
     setCheckingConnection(true)
@@ -39,6 +43,7 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
 
   const fetchUserAnalytics = async () => {
     setLoadingData(true)
+    setHasAttemptedFetch(prev => ({ ...prev, analytics: true }))
     try {
       const response = await fetch(`http://localhost:3010/api/analytics/data?email=${encodeURIComponent(userEmail)}`)
       const data = await response.json()
@@ -48,11 +53,14 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
         console.log('✅ Analytics data loaded:', data)
       } else {
         console.log('⚠️ No analytics data available:', data.reason)
-        setAnalyticsData(null)
+        setAnalyticsData(data)
       }
     } catch (error) {
       console.error('Error fetching analytics data:', error)
-      setAnalyticsData(null)
+      setAnalyticsData({
+        dataAvailable: false,
+        reason: 'Failed to fetch analytics data. Please try again.'
+      })
     } finally {
       setLoadingData(false)
     }
@@ -60,9 +68,19 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
 
   const fetchSearchConsoleData = async () => {
     setLoadingData(true)
+    setHasAttemptedFetch(prev => ({ ...prev, searchConsole: true }))
     try {
-      // This would call your backend endpoint that fetches Search Console data
-      const response = await fetch(`http://localhost:3010/api/search-console/data?email=${encodeURIComponent(userEmail)}`)
+      // Add longer timeout for Search Console API
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+      
+      const response = await fetch(
+        `http://localhost:3010/api/search-console/data?email=${encodeURIComponent(userEmail)}`,
+        { signal: controller.signal }
+      )
+      
+      clearTimeout(timeoutId)
+      
       const data = await response.json()
       
       if (data.dataAvailable) {
@@ -70,11 +88,22 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
         console.log('✅ Search Console data loaded:', data)
       } else {
         console.log('⚠️ No search console data available:', data.reason)
-        setSearchConsoleData(null)
+        setSearchConsoleData(data)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching search console data:', error)
-      setSearchConsoleData(null)
+      
+      if (error.name === 'AbortError') {
+        setSearchConsoleData({
+          dataAvailable: false,
+          reason: 'Request timed out. Search Console API is taking longer than expected. Please try again.'
+        })
+      } else {
+        setSearchConsoleData({
+          dataAvailable: false,
+          reason: 'Failed to fetch search console data. Please try again.'
+        })
+      }
     } finally {
       setLoadingData(false)
     }
@@ -95,6 +124,7 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
         setGoogleConnected(false)
         setAnalyticsData(null)
         setSearchConsoleData(null)
+        setHasAttemptedFetch({ analytics: false, searchConsole: false })
       }
     } catch (error) {
       console.error('Error disconnecting Google:', error)
@@ -118,16 +148,16 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
     }
   }, [])
 
-  // Fetch data when connected
+  // Fetch data when connected and tab changes
   useEffect(() => {
     if (googleConnected && !loadingData) {
-      if (activeTab === 'analytics' && !analyticsData) {
+      if (activeTab === 'analytics' && !analyticsData && !hasAttemptedFetch.analytics) {
         fetchUserAnalytics()
-      } else if (activeTab === 'search-console' && !searchConsoleData) {
+      } else if (activeTab === 'search-console' && !searchConsoleData && !hasAttemptedFetch.searchConsole) {
         fetchSearchConsoleData()
       }
     }
-  }, [googleConnected, activeTab])
+  }, [googleConnected, activeTab, loadingData, analyticsData, searchConsoleData, hasAttemptedFetch])
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M'
@@ -207,7 +237,7 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
               </button>
               <button
                 onClick={() => setActiveTab('search-console')}
-                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors relative ${
                   activeTab === 'search-console'
                     ? 'text-primary border-b-2 border-primary'
                     : 'text-gray-600 hover:text-gray-900'
@@ -215,6 +245,9 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
               >
                 <Search className="w-4 h-4" />
                 Search Console
+                {loadingData && activeTab === 'search-console' && (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                )}
               </button>
             </div>
           )}
@@ -225,7 +258,11 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
               {loadingData ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                  <span className="ml-3 text-gray-600">Loading data...</span>
+                  <span className="ml-3 text-gray-600">
+                    {activeTab === 'search-console' 
+                      ? 'Loading search console data... This may take up to 30 seconds.'
+                      : 'Loading analytics data...'}
+                  </span>
                 </div>
               ) : (
                 <>
@@ -237,7 +274,10 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
                           <div className="flex items-center justify-between">
                             <h4 className="text-sm font-semibold text-gray-900">Analytics Overview (Last 30 Days)</h4>
                             <button
-                              onClick={fetchUserAnalytics}
+                              onClick={() => {
+                                setHasAttemptedFetch(prev => ({ ...prev, analytics: false }))
+                                fetchUserAnalytics()
+                              }}
                               className="text-xs text-primary hover:text-primary-600 font-medium"
                             >
                               Refresh
@@ -339,6 +379,17 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
                             <p className="text-xs text-gray-500 mt-1">
                               {analyticsData?.reason || 'Unable to fetch data'}
                             </p>
+                            <Button
+                              onClick={() => {
+                                setHasAttemptedFetch(prev => ({ ...prev, analytics: false }))
+                                fetchUserAnalytics()
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="mt-3"
+                            >
+                              Try Again
+                            </Button>
                           </div>
                         </div>
                       )}
@@ -353,7 +404,10 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
                           <div className="flex items-center justify-between">
                             <h4 className="text-sm font-semibold text-gray-900">Search Console Overview (Last 30 Days)</h4>
                             <button
-                              onClick={fetchSearchConsoleData}
+                              onClick={() => {
+                                setHasAttemptedFetch(prev => ({ ...prev, searchConsole: false }))
+                                fetchSearchConsoleData()
+                              }}
                               className="text-xs text-primary hover:text-primary-600 font-medium"
                             >
                               Refresh
@@ -442,6 +496,29 @@ export default function GoogleAnalyticsCard({ userEmail = 'test@example.com' }: 
                             <p className="text-xs text-gray-500 mt-1">
                               {searchConsoleData?.reason || 'Unable to fetch data'}
                             </p>
+                            {searchConsoleData?.reason?.includes('No sites found') && (
+                              <div className="mt-4 p-3 bg-blue-50 rounded-lg text-left max-w-md mx-auto">
+                                <p className="text-xs font-semibold text-blue-900 mb-2">📝 How to add a site:</p>
+                                <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
+                                  <li>Visit <a href="https://search.google.com/search-console" target="_blank" rel="noopener noreferrer" className="underline font-medium">Google Search Console</a></li>
+                                  <li>Click "Add Property"</li>
+                                  <li>Enter your website URL</li>
+                                  <li>Verify ownership</li>
+                                  <li>Come back and refresh this page</li>
+                                </ol>
+                              </div>
+                            )}
+                            <Button
+                              onClick={() => {
+                                setHasAttemptedFetch(prev => ({ ...prev, searchConsole: false }))
+                                fetchSearchConsoleData()
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="mt-3"
+                            >
+                              Try Again
+                            </Button>
                           </div>
                         </div>
                       )}

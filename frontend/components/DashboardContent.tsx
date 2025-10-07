@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { BarChart3, TrendingUp, Users, Globe, ArrowRight, Search, Loader2, AlertCircle, Zap, Clock } from 'lucide-react'
 import GoogleAnalyticsCard from './GoogleAnalyticsCard'
+import SocialMediaMetricsCard from './SocialMediaMetricsCard'
 import { useRouter } from 'next/navigation'
 
 interface DashboardContentProps {
@@ -272,6 +273,9 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
 
             {/* Google Analytics Card */}
             <GoogleAnalyticsCard userEmail={userEmail} />
+
+            {/* Social Media Metrics Card */}
+            <SocialMediaMetricsCard userEmail={userEmail} />
           </div>
 
           {/* Right Column - Stats & Quick Actions */}

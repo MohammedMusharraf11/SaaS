@@ -39,4 +39,22 @@ router.get('/analytics/data', async (req, res) => {
   }
 });
 
+// Get social media metrics
+router.get('/analytics/social', async (req, res) => {
+  try {
+    const { email } = req.query;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email parameter is required' });
+    }
+
+    const data = await userAnalyticsService.getSocialMediaMetrics(email);
+    res.json(data);
+
+  } catch (error) {
+    console.error('❌ Error fetching social media data:', error);
+    res.status(500).json({ error: 'Failed to fetch social media data' });
+  }
+});
+
 export default router;

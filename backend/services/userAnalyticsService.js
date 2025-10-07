@@ -199,6 +199,156 @@ const userAnalyticsService = {
     }
   },
 
+  /**
+   * Get social media traffic metrics from GA4
+   */
+  async getSocialMediaMetrics(email) {
+    try {
+      console.log('📱 Fetching social media metrics for:', email);
+      
+      const tokens = await getTokensFromFile(email);
+      
+      if (!tokens || !tokens.access_token) {
+        return {
+          dataAvailable: false,
+          reason: 'Google account not connected',
+          connected: false
+        };
+      }
+
+      // Get the first property ID
+      const propertiesResult = await this.getUserProperties(email);
+      if (!propertiesResult.success || !propertiesResult.properties || propertiesResult.properties.length === 0) {
+        return {
+          dataAvailable: false,
+          reason: 'No GA4 properties found',
+          connected: true
+        };
+      }
+
+      const propertyId = propertiesResult.properties[0].id;
+      console.log('📍 Using property:', propertyId);
+
+      // Prepare request body for social media metrics
+      const requestBody = {
+        dateRanges: [
+          {
+            startDate: '30daysAgo',
+            endDate: 'today'
+          }
+        ],
+        dimensions: [
+          { name: 'sessionSource' },
+          { name: 'sessionMedium' }
+        ],
+        metrics: [
+          { name: 'activeUsers' },
+          { name: 'sessions' },
+          { name: 'screenPageViews' },
+          { name: 'conversions' },
+          { name: 'bounceRate' }
+        ],
+        dimensionFilter: {
+          filter: {
+            fieldName: 'sessionMedium',
+            stringFilter: {
+              matchType: 'CONTAINS',
+              value: 'social'
+            }
+          }
+        },
+        orderBys: [
+          {
+            metric: {
+              metricName: 'sessions'
+            },
+            desc: true
+          }
+        ],
+        limit: 10
+      };
+
+      // Make request to GA4 API
+      const response = await fetch(
+        `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${tokens.access_token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ GA Social API error:', response.status, errorText);
+        
+        if (response.status === 401) {
+          return {
+            dataAvailable: false,
+            reason: 'Authentication token expired. Please reconnect.',
+            connected: false
+          };
+        }
+        
+        throw new Error(`GA API returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('✅ Social media data received');
+
+      // Also get total traffic for percentage calculation
+      const totalTrafficResponse = await fetch(
+        `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${tokens.access_token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+            metrics: [
+              { name: 'activeUsers' },
+              { name: 'sessions' }
+            ]
+          })
+        }
+      );
+
+      const totalData = await totalTrafficResponse.json();
+      const totalUsers = totalData.rows?.[0]?.metricValues?.[0]?.value || 0;
+      const totalSessions = totalData.rows?.[0]?.metricValues?.[1]?.value || 0;
+
+      // Process social media data
+      const socialMetrics = this.processSocialMediaResponse(data, totalUsers);
+
+      return {
+        ...socialMetrics,
+        dataAvailable: true,
+        connected: true,
+        lastUpdated: new Date().toISOString()
+      };
+
+    } catch (error) {
+      console.error('❌ Social Media API failed:', error.message);
+      
+      return {
+        dataAvailable: false,
+        reason: error.message.includes('token') ? 'Authentication failed' : 'Unable to fetch social data',
+        connected: false,
+        totalSocialSessions: 0,
+        totalSocialUsers: 0,
+        totalSocialConversions: 0,
+        socialConversionRate: 0,
+        socialTrafficPercentage: 0,
+        topSocialSources: []
+      };
+    }
+  },
+
   processAnalyticsResponse(response) {
     const metrics = {
       activeUsers: 0,
@@ -250,6 +400,66 @@ const userAnalyticsService = {
         metrics.bounceRate = metrics.bounceRate / totalRows;
         metrics.averageSessionDuration = metrics.averageSessionDuration / totalRows;
       }
+    }
+
+    return metrics;
+  },
+
+  processSocialMediaResponse(response, totalUsers) {
+    const metrics = {
+      totalSocialUsers: 0,
+      totalSocialSessions: 0,
+      totalSocialConversions: 0,
+      socialConversionRate: 0,
+      socialTrafficPercentage: 0,
+      topSocialSources: []
+    };
+
+    if (response.rows && response.rows.length > 0) {
+      const sources = [];
+
+      response.rows.forEach(row => {
+        const sourceName = row.dimensionValues[0]?.value || 'Unknown';
+        const users = parseInt(row.metricValues[0]?.value) || 0;
+        const sessions = parseInt(row.metricValues[1]?.value) || 0;
+        const pageViews = parseInt(row.metricValues[2]?.value) || 0;
+        const conversions = parseFloat(row.metricValues[3]?.value) || 0;
+        const bounceRate = parseFloat(row.metricValues[4]?.value) || 0;
+
+        metrics.totalSocialUsers += users;
+        metrics.totalSocialSessions += sessions;
+        metrics.totalSocialConversions += conversions;
+
+        // Clean up source name
+        let cleanSource = sourceName.toLowerCase();
+        if (cleanSource.includes('facebook')) cleanSource = 'Facebook';
+        else if (cleanSource.includes('twitter') || cleanSource.includes('t.co')) cleanSource = 'Twitter / X';
+        else if (cleanSource.includes('instagram')) cleanSource = 'Instagram';
+        else if (cleanSource.includes('linkedin')) cleanSource = 'LinkedIn';
+        else if (cleanSource.includes('youtube')) cleanSource = 'YouTube';
+        else if (cleanSource.includes('reddit')) cleanSource = 'Reddit';
+        else if (cleanSource.includes('tiktok')) cleanSource = 'TikTok';
+        else if (cleanSource.includes('pinterest')) cleanSource = 'Pinterest';
+        else cleanSource = sourceName;
+
+        sources.push({
+          source: cleanSource,
+          users,
+          sessions,
+          pageViews,
+          conversions,
+          bounceRate
+        });
+      });
+
+      metrics.topSocialSources = sources;
+      metrics.socialConversionRate = metrics.totalSocialSessions > 0 
+        ? (metrics.totalSocialConversions / metrics.totalSocialSessions) * 100 
+        : 0;
+      
+      metrics.socialTrafficPercentage = totalUsers > 0 
+        ? (metrics.totalSocialUsers / parseInt(totalUsers)) * 100 
+        : 0;
     }
 
     return metrics;

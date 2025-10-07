@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { BarChart3, TrendingUp, Users, Globe, ArrowRight, Search, Loader2, AlertCircle } from 'lucide-react'
+import { BarChart3, TrendingUp, Users, Globe, ArrowRight, Search, Loader2, AlertCircle, Zap, Clock } from 'lucide-react'
 import GoogleAnalyticsCard from './GoogleAnalyticsCard'
 import { useRouter } from 'next/navigation'
 
@@ -19,6 +19,7 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
   const [url, setUrl] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
   const [healthScore, setHealthScore] = useState<any>(null)
+  const [lighthouseData, setLighthouseData] = useState<any>(null)
   const [error, setError] = useState('')
 
   // Extract first name from email or use full name
@@ -38,6 +39,7 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
     setAnalyzing(true)
     setError('')
     setHealthScore(null)
+    setLighthouseData(null)
 
     try {
       const cleanUrl = url.replace(/^https?:\/\//, '').replace(/\/$/, '')
@@ -52,6 +54,17 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
 
       const healthData = await healthResponse.json()
       setHealthScore(healthData)
+
+      // Fetch Lighthouse data for quick wins
+      try {
+        const lighthouseResponse = await fetch(`http://localhost:3010/api/lighthouse/${cleanUrl}`)
+        if (lighthouseResponse.ok) {
+          const lighthouseJson = await lighthouseResponse.json()
+          setLighthouseData(lighthouseJson)
+        }
+      } catch (err) {
+        console.warn('Lighthouse data not available')
+      }
 
     } catch (err: any) {
       setError(err.message || 'Failed to analyze website')
@@ -263,43 +276,59 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
 
           {/* Right Column - Stats & Quick Actions */}
           <div className="space-y-6">
-            {/* Quick Tips - Moved to Top */}
+            {/* Quick Wins - Real Data from Lighthouse */}
             <Card className="border-gray-200">
               <CardHeader>
-                <CardTitle className="text-lg font-bold text-gray-900">Quick Tips</CardTitle>
+                <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <Zap className="w-5 h-5 text-orange-500" />
+                  Quick Wins
+                </CardTitle>
+                <p className="text-xs text-gray-600 mt-1">Top optimization opportunities</p>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
-                    <div className="w-6 h-6 bg-blue-200 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-xs font-bold text-blue-700">1</span>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-900 mb-1">Quick Health Check</h4>
-                      <p className="text-xs text-gray-600">Use the search bar to get instant health score of any website.</p>
-                    </div>
+                {lighthouseData?.opportunities && lighthouseData.opportunities.length > 0 ? (
+                  <div className="space-y-3">
+                    {lighthouseData.opportunities.slice(0, 3).map((opp: any, index: number) => (
+                      <div key={index} className="p-3 bg-gradient-to-r from-orange-50 to-orange-100/50 rounded-lg border border-orange-200">
+                        <div className="flex items-start gap-3">
+                          <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <span className="text-xs font-bold text-white">{index + 1}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-semibold text-gray-900 mb-1 line-clamp-1">{opp.title}</h4>
+                            <p className="text-xs text-gray-700 mb-2 line-clamp-2">{opp.description}</p>
+                            {opp.savings && (
+                              <div className="flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-green-600" />
+                                <span className="text-xs font-medium text-green-700">
+                                  Save ~{(opp.savings / 1000).toFixed(1)}s
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    <Button
+                      onClick={() => router.push('/dashboard/seo-performance')}
+                      variant="outline"
+                      className="w-full text-xs mt-2 border-orange-200 text-orange-600 hover:bg-orange-50"
+                    >
+                      View All Opportunities
+                      <ArrowRight className="w-3 h-3 ml-1" />
+                    </Button>
                   </div>
-
-                  <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
-                    <div className="w-6 h-6 bg-green-200 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-xs font-bold text-green-700">2</span>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-900 mb-1">Deep Dive Analysis</h4>
-                      <p className="text-xs text-gray-600">Click "SEO & Website Performance" for comprehensive insights.</p>
-                    </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <Zap className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm text-gray-600 mb-3">
+                      Analyze a website to see quick wins
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Use the search bar above to get started
+                    </p>
                   </div>
-
-                  <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
-                    <div className="w-6 h-6 bg-purple-200 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-xs font-bold text-purple-700">3</span>
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-semibold text-gray-900 mb-1">Track Progress</h4>
-                      <p className="text-xs text-gray-600">Monitor your scores regularly to track improvements.</p>
-                    </div>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
 

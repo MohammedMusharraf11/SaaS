@@ -1,23 +1,30 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
 import { 
-  LayoutDashboard, 
-  Globe, 
-  Share2, 
+  Home, 
+  BarChart3, 
   Users, 
+  FileText, 
+  Settings, 
+  Search,
+  Bell,
+  HelpCircle,
+  Crown,
+  TrendingUp,
+  Menu,
+  X,
+  Globe,
+  Share2,
   LineChart,
   Brain,
-  Bell,
   MessageCircle,
-  HelpCircle,
-  X,
-  ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ChevronLeft
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import Image from 'next/image'
+import { useState } from 'react'
 
 interface MenuItem {
   id: string
@@ -36,7 +43,7 @@ const menuItems: MenuItem[] = [
   {
     id: 'dashboard',
     title: 'Dashboard',
-    icon: <LayoutDashboard className="h-5 w-5" />,
+    icon: <Home className="h-5 w-5" />,
     href: '/dashboard'
   },
   {

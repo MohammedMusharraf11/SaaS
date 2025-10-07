@@ -7,6 +7,7 @@ import healthRoutes from './routes/healthRoutes.js';
 import googleAuthRoutes from './routes/googleAuthRoutes.js';
 import lighthouseRoutes from './routes/lighthouseRoutes.js';
 import userAnalyticsRoutes from './routes/userAnalyticsRoutes.js';
+import searchConsoleRoutes from './routes/searchConsoleRoutes.js';
 
 dotenv.config();
 
@@ -27,6 +28,7 @@ app.use('/api/health', healthRoutes);
 app.use('/api', googleAuthRoutes);
 app.use('/api', lighthouseRoutes);
 app.use('/api', userAnalyticsRoutes);
+app.use('/api', searchConsoleRoutes);
 
 // Health check endpoint
 app.get('/api/status', (req, res) => {
@@ -51,8 +53,10 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
+// Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📊 Lighthouse API available at http://localhost:${PORT}/api/lighthouse/:domain`);
-  console.log(`📈 User Analytics API available at http://localhost:${PORT}/api/analytics/*`);
+  console.log(`🚀 SEO Health Score API running on port ${PORT}`);
+  console.log(`📍 Health endpoint: http://localhost:${PORT}/api/status`);
 });
+
+export default app;

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import DashboardPageLayout from '@/components/DashboardPageLayout'
-import SEOPerformanceContent from '@/components/SEOPerformanceContent'
+import SEOPerformanceNew from '@/components/SEOPerformanceNew'
 
 export default async function SEOPerformancePage() {
     try {
@@ -15,7 +15,7 @@ export default async function SEOPerformancePage() {
 
         return (
             <DashboardPageLayout user={data.user}>
-                <SEOPerformanceContent user={data.user} />
+                <SEOPerformanceNew user={data.user} />
             </DashboardPageLayout>
         )
     } catch (error) {

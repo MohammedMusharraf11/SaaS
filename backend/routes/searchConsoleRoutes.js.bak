@@ -7,7 +7,27 @@ import lighthouseService from '../services/lighthouseService.js';
 const router = express.Router();
 
 // File-based token storage functions
-const getTokensFilePath = () => path.join(process.cwd(), 'data', 'oauth_tokens.json');
+const getTok    console.log('✅ Search Console data retrieved successfully');
+    console.log(`📊 Stats: ${totalClicks} clicks, ${totalImpressions} impressions, ${organicTraffic} organic traffic`);
+
+    // Extract clean domain from siteUrl for Lighthouse analysis
+    let domain = siteUrl;
+    
+    // Handle different GSC URL formats
+    if (domain.startsWith('sc-domain:')) {
+      // Domain property format: sc-domain:example.com -> example.com
+      domain = domain.replace('sc-domain:', '');
+      console.log(`📍 Extracted domain from sc-domain format: ${domain}`);
+    } else {
+      // URL prefix format: https://example.com/ -> example.com
+      domain = domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      console.log(`📍 Extracted domain from URL format: ${domain}`);
+    }
+    
+    console.log(`🔦 Fetching Lighthouse data for domain: ${domain}`);
+    
+    // Fetch Lighthouse/PageSpeed data using existing service
+    let lighthouseData = null;th = () => path.join(process.cwd(), 'data', 'oauth_tokens.json');
 
 const getTokensFromFile = async (email) => {
   try {
@@ -284,21 +304,9 @@ router.get('/search-console/data', async (req, res) => {
     console.log('✅ Search Console data retrieved successfully');
     console.log(`📊 Stats: ${totalClicks} clicks, ${totalImpressions} impressions, ${organicTraffic} organic traffic`);
 
-    // Extract clean domain from siteUrl for Lighthouse analysis
-    let domain = siteUrl;
-    
-    // Handle different GSC URL formats
-    if (domain.startsWith('sc-domain:')) {
-      // Domain property format: sc-domain:example.com -> example.com
-      domain = domain.replace('sc-domain:', '');
-      console.log(`📍 Extracted domain from sc-domain format: ${domain}`);
-    } else {
-      // URL prefix format: https://example.com/ -> example.com
-      domain = domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
-      console.log(`📍 Extracted domain from URL format: ${domain}`);
-    }
-    
-    console.log(`🔦 Fetching Lighthouse data for domain: ${domain}`);
+    // Extract domain from siteUrl for Lighthouse analysis
+    let domain = siteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    console.log(`� Fetching Lighthouse data for domain: ${domain}`);
     
     // Fetch Lighthouse/PageSpeed data using existing service
     let lighthouseData = null;

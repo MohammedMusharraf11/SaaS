@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 import { 
   Search, 
   Loader2, 
@@ -11,10 +12,13 @@ import {
   CheckCircle2,
   AlertCircle,
   TrendingUp,
+  TrendingDown,
+  Minus,
   BarChart3,
   Activity,
   Download,
-  ExternalLink
+  ExternalLink,
+  Info
 } from 'lucide-react'
 // Removed imports: GoogleAnalyticsCard and SocialMediaMetricsCard (keeping them safe for later use)
 // import GoogleAnalyticsCard from './GoogleAnalyticsCard'
@@ -26,6 +30,23 @@ interface DashboardContentProps {
   userName?: string
 }
 
+interface TrafficData {
+  source: string
+  data: Array<{
+    date: string
+    day: number
+    visitors: number
+    sessions: number
+    pageViews: number
+  }>
+  summary: {
+    totalVisitors: number
+    avgDailyVisitors: number
+    trend: 'up' | 'down' | 'stable'
+    changePercent: number
+  }
+}
+
 export default function DashboardContent({ userEmail, userName }: DashboardContentProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'website' | 'seo' | 'social'>('website')
@@ -34,7 +55,8 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
   const [healthScore, setHealthScore] = useState<any>(null)
   const [lighthouseData, setLighthouseData] = useState<any>(null)
   const [error, setError] = useState('')
-  const [chartData, setChartData] = useState<any>(null)
+  const [trafficData, setTrafficData] = useState<TrafficData | null>(null)
+  const [loadingTraffic, setLoadingTraffic] = useState(false)
 
   // Extract first name
   const getDisplayName = () => {
@@ -54,10 +76,12 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
     setError('')
     setHealthScore(null)
     setLighthouseData(null)
+    setTrafficData(null)
 
     try {
       const cleanUrl = url.replace(/^https?:\/\//, '').replace(/\/$/, '')
 
+      // Fetch health score
       const healthResponse = await fetch('http://localhost:3010/api/health/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -80,8 +104,8 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
         console.warn('Lighthouse data not available')
       }
 
-      // Generate mock chart data (replace with real data later)
-      generateChartData()
+      // Fetch traffic data
+      fetchTrafficData(cleanUrl)
 
     } catch (err: any) {
       setError(err.message || 'Failed to analyze website')
@@ -90,21 +114,31 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
     }
   }
 
-  const generateChartData = () => {
-    // Generate sample data - replace with real analytics data
-    const days = 14
-    const data = []
-    let baseValue = 50
-    
-    for (let i = 0; i < days; i++) {
-      baseValue += Math.random() * 20 - 10
-      data.push({
-        day: i + 1,
-        value: Math.max(30, Math.min(90, baseValue))
+  const fetchTrafficData = async (domain: string) => {
+    setLoadingTraffic(true)
+    try {
+      const params = new URLSearchParams({
+        domain,
+        days: '14'
       })
+
+      if (userEmail) {
+        params.append('email', userEmail)
+      }
+
+      const response = await fetch(`http://localhost:3010/api/traffic/data?${params.toString()}`)
+      
+      if (response.ok) {
+        const data = await response.json()
+        setTrafficData(data)
+      } else {
+        console.error('Failed to fetch traffic data')
+      }
+    } catch (err) {
+      console.error('Error fetching traffic:', err)
+    } finally {
+      setLoadingTraffic(false)
     }
-    
-    setChartData(data)
   }
 
   const getScoreColor = (score: number) => {
@@ -123,6 +157,27 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
     if (score >= 80) return 'Good'
     if (score >= 50) return 'Needs Work'
     return 'Poor'
+  }
+
+  const getSourceBadge = (source: string) => {
+    const badges: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
+      google_analytics: { label: 'Real Data (GA)', variant: 'default' },
+      similarweb_estimate: { label: 'Estimated (SimilarWeb)', variant: 'secondary' },
+      estimated: { label: 'Estimated', variant: 'outline' }
+    }
+    return badges[source] || { label: 'Unknown', variant: 'outline' }
+  }
+
+  const getTrendIcon = (trend: string) => {
+    if (trend === 'up') return <TrendingUp className="w-4 h-4 text-green-600" />
+    if (trend === 'down') return <TrendingDown className="w-4 h-4 text-red-600" />
+    return <Minus className="w-4 h-4 text-gray-600" />
+  }
+
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
+    return num.toString()
   }
 
   // Competitor data - replace with real data
@@ -304,26 +359,99 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
             {/* Website Traffic Chart */}
             <Card className="border-gray-200 shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <div>
-                  <CardTitle className="text-lg font-bold">Website Traffic</CardTitle>
-                  <p className="text-xs text-gray-500 mt-1">Last 14 days performance</p>
+                <div className="flex items-center gap-3">
+                  <div>
+                    <CardTitle className="text-lg font-bold">Website Traffic</CardTitle>
+                    <p className="text-xs text-gray-500 mt-1">Last 14 days performance</p>
+                  </div>
+                  {trafficData && (
+                    <Badge variant={getSourceBadge(trafficData.source).variant} className="text-xs">
+                      {getSourceBadge(trafficData.source).label}
+                    </Badge>
+                  )}
                 </div>
                 <Button variant="ghost" size="sm" className="text-orange-600">
                   <ExternalLink className="w-4 h-4" />
                 </Button>
               </CardHeader>
               <CardContent>
-                {chartData ? (
-                  <div className="h-48 flex items-end justify-between gap-1">
-                    {chartData.map((point: any, index: number) => (
-                      <div key={index} className="flex-1 flex flex-col items-center justify-end h-full">
-                        <div 
-                          className="w-full bg-gradient-to-t from-orange-500 to-orange-300 rounded-t-sm hover:from-orange-600 hover:to-orange-400 transition-all cursor-pointer"
-                          style={{ height: `${point.value}%` }}
-                        />
-                      </div>
-                    ))}
+                {loadingTraffic ? (
+                  <div className="h-48 flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
                   </div>
+                ) : trafficData ? (
+                  <>
+                    {/* Summary Stats */}
+                    <div className="grid grid-cols-3 gap-4 mb-6">
+                      <div className="text-center p-3 bg-gray-50 rounded-lg">
+                        <p className="text-xs text-gray-600 mb-1">Total Visitors</p>
+                        <p className="text-xl font-bold text-gray-900">
+                          {formatNumber(trafficData.summary.totalVisitors)}
+                        </p>
+                      </div>
+                      <div className="text-center p-3 bg-gray-50 rounded-lg">
+                        <p className="text-xs text-gray-600 mb-1">Daily Average</p>
+                        <p className="text-xl font-bold text-gray-900">
+                          {formatNumber(trafficData.summary.avgDailyVisitors)}
+                        </p>
+                      </div>
+                      <div className="text-center p-3 bg-gray-50 rounded-lg">
+                        <p className="text-xs text-gray-600 mb-1 flex items-center justify-center gap-1">
+                          Trend {getTrendIcon(trafficData.summary.trend)}
+                        </p>
+                        <p className={`text-xl font-bold ${
+                          trafficData.summary.trend === 'up' ? 'text-green-600' : 
+                          trafficData.summary.trend === 'down' ? 'text-red-600' : 
+                          'text-gray-600'
+                        }`}>
+                          {trafficData.summary.changePercent > 0 ? '+' : ''}
+                          {trafficData.summary.changePercent}%
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Chart */}
+                    <div className="h-48 flex items-end justify-between gap-1">
+                      {trafficData.data.map((point, index) => {
+                        const maxVisitors = Math.max(...trafficData.data.map(d => d.visitors))
+                        const height = (point.visitors / maxVisitors) * 100
+                        
+                        return (
+                          <div 
+                            key={index} 
+                            className="flex-1 flex flex-col items-center justify-end h-full group relative"
+                          >
+                            <div 
+                              className="w-full bg-gradient-to-t from-orange-500 to-orange-300 rounded-t-sm hover:from-orange-600 hover:to-orange-400 transition-all cursor-pointer"
+                              style={{ height: `${height}%` }}
+                            >
+                              {/* Tooltip */}
+                              <div className="opacity-0 group-hover:opacity-100 absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap pointer-events-none z-10">
+                                <div className="font-semibold">{point.date}</div>
+                                <div>{formatNumber(point.visitors)} visitors</div>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
+                      <span>Day 1</span>
+                      <span>Day 7</span>
+                      <span>Day 14</span>
+                    </div>
+
+                    {/* Data Source Info */}
+                    {trafficData.source === 'estimated' && (
+                      <div className="mt-4 flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-blue-700">
+                          <strong>Estimated data:</strong> Connect Google Analytics for real traffic data. 
+                          These estimates are based on website characteristics.
+                        </p>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="h-48 flex items-center justify-center text-gray-400">
                     <div className="text-center">
@@ -332,11 +460,6 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
                     </div>
                   </div>
                 )}
-                <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
-                  <span>Day 1</span>
-                  <span>Day 7</span>
-                  <span>Day 14</span>
-                </div>
               </CardContent>
             </Card>
 

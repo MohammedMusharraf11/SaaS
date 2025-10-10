@@ -16,7 +16,7 @@ const technicalSEOService = {
         this.checkStructuredData(url)
       ]);
 
-      return {
+      const results = {
         robotsTxt: this.getCheckResult(checks[0]),
         sitemap: this.getCheckResult(checks[1]),
         ssl: this.getCheckResult(checks[2]),
@@ -29,9 +29,22 @@ const technicalSEOService = {
         timestamp: new Date().toISOString()
       };
 
+      console.log(`✅ Technical SEO completed for ${domain}`);
+      console.log(`   Score: ${results.overallScore}/100`);
+      console.log(`   Checks passed: ${results.successfulChecks}/${results.checkCount}`);
+
+      return results;
+
     } catch (error) {
       console.error('❌ Technical SEO analysis failed:', error.message);
-      return null;
+      return {
+        dataAvailable: false,
+        error: error.message,
+        overallScore: 0,
+        checkCount: 5,
+        successfulChecks: 0,
+        timestamp: new Date().toISOString()
+      };
     }
   },
 
@@ -71,11 +84,27 @@ const technicalSEOService = {
     try {
       const robotsUrl = `${url}/robots.txt`;
       const response = await axios.get(robotsUrl, { 
-        timeout: 10000,
-        headers: { 'User-Agent': 'SEO-Analyzer-Bot/1.0' }
+        timeout: 30000,
+        headers: { 
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/plain,*/*'
+        },
+        validateStatus: function (status) {
+          return status >= 200 && status < 500; // Accept 404 as valid response
+        }
       });
       
+      if (response.status === 404) {
+        console.log(`   ⚠️ No robots.txt found at ${robotsUrl}`);
+        return {
+          exists: false,
+          score: 0,
+          issue: 'No robots.txt found (404)'
+        };
+      }
+
       const content = response.data;
+      console.log(`   ✓ robots.txt found`);
       
       return {
         exists: true,
@@ -85,10 +114,11 @@ const technicalSEOService = {
         score: content.includes('User-agent') ? 100 : 50
       };
     } catch (error) {
+      console.log(`   ⚠️ robots.txt check failed: ${error.message}`);
       return {
         exists: false,
         score: 0,
-        issue: 'No robots.txt found or inaccessible'
+        issue: `Unable to check robots.txt: ${error.code || error.message}`
       };
     }
   },
@@ -104,31 +134,42 @@ const technicalSEOService = {
       for (const sitemapUrl of sitemapUrls) {
         try {
           const response = await axios.get(sitemapUrl, { 
-            timeout: 10000,
-            headers: { 'User-Agent': 'SEO-Analyzer-Bot/1.0' }
+            timeout: 30000,
+            headers: { 
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+              'Accept': 'application/xml,text/xml,*/*'
+            },
+            validateStatus: function (status) {
+              return status >= 200 && status < 500;
+            }
           });
           
-          return {
-            exists: true,
-            url: sitemapUrl,
-            isXML: response.headers['content-type']?.includes('xml'),
-            score: 100
-          };
+          if (response.status === 200) {
+            console.log(`   ✓ Sitemap found at ${sitemapUrl}`);
+            return {
+              exists: true,
+              url: sitemapUrl,
+              isXML: response.headers['content-type']?.includes('xml'),
+              score: 100
+            };
+          }
         } catch (error) {
           continue;
         }
       }
 
+      console.log(`   ⚠️ No sitemap found at common locations`);
       return {
         exists: false,
         score: 0,
-        issue: 'No sitemap found'
+        issue: 'No sitemap found at common locations'
       };
     } catch (error) {
+      console.log(`   ⚠️ Sitemap check failed: ${error.message}`);
       return {
         exists: false,
         score: 0,
-        issue: 'Error checking sitemap'
+        issue: `Error checking sitemap: ${error.code || error.message}`
       };
     }
   },
@@ -136,6 +177,7 @@ const technicalSEOService = {
   async checkSSL(url) {
     try {
       if (!url.startsWith('https://')) {
+        console.log(`   ⚠️ Site not using HTTPS`);
         return {
           hasSSL: false,
           score: 0,
@@ -144,20 +186,33 @@ const technicalSEOService = {
       }
 
       const response = await axios.get(url, { 
-        timeout: 10000,
-        maxRedirects: 5
+        timeout: 30000,
+        maxRedirects: 5,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        },
+        validateStatus: function (status) {
+          return status >= 200 && status < 600; // Accept any response
+        }
       });
 
+      console.log(`   ✓ SSL/HTTPS verified`);
       return {
         hasSSL: true,
         score: 100,
         status: 'SSL certificate valid'
       };
     } catch (error) {
+      const errorMsg = error.code === 'ENOTFOUND' ? 'Domain not found' :
+                       error.code === 'ECONNREFUSED' ? 'Connection refused' :
+                       error.code === 'ETIMEDOUT' ? 'Connection timeout' :
+                       error.message;
+      
+      console.log(`   ⚠️ SSL check failed: ${errorMsg}`);
       return {
         hasSSL: false,
         score: 0,
-        issue: 'SSL certificate issue or site inaccessible'
+        issue: `SSL/Connection issue: ${errorMsg}`
       };
     }
   },
@@ -165,9 +220,24 @@ const technicalSEOService = {
   async checkMetaTags(url) {
     try {
       const response = await axios.get(url, { 
-        timeout: 15000,
-        headers: { 'User-Agent': 'SEO-Analyzer-Bot/1.0' }
+        timeout: 30000,
+        headers: { 
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        },
+        validateStatus: function (status) {
+          return status >= 200 && status < 600;
+        }
       });
+
+      if (response.status !== 200) {
+        console.log(`   ⚠️ Page returned status ${response.status}`);
+        return {
+          exists: false,
+          score: 0,
+          issue: `Page returned status ${response.status}`
+        };
+      }
       
       const html = response.data;
       
@@ -189,6 +259,8 @@ const technicalSEOService = {
       
       if (hasViewport) score += 20;
       
+      console.log(`   ✓ Meta tags checked (Score: ${score}/100)`);
+      
       return {
         title: {
           exists: !!title,
@@ -207,10 +279,16 @@ const technicalSEOService = {
       };
       
     } catch (error) {
+      const errorMsg = error.code === 'ENOTFOUND' ? 'Domain not found' :
+                       error.code === 'ECONNREFUSED' ? 'Connection refused' :
+                       error.code === 'ETIMEDOUT' ? 'Connection timeout' :
+                       error.message;
+      
+      console.log(`   ⚠️ Meta tags check failed: ${errorMsg}`);
       return {
         exists: false,
         score: 0,
-        issue: 'Unable to fetch or parse page content'
+        issue: `Unable to fetch page: ${errorMsg}`
       };
     }
   },
@@ -218,9 +296,25 @@ const technicalSEOService = {
   async checkStructuredData(url) {
     try {
       const response = await axios.get(url, { 
-        timeout: 15000,
-        headers: { 'User-Agent': 'SEO-Analyzer-Bot/1.0' }
+        timeout: 30000,
+        headers: { 
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        },
+        validateStatus: function (status) {
+          return status >= 200 && status < 600;
+        }
       });
+
+      if (response.status !== 200) {
+        console.log(`   ⚠️ Page returned status ${response.status}`);
+        return {
+          hasJsonLd: false,
+          hasMicrodata: false,
+          score: 0,
+          issue: `Page returned status ${response.status}`
+        };
+      }
       
       const html = response.data;
       
@@ -232,6 +326,8 @@ const technicalSEOService = {
       if (jsonLdMatch && jsonLdMatch.length > 0) score += 60;
       if (microdataMatch && microdataMatch.length > 0) score += 40;
       
+      console.log(`   ✓ Structured data checked (Score: ${Math.min(score, 100)}/100)`);
+      
       return {
         hasJsonLd: !!(jsonLdMatch && jsonLdMatch.length > 0),
         hasMicrodata: !!(microdataMatch && microdataMatch.length > 0),
@@ -241,11 +337,17 @@ const technicalSEOService = {
       };
       
     } catch (error) {
+      const errorMsg = error.code === 'ENOTFOUND' ? 'Domain not found' :
+                       error.code === 'ECONNREFUSED' ? 'Connection refused' :
+                       error.code === 'ETIMEDOUT' ? 'Connection timeout' :
+                       error.message;
+      
+      console.log(`   ⚠️ Structured data check failed: ${errorMsg}`);
       return {
         hasJsonLd: false,
         hasMicrodata: false,
         score: 0,
-        issue: 'Unable to check structured data'
+        issue: `Unable to check: ${errorMsg}`
       };
     }
   }

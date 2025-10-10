@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useFormState } from 'react-dom'
-import { signupUser } from '@/app/auth/actions'
+import { signup } from '@/app/auth/actions'
 import Link from 'next/link'
 import ProviderSigninBlock from '@/components/ProviderSigninBlock'
 
@@ -11,7 +11,7 @@ export default function SignupForm() {
     const initialState = {
         message: ''
     }
-    const [formState, formAction] = useFormState(signupUser, initialState)
+    const [formState, formAction] = useFormState(signup, initialState)
     
     return (
         <div className="w-full">
@@ -50,14 +50,14 @@ export default function SignupForm() {
                 <form action={formAction} className="space-y-5">
                     {/* Full Name Field */}
                     <div className="space-y-2">
-                        <Label htmlFor="fullName" className="text-sm font-semibold text-gray-900">
+                        <Label htmlFor="name" className="text-sm font-semibold text-gray-900">
                             Full name
                         </Label>
                         <Input
-                            id="fullName"
+                            id="name"
                             type="text"
                             placeholder="Enter your name"
-                            name="fullName"
+                            name="name"
                             required
                             className="h-14 border-gray-200 bg-gray-50 focus:border-orange-500 focus:ring-orange-500 rounded-xl text-base"
                         />

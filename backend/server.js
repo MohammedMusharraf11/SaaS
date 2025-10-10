@@ -8,6 +8,7 @@ import googleAuthRoutes from './routes/googleAuthRoutes.js';
 import lighthouseRoutes from './routes/lighthouseRoutes.js';
 import userAnalyticsRoutes from './routes/userAnalyticsRoutes.js';
 import searchConsoleRoutes from './routes/searchConsoleRoutes.js';
+import competitorRoutes from './routes/competitorRoutes.js';
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use('/api', googleAuthRoutes);
 app.use('/api', lighthouseRoutes);
 app.use('/api', userAnalyticsRoutes);
 app.use('/api', searchConsoleRoutes);
+app.use('/api/competitor', competitorRoutes);
 
 // Health check endpoint
 app.get('/api/status', (req, res) => {

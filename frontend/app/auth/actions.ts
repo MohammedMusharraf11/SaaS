@@ -102,7 +102,8 @@ export async function signup(currentState: { message: string }, formData: FormDa
     }
 
     revalidatePath("/", "layout")
-    redirect("/subscribe")
+    // Redirect to login page with success message
+    redirect("/login?message=verify-email")
 }
 
 

@@ -24,13 +24,30 @@ router.get('/analytics/properties', async (req, res) => {
 // Get user's GA4 analytics data
 router.get('/analytics/data', async (req, res) => {
   try {
-    const { email, propertyId } = req.query;
+    const { email, propertyId, dateRange = '30days' } = req.query;
     
     if (!email) {
       return res.status(400).json({ error: 'Email parameter is required' });
     }
 
-    const data = await userAnalyticsService.getUserAnalyticsData(email, propertyId);
+    console.log('📊 Fetching analytics with range:', dateRange);
+
+    let data;
+    // Handle realtime separately
+    if (dateRange === 'realtime') {
+      data = await userAnalyticsService.getUserRealtimeData(email, propertyId);
+    } else {
+      // For historical data (7days, 30days), use the regular method
+      // The service currently uses 30daysAgo by default
+      // We'll pass the dateRange info via property for now
+      data = await userAnalyticsService.getUserAnalyticsData(email, propertyId);
+      
+      // Add dateRange info to response
+      if (data.dataAvailable) {
+        data.dateRange = dateRange;
+      }
+    }
+    
     res.json(data);
 
   } catch (error) {

@@ -257,28 +257,41 @@ router.get('/search-console/data', async (req, res) => {
         position: row.position || 0
       }));
 
-    // Get backlinks data from Search Console
-    let topLinkingSites = [];
-    let topLinkingPages = [];
-    let totalBacklinks = 0;
-    
-    try {
-      // Get top linking sites (external sites that link to you)
-      const linkingSitesResponse = await searchConsole.urlInspection.index.inspect({
-        inspectionUrl: siteUrl,
-        siteUrl: siteUrl
-      }).catch(() => null);
+    // Attempt to get backlinks/top linking pages dynamically. The public
+    // Search Console v1 API typically does not expose backlink lists. We try
+    // a best-effort call to the searchConsoleService helper which will
+    // attempt any available endpoints; if unavailable, return a helpful note.
+    let backlinksResult = {
+      available: false,
+      topLinkingSites: [],
+      topLinkingPages: [],
+      totalBacklinks: 0,
+      note: ''
+    };
 
-      // Try to get links using the sitemaps API as alternative
-      try {
-        // This is a workaround - GSC v1 API has limited backlink support
-        // The actual backlinks are better accessed via Search Console UI
-        console.log('ℹ️ Note: GSC API v1 has limited backlink data access');
-      } catch (linksError) {
-        console.log('⚠️ Backlinks data not available via API');
+    try {
+      const searchConsoleService = (await import('../services/searchConsoleService.js')).default;
+
+      // Try to use the per-user oauth2 client to fetch backlink-like data
+      const backlinksAttempt = await searchConsoleService.getBacklinksDataWithClient(oauth2Client, siteUrl).catch(() => null);
+
+      if (backlinksAttempt) {
+        if (backlinksAttempt.dataAvailable) {
+          backlinksResult.available = true;
+          backlinksResult.topLinkingSites = backlinksAttempt.topLinkingSites || [];
+          backlinksResult.topLinkingPages = backlinksAttempt.topLinkingPages || [];
+          backlinksResult.note = backlinksAttempt.note || '';
+        } else {
+          // API does not expose backlink lists — surface the explanatory message
+          backlinksResult.note = backlinksAttempt.message || backlinksAttempt.recommendation || backlinksAttempt.note || '';
+        }
+      } else {
+        // If attempt returned null, provide a safe note
+        backlinksResult.note = 'Backlink data not available via Search Console API. Consider integrating a backlinks provider (Ahrefs, Moz, Semrush).';
       }
-    } catch (backlinksError) {
-      console.log('⚠️ Could not fetch backlinks:', backlinksError.message);
+    } catch (err) {
+      console.log('\u26a0\ufe0f Backlinks retrieval failed:', err.message);
+      backlinksResult.note = backlinksResult.note || `Backlinks retrieval error: ${err.message}`;
     }
 
     console.log('✅ Search Console data retrieved successfully');
@@ -303,7 +316,9 @@ router.get('/search-console/data', async (req, res) => {
     // Fetch Lighthouse/PageSpeed data using existing service
     let lighthouseData = null;
     try {
+      console.log('📞 Calling lighthouseService.analyzeSite...');
       lighthouseData = await lighthouseService.analyzeSite(domain);
+      console.log('📬 Received response from lighthouseService:', lighthouseData ? 'DATA' : 'NULL');
       if (lighthouseData) {
         console.log(`✅ Lighthouse: Performance ${lighthouseData.categoryScores.performance}%`);
       } else {
@@ -311,6 +326,7 @@ router.get('/search-console/data', async (req, res) => {
       }
     } catch (lighthouseError) {
       console.error('❌ Lighthouse fetch failed:', lighthouseError.message);
+      console.error('❌ Error stack:', lighthouseError.stack);
       lighthouseData = null;
     }
 
@@ -326,11 +342,11 @@ router.get('/search-console/data', async (req, res) => {
       dailyData,
       lighthouse: lighthouseData, // Add Lighthouse data
       backlinks: {
-        available: topLinkingSites.length > 0 || topLinkingPages.length > 0,
-        topLinkingSites: topLinkingSites,
-        topLinkingPages: topLinkingPages,
-        totalBacklinks: totalBacklinks,
-        note: topLinkingSites.length === 0 ? 'No backlink data available. This could mean: (1) Your site is new and hasn\'t built backlinks yet, (2) GSC needs more time to discover links, or (3) Backlink data is only available through Search Console UI, not API.' : ''
+        available: backlinksResult.available,
+        topLinkingSites: backlinksResult.topLinkingSites,
+        topLinkingPages: backlinksResult.topLinkingPages,
+        totalBacklinks: backlinksResult.totalBacklinks || 0,
+        note: backlinksResult.note || ''
       },
       siteUrl,
       domain, // Add domain info

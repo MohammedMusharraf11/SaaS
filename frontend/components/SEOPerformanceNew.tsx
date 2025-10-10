@@ -90,25 +90,22 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
         `http://localhost:3010/api/search-console/data?email=${encodeURIComponent(userEmail)}`
       )
       const searchConsoleJson = await searchConsoleResponse.json()
-      if (searchConsoleJson.dataAvailable) {
-        // Cache lighthouse data if it exists and we don't have it cached
-        if (searchConsoleJson.lighthouse && !cachedLighthouseData) {
-          setCachedLighthouseData(searchConsoleJson.lighthouse)
-          setLoadingPageSpeed(false)
-        }
-        
-        // If we have cached lighthouse data, use it instead of waiting for new fetch
-        if (cachedLighthouseData) {
-          searchConsoleJson.lighthouse = cachedLighthouseData
-        }
-        
-        setSearchConsoleData(searchConsoleJson)
-        console.log('✅ Search Console data loaded:', searchConsoleJson)
-      } else {
-        setSearchConsoleData(null)
-        if (shouldShowLoadingSpinner) {
-          setLoadingPageSpeed(false)
-        }
+      // Always store the response so we can show notes/explanations even when dataAvailable is false
+      // Cache lighthouse data if it exists and we don't have it cached
+      if (searchConsoleJson.lighthouse && !cachedLighthouseData) {
+        setCachedLighthouseData(searchConsoleJson.lighthouse)
+        setLoadingPageSpeed(false)
+      }
+
+      // If we have cached lighthouse data, use it instead of waiting for new fetch
+      if (cachedLighthouseData) {
+        searchConsoleJson.lighthouse = cachedLighthouseData
+      }
+
+      setSearchConsoleData(searchConsoleJson)
+      console.log('\u2705 Search Console data loaded:', searchConsoleJson)
+      if (!searchConsoleJson.dataAvailable && shouldShowLoadingSpinner) {
+        setLoadingPageSpeed(false)
       }
     } catch (error) {
       console.error('Error fetching data:', error)
@@ -1174,36 +1171,26 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
                                 searchConsoleData.backlinks.topLinkingSites.map((site: any, index: number) => (
                                   <tr key={index} className="border-b hover:bg-gray-50">
                                     <td className="py-3 px-2 text-sm font-medium">{site.domain}</td>
-                                    <td className="py-3 px-2 text-sm text-center">{site.backlinks}</td>
+                                    <td className="py-3 px-2 text-sm text-center">{site.links || site.backlinks || 0}</td>
                                     <td className="py-3 px-2 text-sm text-center">
                                       <span className="text-blue-600 font-medium">DA {site.authority || 'N/A'}</span>
                                     </td>
                                   </tr>
                                 ))
                               ) : (
-                                // Sample data
-                                [
-                                  { domain: 'example.com', links: 45, authority: 68 },
-                                  { domain: 'blog.example.org', links: 32, authority: 54 },
-                                  { domain: 'news.site.com', links: 28, authority: 72 },
-                                  { domain: 'forum.tech.io', links: 19, authority: 48 },
-                                  { domain: 'dev.resource.net', links: 12, authority: 61 },
-                                ].map((item, index) => (
-                                  <tr key={index} className="border-b hover:bg-gray-50 opacity-60">
-                                    <td className="py-3 px-2 text-sm font-medium">{item.domain}</td>
-                                    <td className="py-3 px-2 text-sm text-center">{item.links}</td>
-                                    <td className="py-3 px-2 text-sm text-center">
-                                      <span className="text-blue-600 font-medium">DA {item.authority}</span>
-                                    </td>
-                                  </tr>
-                                ))
+                                // Show "No data available" when no backlinks data exists
+                                <tr className="border-b">
+                                  <td className="py-3 px-2 text-sm text-center text-gray-500" colSpan={3}>
+                                    {searchConsoleData.backlinks?.note || 'No linking sites data available'}
+                                  </td>
+                                </tr>
                               )}
                             </tbody>
                           </table>
                         </div>
-                        {!loadingData && !searchConsoleData.backlinks?.topLinkingSites?.length && (
+                        {!loadingData && !searchConsoleData.backlinks?.topLinkingSites?.length && searchConsoleData.backlinks?.note && (
                           <div className="mt-4 p-2 bg-blue-50 rounded text-center">
-                            <p className="text-xs text-gray-600">Sample data - Connect to see your actual backlinks</p>
+                            <p className="text-xs text-gray-600">{searchConsoleData.backlinks.note}</p>
                           </div>
                         )}
                       </CardContent>
@@ -1244,29 +1231,29 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
                                     <td className="py-3 px-2 text-sm text-center font-medium">{page.backlinks}</td>
                                   </tr>
                                 ))
-                              ) : (
-                                // Sample data
-                                [
-                                  { url: 'https://example.com/blog/seo-guide', links: 18 },
-                                  { url: 'https://blog.site.com/marketing-tips', links: 15 },
-                                  { url: 'https://news.example.org/tech-trends', links: 12 },
-                                  { url: 'https://forum.tech.io/discussions/best-tools', links: 9 },
-                                  { url: 'https://dev.resource.net/tutorials/advanced', links: 7 },
-                                ].map((item, index) => (
-                                  <tr key={index} className="border-b hover:bg-gray-50 opacity-60">
-                                    <td className="py-3 px-2 text-sm truncate max-w-xs" title={item.url}>
-                                      {item.url.length > 50 ? item.url.substring(0, 50) + '...' : item.url}
+                              ) : searchConsoleData.backlinks?.topLinkingPages?.length > 0 ? (
+                                searchConsoleData.backlinks.topLinkingPages.map((page: any, index: number) => (
+                                  <tr key={index} className="border-b hover:bg-gray-50">
+                                    <td className="py-3 px-2 text-sm truncate max-w-xs" title={page.url}>
+                                      {page.url && page.url.length > 50 ? page.url.substring(0, 50) + '...' : page.url || 'N/A'}
                                     </td>
-                                    <td className="py-3 px-2 text-sm text-center font-medium">{item.links}</td>
+                                    <td className="py-3 px-2 text-sm text-center font-medium">{page.backlinks || page.links || 0}</td>
                                   </tr>
                                 ))
+                              ) : (
+                                // Show "No data available" when no backlinks data exists
+                                <tr className="border-b">
+                                  <td className="py-3 px-2 text-sm text-center text-gray-500" colSpan={2}>
+                                    {searchConsoleData.backlinks?.note || 'No linking pages data available'}
+                                  </td>
+                                </tr>
                               )}
                             </tbody>
                           </table>
                         </div>
-                        {!loadingData && !searchConsoleData.backlinks?.topLinkingPages?.length && (
+                        {!loadingData && !searchConsoleData.backlinks?.topLinkingPages?.length && searchConsoleData.backlinks?.note && (
                           <div className="mt-4 p-2 bg-purple-50 rounded text-center">
-                            <p className="text-xs text-gray-600">Sample data - Connect to see your actual backlinks</p>
+                            <p className="text-xs text-gray-600">{searchConsoleData.backlinks.note}</p>
                           </div>
                         )}
                       </CardContent>

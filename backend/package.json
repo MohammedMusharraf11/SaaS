@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google-analytics/data": "^5.2.0",
+    "@supabase/supabase-js": "^2.75.0",
     "axios": "^1.6.0",
     "chrome-launcher": "^1.2.1",
     "cors": "^2.8.5",

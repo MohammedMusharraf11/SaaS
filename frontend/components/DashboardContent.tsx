@@ -297,8 +297,8 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
                     {/* Left: Description */}
                     <div>
                       <p className="text-sm text-gray-600 mb-4">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
-                        incididunt ut labore et dolore magna aliqua
+                        Your overall SEO health score based on technical performance, on-page optimization, 
+                        and content quality. This score reflects how well your site is optimized for search engines.
                       </p>
                       <Button
                         onClick={() => router.push('/dashboard/seo-performance')}

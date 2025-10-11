@@ -7,6 +7,7 @@ const lighthouseService = {
   async analyzeSite(domain) {
     let chrome;
     let url = domain;
+    let savedResult = null; // Store result before cleanup
     
     if (!url.startsWith('http')) {
       url = `https://${url}`;
@@ -41,7 +42,18 @@ const lighthouseService = {
         chromeFlags: ['--headless', '--no-sandbox']
       };
 
-      const runnerResult = await lighthouse(url, options);
+      let runnerResult;
+      try {
+        runnerResult = await lighthouse(url, options);
+      } catch (lhError) {
+        console.error('❌ Lighthouse execution error:', lhError.message);
+        // If it's just a performance mark error but we have results, continue
+        if (lhError.message && lhError.message.includes('performance mark')) {
+          console.log('⚠️ Performance mark error (non-critical), checking for results...');
+        } else {
+          throw lhError;
+        }
+      }
       
       if (!runnerResult || !runnerResult.lhr) {
         throw new Error('Lighthouse audit failed - no results returned');
@@ -245,10 +257,22 @@ const lighthouseService = {
       };
 
       console.log(`✅ Comprehensive Lighthouse audit completed for ${domain}`);
+      console.log(`📊 Category Scores:`, result.categoryScores);
+      savedResult = result; // Save result before cleanup
+      console.log('💾 Result saved to savedResult variable');
       return result;
 
     } catch (error) {
       console.error('❌ Lighthouse audit failed:', error.message);
+      console.error('📍 Error occurred at:', new Date().toISOString());
+      console.log('🔍 Checking savedResult:', savedResult ? 'EXISTS' : 'NULL');
+      // If we have saved results despite the error, return them
+      if (savedResult) {
+        console.log('⚠️ Returning saved results despite error');
+        console.log('📊 Saved scores:', savedResult.categoryScores);
+        return savedResult;
+      }
+      console.log('❌ No saved results available, returning null');
       return null;
       
     } finally {

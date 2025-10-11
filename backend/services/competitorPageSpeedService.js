@@ -1,6 +1,11 @@
 import axios from 'axios';
 
-const pagespeedService = {
+/**
+ * PageSpeed Service for Competitor Analysis
+ * This version does NOT validate against GA/GSC connected domains
+ * It can analyze any website for competitor intelligence purposes
+ */
+const competitorPageSpeedService = {
   async getPageSpeedData(domain) {
     let url = domain;
     
@@ -10,7 +15,7 @@ const pagespeedService = {
     }
 
     try {
-      console.log(`📱 Fetching PageSpeed data for: ${url}`);
+      console.log(`📱 Fetching Competitor PageSpeed data for: ${url}`);
       
       const apiKey = process.env.GOOGLE_API_KEY;
       if (!apiKey) {
@@ -35,6 +40,9 @@ const pagespeedService = {
           headers: {
             'User-Agent': 'SEO-Health-Analyzer/1.0'
           }
+        }).catch(error => {
+          console.log(`⚠️ Mobile PageSpeed failed for ${url}: ${error.message}`);
+          return null;
         }),
         axios.get(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed`, {
           params: {
@@ -47,14 +55,52 @@ const pagespeedService = {
           headers: {
             'User-Agent': 'SEO-Health-Analyzer/1.0'
           }
+        }).catch(error => {
+          console.log(`⚠️ Desktop PageSpeed failed for ${url}: ${error.message}`);
+          return null;
         })
       ]);
 
-      const mobileData = this.extractPageSpeedMetrics(mobileResponse.data, 'mobile');
-      const desktopData = this.extractPageSpeedMetrics(desktopResponse.data, 'desktop');
+      // Check if both failed
+      if (!mobileResponse && !desktopResponse) {
+        console.log(`⚠️ Both mobile and desktop PageSpeed failed for ${url}`);
+        return {
+          dataAvailable: false,
+          reason: 'PageSpeed API request failed',
+          desktop: {
+            performanceScore: null,
+            category: 'UNKNOWN'
+          },
+          mobile: {
+            performanceScore: null,
+            category: 'UNKNOWN'
+          }
+        };
+      }
+
+      const mobileData = mobileResponse ? this.extractPageSpeedMetrics(mobileResponse.data, 'mobile') : {
+        strategy: 'mobile',
+        performanceScore: null,
+        category: 'UNKNOWN',
+        fieldData: null,
+        labData: {}
+      };
+      
+      const desktopData = desktopResponse ? this.extractPageSpeedMetrics(desktopResponse.data, 'desktop') : {
+        strategy: 'desktop',
+        performanceScore: null,
+        category: 'UNKNOWN',
+        fieldData: null,
+        labData: {}
+      };
       
       console.log(`✅ PageSpeed data retrieved for ${domain}`);
-      console.log(`   Desktop: ${desktopData.performanceScore}% | Mobile: ${mobileData.performanceScore}%`);
+      if (desktopData.performanceScore) {
+        console.log(`   Desktop: ${desktopData.performanceScore}%`);
+      }
+      if (mobileData.performanceScore) {
+        console.log(`   Mobile: ${mobileData.performanceScore}%`);
+      }
       
       return {
         dataAvailable: true,
@@ -64,7 +110,7 @@ const pagespeedService = {
       };
 
     } catch (error) {
-      console.error(`❌ PageSpeed API failed for ${domain}:`, error.message);
+      console.error(`❌ Competitor PageSpeed API failed for ${domain}:`, error.message);
       
       // Return structured error response
       return {
@@ -126,4 +172,4 @@ const pagespeedService = {
   }
 };
 
-export default pagespeedService;
+export default competitorPageSpeedService;

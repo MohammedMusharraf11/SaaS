@@ -3,13 +3,31 @@ import { google } from 'googleapis';
 import fs from 'fs/promises';
 import path from 'path';
 import lighthouseService from '../services/lighthouseService.js';
-import gscBacklinksScraper from '../services/gscBacklinksScraper.js';
-import seoCacheService from '../services/seoCacheService.js';
 
 const router = express.Router();
 
 // File-based token storage functions
-const getTokensFilePath = () => path.join(process.cwd(), 'data', 'oauth_tokens.json');
+const getTok    console.log('✅ Search Console data retrieved successfully');
+    console.log(`📊 Stats: ${totalClicks} clicks, ${totalImpressions} impressions, ${organicTraffic} organic traffic`);
+
+    // Extract clean domain from siteUrl for Lighthouse analysis
+    let domain = siteUrl;
+    
+    // Handle different GSC URL formats
+    if (domain.startsWith('sc-domain:')) {
+      // Domain property format: sc-domain:example.com -> example.com
+      domain = domain.replace('sc-domain:', '');
+      console.log(`📍 Extracted domain from sc-domain format: ${domain}`);
+    } else {
+      // URL prefix format: https://example.com/ -> example.com
+      domain = domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      console.log(`📍 Extracted domain from URL format: ${domain}`);
+    }
+    
+    console.log(`🔦 Fetching Lighthouse data for domain: ${domain}`);
+    
+    // Fetch Lighthouse/PageSpeed data using existing service
+    let lighthouseData = null;th = () => path.join(process.cwd(), 'data', 'oauth_tokens.json');
 
 const getTokensFromFile = async (email) => {
   try {
@@ -45,7 +63,7 @@ const saveTokensToFile = async (email, tokens) => {
 // Get user's Search Console data
 router.get('/search-console/data', async (req, res) => {
   try {
-    const { email, forceRefresh } = req.query;
+    const { email } = req.query;
     
     if (!email) {
       return res.status(400).json({ 
@@ -56,20 +74,6 @@ router.get('/search-console/data', async (req, res) => {
     }
 
     console.log(`📊 Fetching Search Console data for: ${email}`);
-
-    // Check cache first (unless forceRefresh is true)
-    if (forceRefresh !== 'true') {
-      const cachedData = await seoCacheService.getSearchConsoleCache(email);
-      if (cachedData) {
-        console.log('✅ Returning cached Search Console data');
-        return res.json(cachedData);
-      }
-    } else {
-      console.log('🔄 Force refresh requested, skipping cache');
-    }
-
-    // Cache miss or expired - fetch fresh data
-    console.log('📡 Fetching fresh data from Google Search Console...');
 
     // Get stored tokens for this user
     const tokens = await getTokensFromFile(email);
@@ -273,74 +277,41 @@ router.get('/search-console/data', async (req, res) => {
         position: row.position || 0
       }));
 
-    // Attempt to get backlinks/top linking pages using Puppeteer to scrape GSC web interface
-    // The public Search Console v1 API does not expose backlink lists, so we use web scraping
-    let backlinksResult = {
-      available: false,
-      topLinkingSites: [],
-      topLinkingPages: [],
-      totalBacklinks: 0,
-      note: '',
-      requiresSetup: false,
-      sessionExpired: false
-    };
-
+    // Get backlinks data from Search Console
+    let topLinkingSites = [];
+    let topLinkingPages = [];
+    let totalBacklinks = 0;
+    
     try {
-      console.log('🔗 Attempting to scrape backlinks from GSC web interface...');
-      
-      // Use session-based Puppeteer scraping (more reliable than cookie auth)
-      const backlinksData = await gscBacklinksScraper.scrapeBacklinksWithSession(email, siteUrl, false);
-      
-      if (backlinksData && backlinksData.dataAvailable) {
-        backlinksResult.available = true;
-        backlinksResult.topLinkingSites = backlinksData.topLinkingSites || [];
-        backlinksResult.topLinkingPages = backlinksData.topLinkingPages || [];
-        backlinksResult.totalBacklinks = backlinksData.totalBacklinks || 0;
-        backlinksResult.note = backlinksData.note || '';
-        console.log(`✅ Successfully scraped ${backlinksResult.topLinkingSites.length} linking sites and ${backlinksResult.topLinkingPages.length} linking pages`);
-      } else {
-        // Check if setup is required
-        if (backlinksData?.requiresSetup) {
-          backlinksResult.requiresSetup = true;
-          backlinksResult.sessionExpired = backlinksData.sessionExpired || false;
-          backlinksResult.note = backlinksData.note || 'Backlinks scraper setup required.';
-          console.log('⚠️ Backlinks scraping requires first-time setup');
-        } else {
-          // Scraping failed or no data available
-          backlinksResult.note = backlinksData?.note || 'Backlink data not available via scraping. This property may not have backlinks yet, or GSC interface changed.';
-          console.log('⚠️ Backlinks scraping returned no data');
-        }
+      // Get top linking sites (external sites that link to you)
+      const linkingSitesResponse = await searchConsole.urlInspection.index.inspect({
+        inspectionUrl: siteUrl,
+        siteUrl: siteUrl
+      }).catch(() => null);
+
+      // Try to get links using the sitemaps API as alternative
+      try {
+        // This is a workaround - GSC v1 API has limited backlink support
+        // The actual backlinks are better accessed via Search Console UI
+        console.log('ℹ️ Note: GSC API v1 has limited backlink data access');
+      } catch (linksError) {
+        console.log('⚠️ Backlinks data not available via API');
       }
-    } catch (err) {
-      console.log('⚠️ Backlinks scraping failed:', err.message);
-      backlinksResult.note = `Backlinks scraping error: ${err.message}. Consider using third-party APIs (Ahrefs, Moz, Semrush) for reliable backlinks data.`;
+    } catch (backlinksError) {
+      console.log('⚠️ Could not fetch backlinks:', backlinksError.message);
     }
 
     console.log('✅ Search Console data retrieved successfully');
     console.log(`📊 Stats: ${totalClicks} clicks, ${totalImpressions} impressions, ${organicTraffic} organic traffic`);
 
-    // Extract clean domain from siteUrl for Lighthouse analysis
-    let domain = siteUrl;
-    
-    // Handle different GSC URL formats
-    if (domain.startsWith('sc-domain:')) {
-      // Domain property format: sc-domain:example.com -> example.com
-      domain = domain.replace('sc-domain:', '');
-      console.log(`📍 Extracted domain from sc-domain format: ${domain}`);
-    } else {
-      // URL prefix format: https://example.com/ -> example.com
-      domain = domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
-      console.log(`📍 Extracted domain from URL format: ${domain}`);
-    }
-    
-    console.log(`🔦 Fetching Lighthouse data for domain: ${domain}`);
+    // Extract domain from siteUrl for Lighthouse analysis
+    let domain = siteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    console.log(`� Fetching Lighthouse data for domain: ${domain}`);
     
     // Fetch Lighthouse/PageSpeed data using existing service
     let lighthouseData = null;
     try {
-      console.log('📞 Calling lighthouseService.analyzeSite...');
       lighthouseData = await lighthouseService.analyzeSite(domain);
-      console.log('📬 Received response from lighthouseService:', lighthouseData ? 'DATA' : 'NULL');
       if (lighthouseData) {
         console.log(`✅ Lighthouse: Performance ${lighthouseData.categoryScores.performance}%`);
       } else {
@@ -348,12 +319,10 @@ router.get('/search-console/data', async (req, res) => {
       }
     } catch (lighthouseError) {
       console.error('❌ Lighthouse fetch failed:', lighthouseError.message);
-      console.error('❌ Error stack:', lighthouseError.stack);
       lighthouseData = null;
     }
 
-    // Prepare response data
-    const responseData = {
+    res.json({
       dataAvailable: true,
       totalClicks,
       totalImpressions,
@@ -365,13 +334,11 @@ router.get('/search-console/data', async (req, res) => {
       dailyData,
       lighthouse: lighthouseData, // Add Lighthouse data
       backlinks: {
-        available: backlinksResult.available,
-        topLinkingSites: backlinksResult.topLinkingSites,
-        topLinkingPages: backlinksResult.topLinkingPages,
-        totalBacklinks: backlinksResult.totalBacklinks || 0,
-        note: backlinksResult.note || '',
-        requiresSetup: backlinksResult.requiresSetup || false,
-        sessionExpired: backlinksResult.sessionExpired || false
+        available: topLinkingSites.length > 0 || topLinkingPages.length > 0,
+        topLinkingSites: topLinkingSites,
+        topLinkingPages: topLinkingPages,
+        totalBacklinks: totalBacklinks,
+        note: topLinkingSites.length === 0 ? 'No backlink data available. This could mean: (1) Your site is new and hasn\'t built backlinks yet, (2) GSC needs more time to discover links, or (3) Backlink data is only available through Search Console UI, not API.' : ''
       },
       siteUrl,
       domain, // Add domain info
@@ -380,14 +347,7 @@ router.get('/search-console/data', async (req, res) => {
         endDate: formatDate(endDate)
       },
       lastUpdated: new Date().toISOString()
-    };
-
-    // Save to cache asynchronously (don't wait for it)
-    seoCacheService.saveSearchConsoleCache(email, responseData).catch(err => {
-      console.error('⚠️ Failed to save cache:', err);
     });
-
-    res.json(responseData);
 
   } catch (error) {
     console.error('❌ Error fetching Search Console data:', error);
@@ -528,41 +488,6 @@ router.get('/search-console/backlinks', async (req, res) => {
     res.status(500).json({ 
       error: 'Failed to fetch backlinks data',
       dataAvailable: false
-    });
-  }
-});
-
-// NEW: Setup backlinks scraper with interactive login (first-time only)
-router.post('/search-console/setup-backlinks-scraper', async (req, res) => {
-  try {
-    const { email, domain } = req.body;
-    
-    if (!email || !domain) {
-      return res.status(400).json({ 
-        error: 'Email and domain are required',
-        success: false
-      });
-    }
-
-    console.log(`🔧 Setting up backlinks scraper for: ${email}, domain: ${domain}`);
-
-    // Launch Puppeteer with interactive login (non-headless)
-    const result = await gscBacklinksScraper.scrapeBacklinksWithSession(email, domain, true);
-
-    res.json({
-      success: result.dataAvailable,
-      message: result.dataAvailable 
-        ? 'Backlinks scraper setup successfully! Future requests will use the saved session.'
-        : 'Setup completed but no backlinks data found. Session is saved for future use.',
-      data: result
-    });
-
-  } catch (error) {
-    console.error('❌ Error setting up backlinks scraper:', error);
-    res.status(500).json({ 
-      error: 'Failed to setup backlinks scraper',
-      success: false,
-      message: error.message
     });
   }
 });

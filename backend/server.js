@@ -9,6 +9,7 @@ import lighthouseRoutes from './routes/lighthouseRoutes.js';
 import userAnalyticsRoutes from './routes/userAnalyticsRoutes.js';
 import searchConsoleRoutes from './routes/searchConsoleRoutes.js';
 import trafficRoutes from './routes/trafficRoutes.js';
+import competitorRoutes from './routes/competitorRoutes.js';
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use('/api', lighthouseRoutes);
 app.use('/api', userAnalyticsRoutes);
 app.use('/api', searchConsoleRoutes);
 app.use('/api', trafficRoutes);
+app.use('/api/competitor', competitorRoutes);
 
 // Health check endpoint
 app.get('/api/status', (req, res) => {

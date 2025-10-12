@@ -517,7 +517,15 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
                 <CardTitle className="text-lg font-bold">Top 10 Quick Wins</CardTitle>
               </CardHeader>
               <CardContent>
-                {lighthouseData?.opportunities && lighthouseData.opportunities.length > 0 ? (
+                {analyzing ? (
+                  // Show loading state while analyzing
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <Loader2 className="w-8 h-8 animate-spin text-blue-500 mx-auto mb-3" />
+                      <p className="text-sm text-gray-600">Analyzing opportunities...</p>
+                    </div>
+                  </div>
+                ) : lighthouseData?.opportunities && lighthouseData.opportunities.length > 0 ? (
                   <div className="space-y-3">
                     {lighthouseData.opportunities.slice(0, 10).map((opp: any, index: number) => (
                       <div key={index} className="flex items-start gap-3">
@@ -535,32 +543,8 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
                             {opp.title || `Optimization ${index + 1}`}
                           </h4>
                           <p className="text-xs text-gray-600">
-                            {opp.description?.substring(0, 80) || 'Lorem ipsum dolor sit amet'}...
+                            {opp.description?.substring(0, 80) || 'No description available'}...
                           </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : healthScore ? (
-                  <div className="space-y-3">
-                    {[
-                      { title: 'Optimize Page Title', desc: 'Lorem ipsum dolor sit amet' },
-                      { title: 'Publish a new blog post targeting', desc: 'Lorem ipsum dolor sit amet' },
-                      { title: 'Secure 2 new backlinks blogs', desc: 'Lorem ipsum dolor sit amet' },
-                    ].map((item, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                          index === 0 ? 'bg-orange-500' : 'bg-gray-200'
-                        }`}>
-                          {index === 0 ? (
-                            <CheckCircle2 className="w-3 h-3 text-white" />
-                          ) : (
-                            <div className="w-2 h-2 bg-gray-400 rounded-full" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="text-sm font-medium text-gray-900 mb-1">{item.title}</h4>
-                          <p className="text-xs text-gray-600">{item.desc}</p>
                         </div>
                       </div>
                     ))}

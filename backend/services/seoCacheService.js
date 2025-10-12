@@ -481,6 +481,176 @@ const seoCacheService = {
       console.error('❌ Error in saveLighthouseCache:', error);
       return false;
     }
+  },
+
+  /**
+   * Get cached SE Ranking backlinks data
+   * @param {string} email - User email
+   * @param {string} domain - Domain to get cached data for
+   * @param {boolean} ignoreExpiry - Whether to return expired cache (default: false)
+   * @returns {Object|null} Cached backlinks data or null
+   */
+  async getSERankingCache(email, domain, ignoreExpiry = false) {
+    if (!supabase) {
+      console.warn('⚠️ Supabase not configured, skipping SE Ranking cache check');
+      return null;
+    }
+
+    try {
+      // Get user ID
+      const userId = await this.getUserIdByEmail(email);
+      if (!userId) {
+        console.warn('⚠️ User not found, cannot retrieve SE Ranking cache');
+        return null;
+      }
+
+      // Clean domain
+      const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '').split('/')[0];
+
+      console.log(`🔍 Checking SE Ranking cache for domain: ${cleanDomain}`);
+
+      // Query cache
+      const { data, error } = await supabase
+        .from('se_ranking_cache')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('domain', cleanDomain)
+        .maybeSingle();
+
+      if (error) {
+        console.error('❌ Error fetching SE Ranking cache:', error);
+        return null;
+      }
+
+      if (!data) {
+        console.log('📭 No SE Ranking cache found for domain:', cleanDomain);
+        return null;
+      }
+
+      // Check if cache is expired
+      const now = new Date();
+      const expiresAt = new Date(data.expires_at);
+      const isExpired = now > expiresAt;
+
+      if (isExpired && !ignoreExpiry) {
+        console.log('⏰ SE Ranking cache expired for domain:', cleanDomain);
+        return null;
+      }
+
+      const cacheAge = Math.round((now - new Date(data.updated_at)) / 1000 / 60); // minutes
+      console.log(`✅ SE Ranking cache hit! Age: ${cacheAge} minutes${isExpired ? ' (expired but used anyway)' : ''}`);
+
+      return {
+        ...data.backlinks_data,
+        cached: true,
+        cacheAge: cacheAge,
+        lastUpdated: data.updated_at
+      };
+
+    } catch (error) {
+      console.error('❌ Error in getSERankingCache:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Save SE Ranking backlinks data to cache
+   * @param {string} email - User email
+   * @param {string} domain - Domain to cache data for
+   * @param {Object} backlinksData - SE Ranking backlinks data to cache
+   * @param {number} cacheDurationHours - Cache duration in hours (default: 24)
+   * @returns {boolean} Success status
+   */
+  async saveSERankingCache(email, domain, backlinksData, cacheDurationHours = 24) {
+    if (!supabase) {
+      console.warn('⚠️ Supabase not configured, skipping SE Ranking cache save');
+      return false;
+    }
+
+    try {
+      // Get user ID
+      const userId = await this.getUserIdByEmail(email);
+      if (!userId) {
+        console.warn('⚠️ User not found, cannot save SE Ranking cache');
+        return false;
+      }
+
+      // Clean domain
+      const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '').split('/')[0];
+
+      console.log(`💾 Saving SE Ranking cache for domain: ${cleanDomain}`);
+
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + (cacheDurationHours * 60 * 60 * 1000));
+
+      // Prepare cache data (remove any existing cache metadata)
+      const { cached, cacheAge, lastUpdated, ...cleanData } = backlinksData;
+
+      // Upsert cache data
+      const { error } = await supabase
+        .from('se_ranking_cache')
+        .upsert(
+          {
+            user_id: userId,
+            domain: cleanDomain,
+            backlinks_data: cleanData,
+            updated_at: now.toISOString(),
+            expires_at: expiresAt.toISOString()
+          },
+          {
+            onConflict: 'user_id,domain',
+            ignoreDuplicates: false
+          });
+
+      if (error) {
+        console.error('❌ Error saving SE Ranking cache:', error);
+        return false;
+      }
+
+      console.log(`✅ SE Ranking cache saved successfully (expires in ${cacheDurationHours}h)`);
+      return true;
+
+    } catch (error) {
+      console.error('❌ Error in saveSERankingCache:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Clear expired SE Ranking cache entries
+   * @returns {number} Number of entries deleted
+   */
+  async clearExpiredSERankingCache() {
+    if (!supabase) {
+      console.warn('⚠️ Supabase not configured, skipping cache cleanup');
+      return 0;
+    }
+
+    try {
+      const now = new Date().toISOString();
+
+      const { data, error } = await supabase
+        .from('se_ranking_cache')
+        .delete()
+        .lt('expires_at', now)
+        .select();
+
+      if (error) {
+        console.error('❌ Error clearing expired SE Ranking cache:', error);
+        return 0;
+      }
+
+      const count = data?.length || 0;
+      if (count > 0) {
+        console.log(`🗑️ Cleared ${count} expired SE Ranking cache entries`);
+      }
+
+      return count;
+
+    } catch (error) {
+      console.error('❌ Error in clearExpiredSERankingCache:', error);
+      return 0;
+    }
   }
 };
 

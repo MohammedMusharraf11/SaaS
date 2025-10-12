@@ -300,32 +300,55 @@ router.get('/search-console/data', async (req, res) => {
       console.log(`📍 Extracted domain from URL format: ${domain}`);
     }
 
-    try {
-      console.log('🔗 Fetching backlinks data from SE Ranking API...');
-      
-      // Fetch backlinks data from SE Ranking
-      const seRankingData = await seRankingService.getBacklinksSummary(domain);
-      
-      if (seRankingData && seRankingData.available) {
-        backlinksResult.available = true;
-        backlinksResult.topLinkingSites = seRankingData.topLinkingSites || [];
-        backlinksResult.topLinkingPages = seRankingData.topLinkingPages || [];
-        backlinksResult.totalBacklinks = seRankingData.totalBacklinks || 0;
-        backlinksResult.totalRefDomains = seRankingData.totalRefDomains || 0;
-        backlinksResult.metrics = seRankingData.metrics;
-        backlinksResult.domainMetrics = seRankingData.domainMetrics;
-        backlinksResult.topAnchors = seRankingData.topAnchors;
-        backlinksResult.topTlds = seRankingData.topTlds;
-        backlinksResult.topCountries = seRankingData.topCountries;
-        backlinksResult.note = `Data from SE Ranking API - ${seRankingData.totalBacklinks.toLocaleString()} backlinks from ${seRankingData.totalRefDomains.toLocaleString()} domains`;
-        console.log(`✅ SE Ranking: ${backlinksResult.totalBacklinks} backlinks from ${backlinksResult.totalRefDomains} domains`);
-      } else {
-        backlinksResult.note = seRankingData?.reason || 'Backlink data not available from SE Ranking API';
-        console.log('⚠️ SE Ranking API returned no data');
+    // Check SE Ranking cache first
+    const cachedBacklinks = await seoCacheService.getSERankingCache(email, domain);
+    
+    if (cachedBacklinks && forceRefresh !== 'true') {
+      console.log('✅ Using cached SE Ranking backlinks data');
+      backlinksResult = cachedBacklinks;
+    } else {
+      if (forceRefresh === 'true') {
+        console.log('🔄 Force refresh: Fetching fresh SE Ranking data');
       }
-    } catch (err) {
-      console.log('⚠️ SE Ranking API failed:', err.message);
-      backlinksResult.note = `SE Ranking API error: ${err.message}`;
+      
+      try {
+        console.log('🔗 Fetching backlinks data from SE Ranking API...');
+        
+        // Fetch backlinks data from SE Ranking
+        const seRankingData = await seRankingService.getBacklinksSummary(domain);
+        
+        if (seRankingData && seRankingData.available) {
+          backlinksResult.available = true;
+          backlinksResult.topLinkingSites = seRankingData.topLinkingSites || [];
+          backlinksResult.topLinkingPages = seRankingData.topLinkingPages || [];
+          backlinksResult.totalBacklinks = seRankingData.totalBacklinks || 0;
+          backlinksResult.totalRefDomains = seRankingData.totalRefDomains || 0;
+          backlinksResult.metrics = seRankingData.metrics;
+          backlinksResult.domainMetrics = seRankingData.domainMetrics;
+          backlinksResult.topAnchors = seRankingData.topAnchors;
+          backlinksResult.topTlds = seRankingData.topTlds;
+          backlinksResult.topCountries = seRankingData.topCountries;
+          backlinksResult.note = `Data from SE Ranking API - ${seRankingData.totalBacklinks.toLocaleString()} backlinks from ${seRankingData.totalRefDomains.toLocaleString()} domains`;
+          console.log(`✅ SE Ranking: ${backlinksResult.totalBacklinks} backlinks from ${backlinksResult.totalRefDomains} domains`);
+          
+          // Cache the successful response (24 hours)
+          await seoCacheService.saveSERankingCache(email, domain, backlinksResult, 24);
+        } else {
+          backlinksResult.note = seRankingData?.reason || 'Backlink data not available from SE Ranking API';
+          console.log('⚠️ SE Ranking API returned no data');
+        }
+      } catch (err) {
+        console.log('⚠️ SE Ranking API failed:', err.message);
+        backlinksResult.note = `SE Ranking API error: ${err.message}`;
+        
+        // Try to use expired cache as fallback
+        const expiredCache = await seoCacheService.getSERankingCache(email, domain, true);
+        if (expiredCache) {
+          console.log('📦 Using expired SE Ranking cache as fallback');
+          backlinksResult = expiredCache;
+          backlinksResult.note = `${backlinksResult.note} (Using cached data due to API error)`;
+        }
+      }
     }
 
     console.log('✅ Search Console data retrieved successfully');

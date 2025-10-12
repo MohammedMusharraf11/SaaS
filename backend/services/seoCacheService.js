@@ -366,11 +366,119 @@ const seoCacheService = {
       // Delete both caches
       await supabase.from('search_console_cache').delete().eq('user_id', userId);
       await supabase.from('google_analytics_cache').delete().eq('user_id', userId);
+      await supabase.from('lighthouse_cache').delete().eq('user_id', userId);
 
       console.log('✅ Cache cleared for user');
       return true;
     } catch (error) {
       console.error('❌ Error clearing cache:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Get cached Lighthouse data for a specific domain
+   * @param {string} email - User email
+   * @param {string} domain - Domain to get Lighthouse data for
+   * @param {boolean} ignoreExpiry - If true, return data even if expired (for fallback)
+   */
+  async getLighthouseCache(email, domain, ignoreExpiry = false) {
+    try {
+      if (!supabase) {
+        console.warn('⚠️ Supabase not configured, skipping cache');
+        return null;
+      }
+
+      const userId = await this.getUserIdByEmail(email);
+      if (!userId) {
+        console.warn('⚠️ User not found in database');
+        return null;
+      }
+
+      const { data, error } = await supabase
+        .from('lighthouse_cache')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('domain', domain)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.log('📭 No cache entry found for Lighthouse');
+          return null;
+        }
+        console.error('❌ Error fetching Lighthouse cache:', error);
+        return null;
+      }
+
+      // Check if cache is still valid (unless ignoreExpiry is true)
+      if (!ignoreExpiry && !this.isCacheValid(data.last_fetched_at)) {
+        console.log('⏰ Lighthouse cache expired');
+        return null;
+      }
+
+      if (ignoreExpiry) {
+        console.log('✅ Using expired Lighthouse cache (fallback mode)');
+      } else {
+        console.log('✅ Using cached Lighthouse data');
+      }
+
+      return data.lighthouse_data;
+    } catch (error) {
+      console.error('❌ Error in getLighthouseCache:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Save Lighthouse data to cache
+   * @param {string} email - User email
+   * @param {string} domain - Domain the data is for
+   * @param {object} lighthouseData - Lighthouse analysis results
+   */
+  async saveLighthouseCache(email, domain, lighthouseData) {
+    try {
+      if (!supabase) {
+        console.warn('⚠️ Supabase not configured, skipping cache save');
+        return false;
+      }
+
+      if (!lighthouseData) {
+        console.warn('⚠️ No lighthouse data to cache');
+        return false;
+      }
+
+      const userId = await this.getUserIdByEmail(email);
+      if (!userId) {
+        console.warn('⚠️ User not found in database, cannot save cache');
+        return false;
+      }
+
+      const cacheData = {
+        user_id: userId,
+        domain: domain,
+        lighthouse_data: lighthouseData,
+        updated_at: new Date().toISOString(),
+        last_fetched_at: new Date().toISOString()
+      };
+
+      // Upsert (insert or update) - use compound unique constraint on user_id + domain
+      const { error } = await supabase
+        .from('lighthouse_cache')
+        .upsert(cacheData, {
+          onConflict: 'user_id,domain',
+          ignoreDuplicates: false
+        });
+
+      if (error) {
+        console.error('❌ Error saving Lighthouse cache:', error);
+        return false;
+      }
+
+      console.log('✅ Lighthouse data cached successfully for domain:', domain);
+      return true;
+    } catch (error) {
+      console.error('❌ Error in saveLighthouseCache:', error);
       return false;
     }
   }

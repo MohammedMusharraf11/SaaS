@@ -5,6 +5,7 @@ import path from 'path';
 import lighthouseService from '../services/lighthouseService.js';
 import gscBacklinksScraper from '../services/gscBacklinksScraper.js';
 import seoCacheService from '../services/seoCacheService.js';
+import seRankingService from '../services/seRankingService.js';
 
 const router = express.Router();
 
@@ -61,11 +62,13 @@ router.get('/search-console/data', async (req, res) => {
     if (forceRefresh !== 'true') {
       const cachedData = await seoCacheService.getSearchConsoleCache(email);
       if (cachedData) {
-        console.log('✅ Returning cached Search Console data');
+        console.log('✅ Returning cached Search Console data (SE Ranking API NOT called)');
+        console.log('💡 To test SE Ranking API, click "Refresh Analysis" button on frontend');
         return res.json(cachedData);
       }
     } else {
       console.log('🔄 Force refresh requested, skipping cache');
+      console.log('🔗 SE Ranking API will be called for fresh backlinks data');
     }
 
     // Cache miss or expired - fetch fresh data
@@ -273,83 +276,102 @@ router.get('/search-console/data', async (req, res) => {
         position: row.position || 0
       }));
 
-    // Attempt to get backlinks/top linking pages using Puppeteer to scrape GSC web interface
-    // The public Search Console v1 API does not expose backlink lists, so we use web scraping
+    // Get backlinks data from SE Ranking API
     let backlinksResult = {
       available: false,
       topLinkingSites: [],
       topLinkingPages: [],
       totalBacklinks: 0,
       note: '',
-      requiresSetup: false,
-      sessionExpired: false
+      source: 'SE Ranking'
     };
 
-    try {
-      console.log('🔗 Attempting to scrape backlinks from GSC web interface...');
-      
-      // Use session-based Puppeteer scraping (more reliable than cookie auth)
-      const backlinksData = await gscBacklinksScraper.scrapeBacklinksWithSession(email, siteUrl, false);
-      
-      if (backlinksData && backlinksData.dataAvailable) {
-        backlinksResult.available = true;
-        backlinksResult.topLinkingSites = backlinksData.topLinkingSites || [];
-        backlinksResult.topLinkingPages = backlinksData.topLinkingPages || [];
-        backlinksResult.totalBacklinks = backlinksData.totalBacklinks || 0;
-        backlinksResult.note = backlinksData.note || '';
-        console.log(`✅ Successfully scraped ${backlinksResult.topLinkingSites.length} linking sites and ${backlinksResult.topLinkingPages.length} linking pages`);
-      } else {
-        // Check if setup is required
-        if (backlinksData?.requiresSetup) {
-          backlinksResult.requiresSetup = true;
-          backlinksResult.sessionExpired = backlinksData.sessionExpired || false;
-          backlinksResult.note = backlinksData.note || 'Backlinks scraper setup required.';
-          console.log('⚠️ Backlinks scraping requires first-time setup');
-        } else {
-          // Scraping failed or no data available
-          backlinksResult.note = backlinksData?.note || 'Backlink data not available via scraping. This property may not have backlinks yet, or GSC interface changed.';
-          console.log('⚠️ Backlinks scraping returned no data');
-        }
-      }
-    } catch (err) {
-      console.log('⚠️ Backlinks scraping failed:', err.message);
-      backlinksResult.note = `Backlinks scraping error: ${err.message}. Consider using third-party APIs (Ahrefs, Moz, Semrush) for reliable backlinks data.`;
-    }
-
-    console.log('✅ Search Console data retrieved successfully');
-    console.log(`📊 Stats: ${totalClicks} clicks, ${totalImpressions} impressions, ${organicTraffic} organic traffic`);
-
-    // Extract clean domain from siteUrl for Lighthouse analysis
+    // Extract clean domain from siteUrl for backlinks analysis
     let domain = siteUrl;
     
     // Handle different GSC URL formats
     if (domain.startsWith('sc-domain:')) {
       // Domain property format: sc-domain:example.com -> example.com
       domain = domain.replace('sc-domain:', '');
-      console.log(`📍 Extracted domain from sc-domain format: ${domain}`);
+      console.log(`� Extracted domain from sc-domain format: ${domain}`);
     } else {
       // URL prefix format: https://example.com/ -> example.com
       domain = domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
       console.log(`📍 Extracted domain from URL format: ${domain}`);
     }
-    
+
+    try {
+      console.log('🔗 Fetching backlinks data from SE Ranking API...');
+      
+      // Fetch backlinks data from SE Ranking
+      const seRankingData = await seRankingService.getBacklinksSummary(domain);
+      
+      if (seRankingData && seRankingData.available) {
+        backlinksResult.available = true;
+        backlinksResult.topLinkingSites = seRankingData.topLinkingSites || [];
+        backlinksResult.topLinkingPages = seRankingData.topLinkingPages || [];
+        backlinksResult.totalBacklinks = seRankingData.totalBacklinks || 0;
+        backlinksResult.totalRefDomains = seRankingData.totalRefDomains || 0;
+        backlinksResult.metrics = seRankingData.metrics;
+        backlinksResult.domainMetrics = seRankingData.domainMetrics;
+        backlinksResult.topAnchors = seRankingData.topAnchors;
+        backlinksResult.topTlds = seRankingData.topTlds;
+        backlinksResult.topCountries = seRankingData.topCountries;
+        backlinksResult.note = `Data from SE Ranking API - ${seRankingData.totalBacklinks.toLocaleString()} backlinks from ${seRankingData.totalRefDomains.toLocaleString()} domains`;
+        console.log(`✅ SE Ranking: ${backlinksResult.totalBacklinks} backlinks from ${backlinksResult.totalRefDomains} domains`);
+      } else {
+        backlinksResult.note = seRankingData?.reason || 'Backlink data not available from SE Ranking API';
+        console.log('⚠️ SE Ranking API returned no data');
+      }
+    } catch (err) {
+      console.log('⚠️ SE Ranking API failed:', err.message);
+      backlinksResult.note = `SE Ranking API error: ${err.message}`;
+    }
+
+    console.log('✅ Search Console data retrieved successfully');
+    console.log(`📊 Stats: ${totalClicks} clicks, ${totalImpressions} impressions, ${organicTraffic} organic traffic`);
+
+    // Domain already extracted above for backlinks
     console.log(`🔦 Fetching Lighthouse data for domain: ${domain}`);
     
-    // Fetch Lighthouse/PageSpeed data using existing service
+    // Try to get cached Lighthouse data first (separate from Search Console cache)
     let lighthouseData = null;
-    try {
-      console.log('📞 Calling lighthouseService.analyzeSite...');
-      lighthouseData = await lighthouseService.analyzeSite(domain);
-      console.log('📬 Received response from lighthouseService:', lighthouseData ? 'DATA' : 'NULL');
-      if (lighthouseData) {
-        console.log(`✅ Lighthouse: Performance ${lighthouseData.categoryScores.performance}%`);
-      } else {
-        console.log(`⚠️ Lighthouse data not available`);
+    const cachedLighthouse = await seoCacheService.getLighthouseCache(email, domain);
+    
+    if (cachedLighthouse && forceRefresh !== 'true') {
+      console.log('✅ Using cached Lighthouse data');
+      lighthouseData = cachedLighthouse;
+    } else {
+      // Fetch fresh Lighthouse data
+      try {
+        console.log('📞 Calling lighthouseService.analyzeSite...');
+        lighthouseData = await lighthouseService.analyzeSite(domain);
+        console.log('📬 Received response from lighthouseService:', lighthouseData ? 'DATA' : 'NULL');
+        if (lighthouseData) {
+          console.log(`✅ Lighthouse: Performance ${lighthouseData.categoryScores.performance}%`);
+          // Save Lighthouse data to separate cache
+          await seoCacheService.saveLighthouseCache(email, domain, lighthouseData).catch(err => {
+            console.error('⚠️ Failed to cache Lighthouse data:', err);
+          });
+        } else {
+          console.log(`⚠️ Lighthouse data not available, trying to use old cache if exists`);
+          // If fresh fetch fails, try to use old cached data even if expired
+          const oldCache = await seoCacheService.getLighthouseCache(email, domain, true);
+          if (oldCache) {
+            console.log('🔄 Using expired Lighthouse cache as fallback');
+            lighthouseData = oldCache;
+          }
+        }
+      } catch (lighthouseError) {
+        console.error('❌ Lighthouse fetch failed:', lighthouseError.message);
+        console.error('❌ Error stack:', lighthouseError.stack);
+        // Try to use old cached data as fallback
+        const oldCache = await seoCacheService.getLighthouseCache(email, domain, true);
+        if (oldCache) {
+          console.log('🔄 Using expired Lighthouse cache as fallback after error');
+          lighthouseData = oldCache;
+        }
       }
-    } catch (lighthouseError) {
-      console.error('❌ Lighthouse fetch failed:', lighthouseError.message);
-      console.error('❌ Error stack:', lighthouseError.stack);
-      lighthouseData = null;
     }
 
     // Prepare response data

@@ -28,7 +28,19 @@ import {
   Globe,
   ArrowUp,
   ArrowDown,
-  Activity
+  Activity,
+  RefreshCw,
+  Users,
+  Clock,
+  Eye,
+  Target,
+  DollarSign,
+  BarChart3,
+  Link,
+  CheckCircle2,
+  Award,
+  Hash,
+  Tag
 } from 'lucide-react'
 
 interface SEOPerformanceNewProps {
@@ -44,8 +56,12 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
   const [searchConsoleData, setSearchConsoleData] = useState<any>(null)
   const [loadingData, setLoadingData] = useState(false)
   const [loadingPageSpeed, setLoadingPageSpeed] = useState(false)
+  const [refreshingLighthouse, setRefreshingLighthouse] = useState(false)
   const [selectedMetric, setSelectedMetric] = useState<'clicks' | 'impressions' | 'ctr' | 'position'>('clicks')
   const [cachedLighthouseData, setCachedLighthouseData] = useState<any>(null) // Cache lighthouse data
+  const [lighthouseLastUpdated, setLighthouseLastUpdated] = useState<string | null>(null)
+  const [analyticsData, setAnalyticsData] = useState<any>(null)
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false)
 
   const userEmail = user?.email || 'test@example.com'
 
@@ -77,33 +93,35 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
   }
 
   // Fetch Search Console data
-  const fetchSearchConsoleData = async () => {
+  const fetchSearchConsoleData = async (forceRefreshLighthouse = false) => {
     setLoadingData(true)
-    // Only show PageSpeed loading spinner if we don't have cached lighthouse data
-    const shouldShowLoadingSpinner = !cachedLighthouseData
+    // Only show PageSpeed loading spinner if we don't have cached lighthouse data or forcing refresh
+    const shouldShowLoadingSpinner = !cachedLighthouseData || forceRefreshLighthouse
     if (shouldShowLoadingSpinner) {
       setLoadingPageSpeed(true)
     }
     
     try {
-      const searchConsoleResponse = await fetch(
-        `http://localhost:3010/api/search-console/data?email=${encodeURIComponent(userEmail)}`
-      )
+      const url = forceRefreshLighthouse 
+        ? `http://localhost:3010/api/search-console/data?email=${encodeURIComponent(userEmail)}&forceRefresh=true`
+        : `http://localhost:3010/api/search-console/data?email=${encodeURIComponent(userEmail)}`
+      
+      const searchConsoleResponse = await fetch(url)
       const searchConsoleJson = await searchConsoleResponse.json()
+      
       // Always store the response so we can show notes/explanations even when dataAvailable is false
-      // Cache lighthouse data if it exists and we don't have it cached
-      if (searchConsoleJson.lighthouse && !cachedLighthouseData) {
+      // Cache lighthouse data if it exists
+      if (searchConsoleJson.lighthouse) {
         setCachedLighthouseData(searchConsoleJson.lighthouse)
+        setLighthouseLastUpdated(searchConsoleJson.lastUpdated || new Date().toISOString())
         setLoadingPageSpeed(false)
-      }
-
-      // If we have cached lighthouse data, use it instead of waiting for new fetch
-      if (cachedLighthouseData) {
+      } else if (!forceRefreshLighthouse && cachedLighthouseData) {
+        // If we have cached lighthouse data and didn't get new data, keep using cached
         searchConsoleJson.lighthouse = cachedLighthouseData
       }
 
       setSearchConsoleData(searchConsoleJson)
-      console.log('\u2705 Search Console data loaded:', searchConsoleJson)
+      console.log('✅ Search Console data loaded:', searchConsoleJson)
       if (!searchConsoleJson.dataAvailable && shouldShowLoadingSpinner) {
         setLoadingPageSpeed(false)
       }
@@ -114,6 +132,43 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
       }
     } finally {
       setLoadingData(false)
+    }
+  }
+
+  // Force refresh Lighthouse data
+  const handleRefreshLighthouse = async () => {
+    setRefreshingLighthouse(true)
+    setLoadingPageSpeed(true)
+    try {
+      await fetchSearchConsoleData(true)
+    } finally {
+      setRefreshingLighthouse(false)
+      setLoadingPageSpeed(false)
+    }
+  }
+
+  // Fetch Google Analytics data
+  const fetchAnalyticsData = async () => {
+    setLoadingAnalytics(true)
+    try {
+      const response = await fetch(`http://localhost:3010/api/analytics/data?email=${encodeURIComponent(userEmail)}`)
+      const data = await response.json()
+      
+      if (data.dataAvailable) {
+        setAnalyticsData(data)
+        console.log('✅ Analytics data loaded:', data)
+      } else {
+        console.log('⚠️ No analytics data available:', data.reason)
+        setAnalyticsData(data)
+      }
+    } catch (error) {
+      console.error('Error fetching analytics data:', error)
+      setAnalyticsData({
+        dataAvailable: false,
+        reason: 'Failed to fetch analytics data'
+      })
+    } finally {
+      setLoadingAnalytics(false)
     }
   }
 
@@ -160,6 +215,7 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
   useEffect(() => {
     if (isConnected && !checkingConnection) {
       fetchSearchConsoleData()
+      fetchAnalyticsData()
     }
   }, [dateRange, isConnected])
 
@@ -201,21 +257,42 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
               </SelectContent>
             </Select>
             {isConnected && (
-              <Button 
-                variant="outline" 
-                className="gap-2 text-red-600 border-red-300 hover:bg-red-50"
-                onClick={handleDisconnect}
-                disabled={connecting}
-              >
-                {connecting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Disconnecting...
-                  </>
-                ) : (
-                  'Disconnect'
-                )}
-              </Button>
+              <>
+                <Button 
+                  variant="outline" 
+                  className="gap-2 text-blue-600 border-blue-300 hover:bg-blue-50"
+                  onClick={handleRefreshLighthouse}
+                  disabled={refreshingLighthouse || loadingPageSpeed}
+                  title="Refresh Lighthouse/PageSpeed data"
+                >
+                  {refreshingLighthouse ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Refreshing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4" />
+                      Refresh Analysis
+                    </>
+                  )}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="gap-2 text-red-600 border-red-300 hover:bg-red-50"
+                  onClick={handleDisconnect}
+                  disabled={connecting}
+                >
+                  {connecting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Disconnecting...
+                    </>
+                  ) : (
+                    'Disconnect'
+                  )}
+                </Button>
+              </>
             )}
             <Button variant="outline" className="gap-2">
               <Download className="w-4 h-4" />
@@ -495,143 +572,525 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
                 </CardContent>
               </Card>
 
-              {/* Backlink Overview */}
+              {/* Backlink Overview - Dynamic from SE Ranking */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base font-semibold">Backlink Overview</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-bold text-green-600">+15,000</span>
-                      <div className="flex items-center gap-1 text-sm text-gray-600">
-                        <span>Net change</span>
-                        <ArrowUp className="w-4 h-4 text-green-600" />
+                <CardContent className="space-y-3">
+                  {loadingData ? (
+                    <div className="space-y-3">
+                      <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-16 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-12 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  ) : searchConsoleData?.backlinks?.available ? (
+                    <>
+                      {/* Total Backlinks - Large Display */}
+                      <div className="text-center pb-2 border-b">
+                        <div className="text-4xl font-bold text-green-600 leading-none mb-1">
+                          {searchConsoleData.backlinks.totalBacklinks?.toLocaleString() || '0'}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          Total Backlinks
+                        </div>
+                      </div>
+                      
+                      {/* Backlinks Quality Metrics - 2x2 Grid */}
+                      <div className="grid grid-cols-2 gap-2">
+                        {/* Dofollow */}
+                        <div className="p-2.5 bg-green-50 rounded-lg text-center">
+                          <div className="text-xs text-gray-600 mb-1">Dofollow</div>
+                          <div className="text-xl font-bold text-green-700 leading-none mb-0.5">
+                            {searchConsoleData.backlinks.metrics?.dofollowBacklinks?.toLocaleString() || '0'}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {searchConsoleData.backlinks.totalBacklinks > 0 && searchConsoleData.backlinks.metrics?.dofollowBacklinks ? 
+                              `${((searchConsoleData.backlinks.metrics.dofollowBacklinks / searchConsoleData.backlinks.totalBacklinks) * 100).toFixed(1)}%`
+                              : '0%'
+                            }
+                          </div>
+                        </div>
+                        
+                        {/* Nofollow */}
+                        <div className="p-2.5 bg-orange-50 rounded-lg text-center">
+                          <div className="text-xs text-gray-600 mb-1">Nofollow</div>
+                          <div className="text-xl font-bold text-orange-700 leading-none mb-0.5">
+                            {searchConsoleData.backlinks.metrics?.nofollowBacklinks?.toLocaleString() || '0'}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {searchConsoleData.backlinks.totalBacklinks > 0 && searchConsoleData.backlinks.metrics?.nofollowBacklinks ? 
+                              `${((searchConsoleData.backlinks.metrics.nofollowBacklinks / searchConsoleData.backlinks.totalBacklinks) * 100).toFixed(1)}%`
+                              : '0%'
+                            }
+                          </div>
+                        </div>
+                        
+                        {/* .edu Links */}
+                        <div className="p-2.5 bg-purple-50 rounded-lg text-center">
+                          <div className="text-xs text-gray-600 mb-1">.edu Links</div>
+                          <div className="text-xl font-bold text-purple-700 leading-none mb-0.5">
+                            {searchConsoleData.backlinks.metrics?.eduBacklinks?.toLocaleString() || '0'}
+                          </div>
+                          <div className="text-xs text-gray-500">Authority</div>
+                        </div>
+                        
+                        {/* .gov Links */}
+                        <div className="p-2.5 bg-blue-50 rounded-lg text-center">
+                          <div className="text-xs text-gray-600 mb-1">.gov Links</div>
+                          <div className="text-xl font-bold text-blue-700 leading-none mb-0.5">
+                            {searchConsoleData.backlinks.metrics?.govBacklinks?.toLocaleString() || '0'}
+                          </div>
+                          <div className="text-xs text-gray-500">Authority</div>
+                        </div>
+                      </div>
+                      
+                      {/* Bottom Stats Row - 3 Columns */}
+                      <div className="grid grid-cols-3 gap-2 pt-2 border-t">
+                        <div className="text-center">
+                          <div className="text-xs text-gray-600 mb-0.5">Ref Domains</div>
+                          <div className="text-lg font-bold text-gray-900 leading-none">
+                            {searchConsoleData.backlinks.totalRefDomains?.toLocaleString() || '0'}
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs text-gray-600 mb-0.5">Text Links</div>
+                          <div className="text-lg font-bold text-gray-900 leading-none">
+                            {searchConsoleData.backlinks.metrics?.textBacklinks?.toLocaleString() || '0'}
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs text-gray-600 mb-0.5">From Homepage</div>
+                          <div className="text-lg font-bold text-gray-900 leading-none">
+                            {searchConsoleData.backlinks.metrics?.fromHomePageBacklinks?.toLocaleString() || '0'}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-6">
+                      <div className="text-gray-500">
+                        <p className="text-sm">No backlink data available</p>
+                        <p className="text-xs mt-2 text-gray-400">
+                          {searchConsoleData?.backlinks?.note || 'Click "Refresh Analysis" to fetch backlinks data'}
+                        </p>
                       </div>
                     </div>
-                    <div className="h-20">
-                      <svg className="w-full h-full" viewBox="0 0 300 80">
-                        <polyline
-                          points="0,60 50,55 100,45 150,50 200,30 250,25 300,20"
-                          fill="none"
-                          stroke="#10b981"
-                          strokeWidth="2"
-                        />
-                      </svg>
-                    </div>
-                    <div className="flex justify-between text-sm pt-2 border-t">
-                      <div>
-                        <div className="text-gray-600">Total</div>
-                        <div className="font-semibold">85,000</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-green-600">New: 20,000</div>
-                        <div className="text-red-600">Lost: 5,000</div>
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
 
-            {/* Bottom Tables Row - Original Design */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Keyword Ranking */}
+            {/* Core Web Vitals - Section #4 from Image */}
+            <div className="grid grid-cols-1 gap-6">
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-base font-semibold">Keyword Ranking</CardTitle>
+                <CardHeader className="border-b">
+                  <CardTitle className="text-lg font-bold flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-blue-600" />
+                    Core Web Vitals
+                  </CardTitle>
+                  <p className="text-sm text-gray-500 mt-1">Real user experience metrics from Lighthouse</p>
                 </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">Keyword</th>
-                          <th className="text-center py-3 px-2 text-sm font-medium text-gray-600">Position</th>
-                          <th className="text-center py-3 px-2 text-sm font-medium text-gray-600">Change</th>
-                          <th className="text-center py-3 px-2 text-sm font-medium text-gray-600">Volume</th>
-                          <th className="text-center py-3 px-2 text-sm font-medium text-gray-600">Difficulty</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[
-                          { keyword: 'email marketing', position: 11, change: 7, volume: '72K', difficulty: 27 },
-                          { keyword: 'social media', position: 7, change: 1, volume: '135K', difficulty: 9 },
-                          { keyword: 'marketing', position: 3, change: -4, volume: '57K', difficulty: 42 },
-                          { keyword: 'digital marketing', position: 13, change: 5, volume: '46K', difficulty: 46 },
-                          { keyword: 'newsletter', position: 28, change: -6, volume: '23K', difficulty: 52 },
-                          { keyword: 'agency', position: 28, change: -4, volume: '17K', difficulty: 87 },
-                        ].map((item, index) => (
-                          <tr key={index} className="border-b hover:bg-gray-50">
-                            <td className="py-3 px-2 text-sm">{item.keyword}</td>
-                            <td className="py-3 px-2 text-sm text-center">{item.position}</td>
-                            <td className="py-3 px-2 text-sm text-center">
-                              <div className={`flex items-center justify-center gap-1 ${item.change > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                {item.change > 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
-                                <span>{Math.abs(item.change)}</span>
+                <CardContent className="pt-6">
+                  {loadingPageSpeed && !searchConsoleData?.lighthouse?.coreWebVitals ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                      <span className="ml-3 text-gray-600">Analyzing Core Web Vitals...</span>
+                    </div>
+                  ) : searchConsoleData?.lighthouse?.coreWebVitals ? (
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                      {/* LCP */}
+                      {(() => {
+                        const lcp = searchConsoleData.lighthouse.coreWebVitals.lcp;
+                        const rating = lcp.rating || 'unknown';
+                        const color = rating === 'good' ? '#10b981' : rating === 'needs-improvement' ? '#f59e0b' : '#ef4444';
+                        return (
+                          <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
+                            <div className="relative w-24 h-24 mb-3">
+                              <svg className="w-24 h-24 transform -rotate-90">
+                                <circle cx="48" cy="48" r="40" stroke="#e5e7eb" strokeWidth="8" fill="none" />
+                                <circle
+                                  cx="48"
+                                  cy="48"
+                                  r="40"
+                                  stroke={color}
+                                  strokeWidth="8"
+                                  fill="none"
+                                  strokeDasharray={`${(lcp.score / 100) * 251.2} 251.2`}
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <span className="text-xl font-bold" style={{ color }}>{lcp.score}%</span>
                               </div>
-                            </td>
-                            <td className="py-3 px-2 text-sm text-center">{item.volume}</td>
-                            <td className="py-3 px-2 text-sm text-center">
-                              <span className={`${item.difficulty > 50 ? 'text-red-600' : item.difficulty > 30 ? 'text-orange-500' : 'text-green-600'}`}>
-                                {item.difficulty}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="mt-4">
-                    <Button variant="outline" className="w-full text-orange-600 border-orange-600 hover:bg-orange-50">
-                      View Full Report →
-                    </Button>
-                  </div>
+                            </div>
+                            <h4 className="text-sm font-semibold text-gray-700 mb-1">LCP</h4>
+                            <p className="text-xs text-gray-500 text-center mb-1">Largest Contentful Paint</p>
+                            <p className="text-sm font-bold text-gray-900">{lcp.displayValue}</p>
+                            <Badge 
+                              variant={rating === 'good' ? 'default' : 'destructive'} 
+                              className={`mt-2 ${rating === 'good' ? 'bg-green-100 text-green-700' : rating === 'needs-improvement' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}
+                            >
+                              {rating === 'good' ? 'Good' : rating === 'needs-improvement' ? 'Needs Work' : 'Poor'}
+                            </Badge>
+                          </div>
+                        );
+                      })()}
+
+                      {/* FID */}
+                      {(() => {
+                        const fid = searchConsoleData.lighthouse.coreWebVitals.fid;
+                        const rating = fid.rating || 'unknown';
+                        const color = rating === 'good' ? '#10b981' : rating === 'needs-improvement' ? '#f59e0b' : '#ef4444';
+                        return (
+                          <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
+                            <div className="relative w-24 h-24 mb-3">
+                              <svg className="w-24 h-24 transform -rotate-90">
+                                <circle cx="48" cy="48" r="40" stroke="#e5e7eb" strokeWidth="8" fill="none" />
+                                <circle
+                                  cx="48"
+                                  cy="48"
+                                  r="40"
+                                  stroke={color}
+                                  strokeWidth="8"
+                                  fill="none"
+                                  strokeDasharray={`${(fid.score / 100) * 251.2} 251.2`}
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <span className="text-xl font-bold" style={{ color }}>{fid.score}%</span>
+                              </div>
+                            </div>
+                            <h4 className="text-sm font-semibold text-gray-700 mb-1">FID</h4>
+                            <p className="text-xs text-gray-500 text-center mb-1">First Input Delay</p>
+                            <p className="text-sm font-bold text-gray-900">{fid.displayValue}</p>
+                            <Badge 
+                              variant={rating === 'good' ? 'default' : 'destructive'} 
+                              className={`mt-2 ${rating === 'good' ? 'bg-green-100 text-green-700' : rating === 'needs-improvement' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}
+                            >
+                              {rating === 'good' ? 'Good' : rating === 'needs-improvement' ? 'Needs Work' : 'Poor'}
+                            </Badge>
+                          </div>
+                        );
+                      })()}
+
+                      {/* CLS */}
+                      {(() => {
+                        const cls = searchConsoleData.lighthouse.coreWebVitals.cls;
+                        const rating = cls.rating || 'unknown';
+                        const color = rating === 'good' ? '#10b981' : rating === 'needs-improvement' ? '#f59e0b' : '#ef4444';
+                        return (
+                          <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
+                            <div className="relative w-24 h-24 mb-3">
+                              <svg className="w-24 h-24 transform -rotate-90">
+                                <circle cx="48" cy="48" r="40" stroke="#e5e7eb" strokeWidth="8" fill="none" />
+                                <circle
+                                  cx="48"
+                                  cy="48"
+                                  r="40"
+                                  stroke={color}
+                                  strokeWidth="8"
+                                  fill="none"
+                                  strokeDasharray={`${(cls.score / 100) * 251.2} 251.2`}
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <span className="text-xl font-bold" style={{ color }}>{cls.score}%</span>
+                              </div>
+                            </div>
+                            <h4 className="text-sm font-semibold text-gray-700 mb-1">CLS</h4>
+                            <p className="text-xs text-gray-500 text-center mb-1">Cumulative Layout Shift</p>
+                            <p className="text-sm font-bold text-gray-900">{cls.displayValue}</p>
+                            <Badge 
+                              variant={rating === 'good' ? 'default' : 'destructive'} 
+                              className={`mt-2 ${rating === 'good' ? 'bg-green-100 text-green-700' : rating === 'needs-improvement' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}
+                            >
+                              {rating === 'good' ? 'Good' : rating === 'needs-improvement' ? 'Needs Work' : 'Poor'}
+                            </Badge>
+                          </div>
+                        );
+                      })()}
+
+                      {/* FCP */}
+                      {(() => {
+                        const fcp = searchConsoleData.lighthouse.coreWebVitals.fcp;
+                        const rating = fcp.rating || 'unknown';
+                        const color = rating === 'good' ? '#10b981' : rating === 'needs-improvement' ? '#f59e0b' : '#ef4444';
+                        return (
+                          <div className="flex flex-col items-center p-4 bg-gray-50 rounded-lg">
+                            <div className="relative w-24 h-24 mb-3">
+                              <svg className="w-24 h-24 transform -rotate-90">
+                                <circle cx="48" cy="48" r="40" stroke="#e5e7eb" strokeWidth="8" fill="none" />
+                                <circle
+                                  cx="48"
+                                  cy="48"
+                                  r="40"
+                                  stroke={color}
+                                  strokeWidth="8"
+                                  fill="none"
+                                  strokeDasharray={`${(fcp.score / 100) * 251.2} 251.2`}
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <span className="text-xl font-bold" style={{ color }}>{fcp.score}%</span>
+                              </div>
+                            </div>
+                            <h4 className="text-sm font-semibold text-gray-700 mb-1">FCP</h4>
+                            <p className="text-xs text-gray-500 text-center mb-1">First Contentful Paint</p>
+                            <p className="text-sm font-bold text-gray-900">{fcp.displayValue}</p>
+                            <Badge 
+                              variant={rating === 'good' ? 'default' : 'destructive'} 
+                              className={`mt-2 ${rating === 'good' ? 'bg-green-100 text-green-700' : rating === 'needs-improvement' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'}`}
+                            >
+                              {rating === 'good' ? 'Good' : rating === 'needs-improvement' ? 'Needs Work' : 'Poor'}
+                            </Badge>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <AlertCircle className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                      <p>Core Web Vitals data unavailable</p>
+                    </div>
+                  )}
+                  
+                  {/* Timestamp indicator */}
+                  {searchConsoleData?.lighthouse?.coreWebVitals && (
+                    <div className="mt-4 pt-4 border-t text-center">
+                      <p className="text-xs text-gray-500">
+                        Last analyzed: {lighthouseLastUpdated 
+                          ? new Date(lighthouseLastUpdated).toLocaleString() 
+                          : new Date(searchConsoleData.lighthouse.timestamp || Date.now()).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Data is cached for 1 hour • Click "Refresh Analysis" to update
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Three Column Row: Google Analytics + SEO Technical Analysis + Top Optimization Opportunities */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Google Analytics Card */}
+              <Card className="border-purple-200">
+                <CardHeader className="border-b border-purple-100 bg-gradient-to-r from-purple-50 to-pink-50">
+                  <CardTitle className="text-base font-bold flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-purple-600" />
+                    Google Analytics
+                  </CardTitle>
+                  <p className="text-xs text-gray-500 mt-1">User engagement metrics</p>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  {loadingAnalytics ? (
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <Loader2 className="w-8 h-8 animate-spin text-purple-500 mb-3" />
+                      <p className="text-xs text-gray-500">Loading...</p>
+                    </div>
+                  ) : analyticsData && analyticsData.dataAvailable ? (
+                    <div className="space-y-3">
+                      {/* Active Users */}
+                      <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-purple-600" />
+                          <span className="text-sm font-medium text-gray-700">Active Users</span>
+                        </div>
+                        <span className="text-lg font-bold text-gray-900">{formatNumber(analyticsData.activeUsers || 0)}</span>
+                      </div>
+
+                      {/* Sessions */}
+                      <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Activity className="w-4 h-4 text-blue-600" />
+                          <span className="text-sm font-medium text-gray-700">Sessions</span>
+                        </div>
+                        <span className="text-lg font-bold text-gray-900">{formatNumber(analyticsData.sessions || 0)}</span>
+                      </div>
+
+                      {/* Bounce Rate */}
+                      <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-orange-600" />
+                          <span className="text-sm font-medium text-gray-700">Bounce Rate</span>
+                        </div>
+                        <span className="text-lg font-bold text-gray-900">
+                          {analyticsData.bounceRate ? (analyticsData.bounceRate * 100).toFixed(1) + '%' : '0%'}
+                        </span>
+                      </div>
+
+                      {/* Avg Session Duration */}
+                      <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-green-600" />
+                          <span className="text-sm font-medium text-gray-700">Avg Duration</span>
+                        </div>
+                        <span className="text-lg font-bold text-gray-900">
+                          {analyticsData.avgSessionDuration ? Math.round(analyticsData.avgSessionDuration) + 's' : '0s'}
+                        </span>
+                      </div>
+
+                      {/* Page Views */}
+                      <div className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Eye className="w-4 h-4 text-indigo-600" />
+                          <span className="text-sm font-medium text-gray-700">Page Views</span>
+                        </div>
+                        <span className="text-lg font-bold text-gray-900">{formatNumber(analyticsData.pageViews || 0)}</span>
+                      </div>
+
+                      {/* Conversions & Revenue */}
+                      <div className="p-3 bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Target className="w-4 h-4 text-pink-600" />
+                            <span className="text-sm font-medium text-gray-700">Conversions</span>
+                          </div>
+                          <span className="text-lg font-bold text-gray-900">{analyticsData.conversions || 0}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="w-4 h-4 text-emerald-600" />
+                            <span className="text-sm font-medium text-gray-700">Revenue</span>
+                          </div>
+                          <span className="text-lg font-bold text-emerald-600">
+                            ${analyticsData.revenue ? analyticsData.revenue.toFixed(2) : '0.00'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <AlertCircle className="w-10 h-10 mx-auto mb-2 text-gray-400" />
+                      <p className="text-xs font-medium text-gray-700">Data Unavailable</p>
+                      <p className="text-xs mt-1">{analyticsData?.reason || 'No data'}</p>
+                    </div>
+                  )}
+
+                  {/* Timestamp */}
+                  {analyticsData?.dataAvailable && (
+                    <div className="mt-4 pt-3 border-t text-center">
+                      <p className="text-xs text-gray-400">
+                        Updated: {new Date(analyticsData.lastUpdated || Date.now()).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
-              {/* Content Gap */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base font-semibold">Content Gap</CardTitle>
+              {/* SEO Technical Analysis - Section #8 from Image */}
+              <Card className="border-purple-200">
+                <CardHeader className="border-b border-purple-100 bg-gradient-to-r from-purple-50 to-indigo-50">
+                  <CardTitle className="text-base font-bold flex items-center gap-2">
+                    <Search className="w-5 h-5 text-purple-600" />
+                    SEO Technical Analysis
+                  </CardTitle>
+                  <p className="text-xs text-gray-500 mt-1">Technical SEO health check</p>
                 </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-3 px-2 text-sm font-medium text-gray-600">Keyword</th>
-                          <th className="text-center py-3 px-2 text-sm font-medium text-gray-600">Your site</th>
-                          <th className="text-center py-3 px-2 text-sm font-medium text-gray-600">Site A</th>
-                          <th className="text-center py-3 px-2 text-sm font-medium text-gray-600">Site B</th>
-                          <th className="text-center py-3 px-2 text-sm font-medium text-gray-600">Site C</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[
-                          { keyword: 'email marketing', your: 11, siteA: 7, siteB: null, siteC: null },
-                          { keyword: 'social media', your: 7, siteA: 1, siteB: null, siteC: 9 },
-                          { keyword: 'marketing', your: 3, siteA: null, siteB: null, siteC: null },
-                          { keyword: 'digital marketing', your: 13, siteA: 5, siteB: null, siteC: 22 },
-                          { keyword: 'newsletter', your: 28, siteA: 6, siteB: 3, siteC: null },
-                          { keyword: 'agency', your: 28, siteA: 4, siteB: null, siteC: 7 },
-                        ].map((item, index) => (
-                          <tr key={index} className="border-b hover:bg-gray-50">
-                            <td className="py-3 px-2 text-sm">{item.keyword}</td>
-                            <td className="py-3 px-2 text-sm text-center">{item.your}</td>
-                            <td className="py-3 px-2 text-sm text-center">{item.siteA || '-'}</td>
-                            <td className="py-3 px-2 text-sm text-center">{item.siteB || '-'}</td>
-                            <td className="py-3 px-2 text-sm text-center">{item.siteC || '-'}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="mt-4">
-                    <Button variant="outline" className="w-full text-orange-600 border-orange-600 hover:bg-orange-50">
-                      View Full Report →
-                    </Button>
-                  </div>
+                <CardContent className="pt-6">
+                  {loadingPageSpeed && !searchConsoleData?.lighthouse?.seoAnalysis ? (
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <Loader2 className="w-8 h-8 animate-spin text-purple-500 mb-3" />
+                      <p className="text-xs text-gray-500">Loading...</p>
+                    </div>
+                  ) : searchConsoleData?.lighthouse?.seoAnalysis ? (
+                    <div className="space-y-3">
+                      {Object.entries(searchConsoleData.lighthouse.seoAnalysis).map(([key, item]: [string, any], index) => (
+                        <div key={index} className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                          <div className="mt-0.5">
+                            {item.passed ? (
+                              <CheckCircle className="w-5 h-5 text-green-600" />
+                            ) : (
+                              <AlertCircle className="w-5 h-5 text-red-600" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-xs font-semibold text-gray-900">{item.title}</h4>
+                            <div className="flex items-center gap-2 mt-1">
+                              <div className="flex-1 bg-gray-200 rounded-full h-1.5">
+                                <div
+                                  className={`h-1.5 rounded-full transition-all ${
+                                    item.score >= 80 ? 'bg-green-600' : item.score >= 50 ? 'bg-orange-500' : 'bg-red-600'
+                                  }`}
+                                  style={{ width: `${item.score}%` }}
+                                />
+                              </div>
+                              <span className="text-xs font-medium text-gray-600 min-w-[35px]">{item.score}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <AlertCircle className="w-10 h-10 mx-auto mb-2 text-gray-400" />
+                      <p className="text-xs">SEO analysis unavailable</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Top Optimization Opportunities - Section #9 from Image */}
+              <Card className="border-orange-200">
+                <CardHeader className="border-b border-orange-100 bg-gradient-to-r from-orange-50 to-yellow-50">
+                  <CardTitle className="text-base font-bold flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-orange-600" />
+                    Top Optimization Opportunities
+                  </CardTitle>
+                  <p className="text-xs text-gray-500 mt-1">Prioritized improvements</p>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  {loadingPageSpeed && !searchConsoleData?.lighthouse?.opportunities ? (
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <Loader2 className="w-8 h-8 animate-spin text-orange-500 mb-3" />
+                      <p className="text-xs text-gray-500">Loading...</p>
+                    </div>
+                  ) : searchConsoleData?.lighthouse?.opportunities && searchConsoleData.lighthouse.opportunities.length > 0 ? (
+                    <div className="space-y-3">
+                      {searchConsoleData.lighthouse.opportunities.slice(0, 5).map((opp: any, index: number) => (
+                        <div key={index} className="p-3 border border-gray-200 rounded-lg hover:border-orange-300 hover:shadow-sm transition-all">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge 
+                              variant="outline"
+                              className={`text-xs px-2 py-0 ${
+                                opp.impact === 'high' ? 'border-red-500 text-red-700 bg-red-50' :
+                                opp.impact === 'medium' ? 'border-orange-500 text-orange-700 bg-orange-50' :
+                                'border-blue-500 text-blue-700 bg-blue-50'
+                              }`}
+                            >
+                              {opp.impact?.toUpperCase() || 'LOW'}
+                            </Badge>
+                            <span className="text-xs font-semibold text-green-600">
+                              ~{(opp.savings / 1000).toFixed(2)}s
+                            </span>
+                          </div>
+                          <h4 className="text-xs font-semibold text-gray-900 mb-1">{opp.title}</h4>
+                          <p className="text-xs text-gray-600 line-clamp-2 mb-2">{opp.description}</p>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 bg-gray-200 rounded-full h-1.5">
+                              <div
+                                className={`h-1.5 rounded-full ${
+                                  opp.score >= 80 ? 'bg-green-600' : opp.score >= 50 ? 'bg-orange-500' : 'bg-red-600'
+                                }`}
+                                style={{ width: `${opp.score}%` }}
+                              />
+                            </div>
+                            <span className="text-xs font-medium text-gray-600">{opp.score}%</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <CheckCircle className="w-10 h-10 mx-auto mb-2 text-green-500" />
+                      <p className="text-xs font-medium text-gray-900">Great job!</p>
+                      <p className="text-xs mt-1">No major issues found</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -1135,6 +1594,86 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
                     )}
                   </div>
 
+                  {/* Backlinks Metrics Overview - SE Ranking */}
+                  {!loadingData && searchConsoleData.backlinks?.available && searchConsoleData.backlinks?.metrics && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <Card className="border-l-4 border-l-blue-500">
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-gray-600">Total Backlinks</p>
+                              <p className="text-2xl font-bold text-gray-900">
+                                {searchConsoleData.backlinks.totalBacklinks?.toLocaleString() || 0}
+                              </p>
+                              {searchConsoleData.backlinks.metrics?.dofollow && (
+                                <p className="text-xs text-green-600 mt-1">
+                                  {searchConsoleData.backlinks.metrics.dofollow.toLocaleString()} dofollow
+                                </p>
+                              )}
+                            </div>
+                            <Link className="h-10 w-10 text-blue-500" />
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="border-l-4 border-l-purple-500">
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-gray-600">Referring Domains</p>
+                              <p className="text-2xl font-bold text-gray-900">
+                                {searchConsoleData.backlinks.totalRefDomains?.toLocaleString() || 0}
+                              </p>
+                              {searchConsoleData.backlinks.domainMetrics?.eduDomains !== undefined && (
+                                <p className="text-xs text-purple-600 mt-1">
+                                  {searchConsoleData.backlinks.domainMetrics.eduDomains} .edu domains
+                                </p>
+                              )}
+                            </div>
+                            <Globe className="h-10 w-10 text-purple-500" />
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="border-l-4 border-l-green-500">
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-gray-600">Dofollow Links</p>
+                              <p className="text-2xl font-bold text-gray-900">
+                                {searchConsoleData.backlinks.metrics?.dofollow?.toLocaleString() || 0}
+                              </p>
+                              {searchConsoleData.backlinks.totalBacklinks > 0 && (
+                                <p className="text-xs text-green-600 mt-1">
+                                  {((searchConsoleData.backlinks.metrics?.dofollow / searchConsoleData.backlinks.totalBacklinks) * 100).toFixed(1)}% of total
+                                </p>
+                              )}
+                            </div>
+                            <CheckCircle2 className="h-10 w-10 text-green-500" />
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="border-l-4 border-l-orange-500">
+                        <CardContent className="pt-6">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-gray-600">Authority Links</p>
+                              <p className="text-2xl font-bold text-gray-900">
+                                {((searchConsoleData.backlinks.domainMetrics?.eduDomains || 0) + 
+                                  (searchConsoleData.backlinks.domainMetrics?.govDomains || 0))}
+                              </p>
+                              <p className="text-xs text-orange-600 mt-1">
+                                .edu + .gov domains
+                              </p>
+                            </div>
+                            <Award className="h-10 w-10 text-orange-500" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+
                   {/* Backlinks Section */}
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <Card>
@@ -1259,6 +1798,116 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
                       </CardContent>
                     </Card>
                   </div>
+
+                  {/* Additional SE Ranking Insights */}
+                  {!loadingData && searchConsoleData.backlinks?.available && (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      {/* Top Anchor Texts */}
+                      {searchConsoleData.backlinks?.topAnchors?.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-base font-semibold flex items-center gap-2">
+                              <Hash className="h-4 w-4" />
+                              Top Anchor Texts
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-3">
+                              {searchConsoleData.backlinks.topAnchors.slice(0, 5).map((anchor: any, index: number) => (
+                                <div key={index} className="flex items-center justify-between">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-gray-900 truncate" title={anchor.anchor}>
+                                      {anchor.anchor}
+                                    </p>
+                                    <div className="mt-1 w-full bg-gray-200 rounded-full h-1.5">
+                                      <div 
+                                        className="bg-blue-600 h-1.5 rounded-full" 
+                                        style={{ width: `${anchor.percentage}%` }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                  <span className="ml-3 text-sm font-semibold text-blue-600">
+                                    {anchor.count}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Top Countries */}
+                      {searchConsoleData.backlinks?.topCountries?.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-base font-semibold flex items-center gap-2">
+                              <Globe className="h-4 w-4" />
+                              Top Countries
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-3">
+                              {searchConsoleData.backlinks.topCountries.slice(0, 5).map((country: any, index: number) => (
+                                <div key={index} className="flex items-center justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-lg">{country.flag || '🌐'}</span>
+                                      <span className="text-sm font-medium text-gray-900">
+                                        {country.country}
+                                      </span>
+                                    </div>
+                                    <div className="mt-1 w-full bg-gray-200 rounded-full h-1.5">
+                                      <div 
+                                        className="bg-purple-600 h-1.5 rounded-full" 
+                                        style={{ width: `${country.percentage}%` }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                  <span className="ml-3 text-sm font-semibold text-purple-600">
+                                    {country.count}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* Top TLDs */}
+                      {searchConsoleData.backlinks?.topTlds?.length > 0 && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-base font-semibold flex items-center gap-2">
+                              <Tag className="h-4 w-4" />
+                              Top TLDs
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-3">
+                              {searchConsoleData.backlinks.topTlds.slice(0, 5).map((tld: any, index: number) => (
+                                <div key={index} className="flex items-center justify-between">
+                                  <div className="flex-1">
+                                    <p className="text-sm font-medium text-gray-900">
+                                      .{tld.tld}
+                                    </p>
+                                    <div className="mt-1 w-full bg-gray-200 rounded-full h-1.5">
+                                      <div 
+                                        className="bg-green-600 h-1.5 rounded-full" 
+                                        style={{ width: `${tld.percentage}%` }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                  <span className="ml-3 text-sm font-semibold text-green-600">
+                                    {tld.count}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  )}
 
                   {/* Data timestamp */}
                   <div className="text-center text-xs text-gray-500">

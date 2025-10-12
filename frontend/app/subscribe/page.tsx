@@ -22,6 +22,12 @@ export default async function Subscribe() {
         )
     }
 
+    // Get user's display name from metadata or email
+    const userName = user.user_metadata?.full_name || 
+                     user.user_metadata?.name || 
+                     user.email?.split('@')[0] || 
+                     'User';
+
     return (
         <div className="flex flex-col min-h-screen bg-background">
             {/* Header - Matches Dashboard Design */}
@@ -56,7 +62,7 @@ export default async function Subscribe() {
                                         {user?.email?.[0].toUpperCase() || 'U'}
                                     </span>
                                 </div>
-                                <span className="text-sm font-medium text-gray-700">Your name</span>
+                                <span className="text-sm font-medium text-gray-700">{userName}</span>
                                 <ChevronDown className="h-4 w-4 text-gray-400" />
                             </div>
 

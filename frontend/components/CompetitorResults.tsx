@@ -1,9 +1,10 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { Button } from '@/components/ui/button'
 import { Doughnut, Bar } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
@@ -31,7 +32,9 @@ import {
   AlertTriangle,
   Crown,
   Target,
-  Lightbulb
+  Lightbulb,
+  Sparkles,
+  Loader2
 } from 'lucide-react'
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title)
@@ -41,6 +44,12 @@ interface CompetitorResultsProps {
 }
 
 export default function CompetitorResults({ data }: CompetitorResultsProps) {
+  const [showAIRecommendations, setShowAIRecommendations] = useState(false)
+  const [isLoadingAI, setIsLoadingAI] = useState(false)
+  const [aiRecommendations, setAiRecommendations] = useState<any[]>([])
+  const [aiError, setAiError] = useState<string | null>(null)
+  const [isFallback, setIsFallback] = useState(false)
+
   if (!data) {
     return null
   }
@@ -63,14 +72,16 @@ export default function CompetitorResults({ data }: CompetitorResultsProps) {
 
   const { yourSite, competitorSite, comparison } = actualData
 
-  // Safety check for required data
-  if (!yourSite || !competitorSite) {
+  // Safety check for required data - but be more lenient
+  if (!yourSite || !competitorSite || !comparison) {
     return (
       <Card className="border-yellow-200 bg-yellow-50">
         <CardContent className="pt-6">
           <div className="flex items-center gap-2 text-yellow-700">
             <AlertTriangle className="h-5 w-5" />
             <p>Incomplete data received. Some analysis results may be missing.</p>
+            {yourSite && <p className="text-sm mt-2">Your site: {yourSite.domain || 'Unknown'}</p>}
+            {competitorSite && <p className="text-sm">Competitor: {competitorSite.domain || 'Unknown'}</p>}
           </div>
         </CardContent>
       </Card>
@@ -88,6 +99,57 @@ export default function CompetitorResults({ data }: CompetitorResultsProps) {
     if (score >= 80) return 'bg-green-100'
     if (score >= 50) return 'bg-yellow-100'
     return 'bg-red-100'
+  }
+
+  // API call to fetch AI recommendations
+  const fetchAIRecommendations = async () => {
+    setIsLoadingAI(true)
+    setAiError(null)
+
+    try {
+      console.log('🤖 Fetching AI recommendations...')
+      console.log('Request data:', { yourSite: yourSite?.domain, competitorSite: competitorSite?.domain })
+      
+      const response = await fetch('http://localhost:3010/api/competitor/ai-recommendations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          yourSite,
+          competitorSite,
+          comparison
+        })
+      })
+
+      console.log('Response status:', response.status)
+      const result = await response.json()
+      console.log('Response data:', result)
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to generate AI recommendations')
+      }
+
+      if (result.success && result.recommendations) {
+        console.log('✅ Received recommendations:', result.recommendations.length)
+        setAiRecommendations(result.recommendations)
+        setIsFallback(result.isFallback || false)
+        setShowAIRecommendations(true)
+        
+        // Show info if fallback recommendations
+        if (result.isFallback) {
+          console.log('ℹ️ Using fallback recommendations:', result.message)
+        }
+      } else {
+        throw new Error('Invalid response format')
+      }
+
+    } catch (error: any) {
+      console.error('❌ Error fetching AI recommendations:', error)
+      setAiError(error.message || 'Failed to generate AI recommendations. Please try again.')
+    } finally {
+      setIsLoadingAI(false)
+    }
   }
 
   const getScoreLabel = (score: number) => {
@@ -218,7 +280,7 @@ export default function CompetitorResults({ data }: CompetitorResultsProps) {
             </div>
 
             {/* PageSpeed Scores */}
-            {yourSite.pagespeed?.dataAvailable && (
+            {yourSite.pagespeed && (yourSite.pagespeed.dataAvailable || yourSite.pagespeed.desktop || yourSite.pagespeed.mobile) && (
               <div className="space-y-2">
                 <h4 className="font-semibold text-sm">PageSpeed Scores</h4>
                 <div className="grid grid-cols-2 gap-2">
@@ -278,7 +340,7 @@ export default function CompetitorResults({ data }: CompetitorResultsProps) {
             </div>
 
             {/* PageSpeed Scores */}
-            {competitorSite.pagespeed?.dataAvailable && (
+            {competitorSite.pagespeed && (competitorSite.pagespeed.dataAvailable || competitorSite.pagespeed.desktop || competitorSite.pagespeed.mobile) && (
               <div className="space-y-2">
                 <h4 className="font-semibold text-sm">PageSpeed Scores</h4>
                 <div className="grid grid-cols-2 gap-2">
@@ -315,7 +377,7 @@ export default function CompetitorResults({ data }: CompetitorResultsProps) {
       </Card>
 
       {/* SEO Comparison */}
-      {comparison?.seo && (
+      {comparison?.seo && comparison?.seo?.metaTags && comparison?.seo?.headings && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -333,7 +395,7 @@ export default function CompetitorResults({ data }: CompetitorResultsProps) {
                     <Badge className="bg-green-600">Winner</Badge>
                   )}
                 </h3>
-                <SEOMetrics data={comparison.seo.metaTags.your} headings={comparison.seo.headings.your} />
+                <SEOMetrics data={comparison.seo.metaTags?.your || {}} headings={comparison.seo.headings?.your || {}} />
               </div>
 
               {/* Competitor SEO */}
@@ -344,7 +406,7 @@ export default function CompetitorResults({ data }: CompetitorResultsProps) {
                     <Badge className="bg-green-600">Winner</Badge>
                   )}
                 </h3>
-                <SEOMetrics data={comparison.seo.metaTags.competitor} headings={comparison.seo.headings.competitor} />
+                <SEOMetrics data={comparison.seo.metaTags?.competitor || {}} headings={comparison.seo.headings?.competitor || {}} />
               </div>
             </div>
 
@@ -365,6 +427,173 @@ export default function CompetitorResults({ data }: CompetitorResultsProps) {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Backlinks Comparison */}
+      {(yourSite.backlinks || competitorSite.backlinks || comparison?.backlinks) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <LinkIcon className="h-5 w-5" />
+              Backlinks Comparison
+              {comparison?.backlinks?.winner === 'yours' && (
+                <Badge className="bg-green-600 ml-2">You're Leading</Badge>
+              )}
+              {comparison?.backlinks?.winner === 'competitor' && (
+                <Badge className="bg-red-600 ml-2">Competitor Leading</Badge>
+              )}
+            </CardTitle>
+            <CardDescription>
+              Backlink profile analysis from SE Ranking
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Your Site Backlinks */}
+              <div className="space-y-4">
+                <h3 className="font-semibold flex items-center gap-2 text-blue-600">
+                  <Globe className="h-4 w-4" />
+                  {yourSite.domain}
+                  {yourSite.fromCache && (
+                    <Badge variant="outline" className="text-xs">Cached</Badge>
+                  )}
+                </h3>
+                {(() => {
+                  // Debug: Log the backlinks structure
+                  console.log('Your Site Backlinks Data:', yourSite.backlinks);
+                  
+                  const hasBacklinks = yourSite.backlinks && (
+                    yourSite.backlinks.available === true || 
+                    yourSite.backlinks.totalBacklinks > 0 ||
+                    yourSite.backlinks.total_backlinks > 0
+                  );
+
+                  if (!hasBacklinks) {
+                    return (
+                      <div className="p-4 bg-gray-50 rounded-lg text-center text-gray-500">
+                        No backlinks data available
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-3">
+                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="text-sm text-gray-600 mb-1">Total Backlinks</div>
+                        <div className="text-3xl font-bold text-blue-600">
+                          {(yourSite.backlinks.totalBacklinks || yourSite.backlinks.total_backlinks || 0).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-xs text-gray-600">Referring Domains</div>
+                          <div className="text-xl font-semibold">
+                            {(yourSite.backlinks.totalRefDomains || yourSite.backlinks.referring_domains || 0).toLocaleString()}
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-xs text-gray-600">Referring IPs</div>
+                          <div className="text-xl font-semibold">
+                            {(yourSite.backlinks.metrics?.ips || yourSite.backlinks.referring_ips || 0).toLocaleString()}
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-xs text-gray-600">Referring Subnets</div>
+                          <div className="text-xl font-semibold">
+                            {(yourSite.backlinks.metrics?.subnets || yourSite.backlinks.referring_subnets || 0).toLocaleString()}
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <div className="text-xs text-gray-600">DoFollow Links</div>
+                          <div className="text-xl font-semibold">
+                            {(yourSite.backlinks.metrics?.dofollowBacklinks || yourSite.backlinks.dofollow || 0).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Competitor Backlinks */}
+              <div className="space-y-4">
+                <h3 className="font-semibold flex items-center gap-2 text-red-600">
+                  <Globe className="h-4 w-4" />
+                  {competitorSite.domain}
+                  {competitorSite.fromCache === false && (
+                    <Badge variant="outline" className="text-xs">Fresh Data</Badge>
+                  )}
+                </h3>
+                {competitorSite.backlinks ? (
+                  <div className="space-y-3">
+                    <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+                      <div className="text-sm text-gray-600 mb-1">Total Backlinks</div>
+                      <div className="text-3xl font-bold text-red-600">
+                        {(competitorSite.backlinks.totalBacklinks || competitorSite.backlinks.total_backlinks || 0).toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <div className="text-xs text-gray-600">Referring Domains</div>
+                        <div className="text-xl font-semibold">
+                          {(competitorSite.backlinks.totalRefDomains || competitorSite.backlinks.referring_domains || 0).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <div className="text-xs text-gray-600">Referring IPs</div>
+                        <div className="text-xl font-semibold">
+                          {(competitorSite.backlinks.metrics?.ips || competitorSite.backlinks.referring_ips || 0).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <div className="text-xs text-gray-600">Referring Subnets</div>
+                        <div className="text-xl font-semibold">
+                          {(competitorSite.backlinks.metrics?.subnets || competitorSite.backlinks.referring_subnets || 0).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <div className="text-xs text-gray-600">DoFollow Links</div>
+                        <div className="text-xl font-semibold">
+                          {(competitorSite.backlinks.metrics?.dofollowBacklinks || competitorSite.backlinks.dofollow || 0).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-gray-50 rounded-lg text-center text-gray-500">
+                    No backlinks data available
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Backlinks Difference */}
+            {comparison?.backlinks && (
+              <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <div className="text-sm text-gray-600 mb-1">Backlinks Difference</div>
+                    <div className={`text-2xl font-bold ${comparison.backlinks.difference > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {comparison.backlinks.difference > 0 ? '+' : ''}{comparison.backlinks.difference?.toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm text-gray-600 mb-1">Your Total</div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {comparison.backlinks.yours?.toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm text-gray-600 mb-1">Competitor Total</div>
+                    <div className="text-2xl font-bold text-red-600">
+                      {comparison.backlinks.competitor?.toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -517,6 +746,165 @@ export default function CompetitorResults({ data }: CompetitorResultsProps) {
           </CardContent>
         </Card>
       )}
+
+      {/* AI-Powered Recommendations */}
+      <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-blue-50">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-purple-600" />
+              AI-Powered Recommendations
+            </div>
+            {!showAIRecommendations && (
+              <Button 
+                onClick={fetchAIRecommendations}
+                disabled={isLoadingAI}
+                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              >
+                {isLoadingAI ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Analyzing with AI...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Generate AI Insights
+                  </>
+                )}
+              </Button>
+            )}
+          </CardTitle>
+          <CardDescription>
+            Get personalized, AI-generated recommendations based on deep analysis of your site vs competitor
+          </CardDescription>
+        </CardHeader>
+        
+        {showAIRecommendations && (
+          <CardContent className="space-y-6">
+            {aiError && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-red-900">Failed to generate AI recommendations</p>
+                  <p className="text-sm text-red-700 mt-1">{aiError}</p>
+                  <Button
+                    onClick={fetchAIRecommendations}
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 text-red-700 border-red-300 hover:bg-red-50"
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {!aiError && aiRecommendations.length > 0 && (
+              <>
+                {/* Fallback Notice */}
+                {isFallback && (
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3 mb-4">
+                    <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-yellow-900">AI Service Temporarily Busy</p>
+                      <p className="text-sm text-yellow-700 mt-1">
+                        Google's AI is experiencing high traffic. Showing general recommendations below. 
+                        Try again in a few minutes for personalized insights.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Display AI-Generated Recommendations */}
+                <div>
+                  <h3 className="font-semibold flex items-center gap-2 text-purple-700 mb-4">
+                    <Target className="h-5 w-5" />
+                    🎯 {isFallback ? 'General' : 'AI-Generated'} Recommendations
+                  </h3>
+                  <div className="space-y-3">
+                    {aiRecommendations.map((rec, index) => (
+                      <AIRecommendationCard
+                        key={index}
+                        title={rec.title}
+                        impact={rec.impact}
+                        effort={rec.effort}
+                        description={rec.description}
+                        steps={rec.steps}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* AI Analysis Info */}
+                {!isFallback && (
+                  <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <Sparkles className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm">
+                        <p className="font-semibold text-purple-900">Powered by Google Gemini AI</p>
+                        <p className="text-purple-700 mt-1">
+                          These recommendations are generated using advanced AI analysis of your site's performance, 
+                          SEO metrics, content quality, and direct comparison with your competitor's strengths.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        )}
+      </Card>
+    </div>
+  )
+}
+
+// AI Recommendation Card Component
+function AIRecommendationCard({ title, impact, effort, description, steps }: {
+  title: string
+  impact: string
+  effort: string
+  description: string
+  steps: string[]
+}) {
+  const getImpactColor = (impact: string) => {
+    if (impact === 'High') return 'bg-red-100 text-red-700 border-red-200'
+    if (impact === 'Medium') return 'bg-yellow-100 text-yellow-700 border-yellow-200'
+    return 'bg-green-100 text-green-700 border-green-200'
+  }
+
+  const getEffortColor = (effort: string) => {
+    if (effort === 'High') return 'bg-orange-100 text-orange-700 border-orange-200'
+    if (effort === 'Medium') return 'bg-blue-100 text-blue-700 border-blue-200'
+    return 'bg-emerald-100 text-emerald-700 border-emerald-200'
+  }
+
+  return (
+    <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between mb-2">
+        <h4 className="font-semibold text-gray-900">{title}</h4>
+        <div className="flex gap-2">
+          <Badge className={`text-xs ${getImpactColor(impact)} border`}>
+            Impact: {impact}
+          </Badge>
+          <Badge className={`text-xs ${getEffortColor(effort)} border`}>
+            Effort: {effort}
+          </Badge>
+        </div>
+      </div>
+      <p className="text-sm text-gray-600 mb-3">{description}</p>
+      <div className="space-y-1">
+        <p className="text-xs font-semibold text-gray-700">Action Steps:</p>
+        <ul className="space-y-1">
+          {steps.map((step, index) => (
+            <li key={index} className="text-xs text-gray-600 flex items-start gap-2">
+              <span className="text-purple-600 font-bold">•</span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   )
 }
@@ -571,11 +959,15 @@ function ScoreCircle({ label, score, icon }: { label: string; score: number; ico
 }
 
 function SEOMetrics({ data, headings }: { data: any; headings: any }) {
+  // Provide safe defaults
+  const safeData = data || {};
+  const safeHeadings = headings || {};
+  
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
         <span className="text-sm">Title Tag</span>
-        {data.hasTitle ? (
+        {safeData.hasTitle ? (
           <CheckCircle2 className="h-4 w-4 text-green-600" />
         ) : (
           <XCircle className="h-4 w-4 text-red-600" />
@@ -583,7 +975,7 @@ function SEOMetrics({ data, headings }: { data: any; headings: any }) {
       </div>
       <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
         <span className="text-sm">Meta Description</span>
-        {data.hasDescription ? (
+        {safeData.hasDescription ? (
           <CheckCircle2 className="h-4 w-4 text-green-600" />
         ) : (
           <XCircle className="h-4 w-4 text-red-600" />
@@ -591,11 +983,11 @@ function SEOMetrics({ data, headings }: { data: any; headings: any }) {
       </div>
       <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
         <span className="text-sm">H1 Tags</span>
-        <Badge variant="outline">{headings.h1Count}</Badge>
+        <Badge variant="outline">{safeHeadings.h1Count || 0}</Badge>
       </div>
       <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
         <span className="text-sm">H2 Tags</span>
-        <Badge variant="outline">{headings.h2Count}</Badge>
+        <Badge variant="outline">{safeHeadings.h2Count || 0}</Badge>
       </div>
     </div>
   )

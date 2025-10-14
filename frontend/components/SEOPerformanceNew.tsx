@@ -109,6 +109,16 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
       const searchConsoleResponse = await fetch(url)
       const searchConsoleJson = await searchConsoleResponse.json()
       
+      // Check if reconnection is needed - treat as disconnected
+      if (searchConsoleJson.needsReconnect) {
+        console.log('🔒 OAuth token expired, showing connect modal')
+        setIsConnected(false)
+        setShowConnectModal(true)
+        setLoadingData(false)
+        setLoadingPageSpeed(false)
+        return
+      }
+      
       // Always store the response so we can show notes/explanations even when dataAvailable is false
       // Cache lighthouse data if it exists
       if (searchConsoleJson.lighthouse) {
@@ -153,6 +163,15 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
     try {
       const response = await fetch(`http://localhost:3010/api/analytics/data?email=${encodeURIComponent(userEmail)}`)
       const data = await response.json()
+      
+      // Check if reconnection is needed - treat as disconnected
+      if (data.needsReconnect) {
+        console.log('🔒 OAuth token expired, showing connect modal')
+        setIsConnected(false)
+        setShowConnectModal(true)
+        setLoadingAnalytics(false)
+        return
+      }
       
       if (data.dataAvailable) {
         setAnalyticsData(data)
@@ -307,7 +326,10 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
             <DialogHeader>
               <DialogTitle className="text-center text-xl">SEO & Website Performance</DialogTitle>
               <DialogDescription className="text-center pt-4">
-                Connect your Google account to access Analytics and Search Console data
+                {searchConsoleData?.needsReconnect || analyticsData?.needsReconnect 
+                  ? 'Your session has expired. Please reconnect your Google account to continue.'
+                  : 'Connect your Google account to access Analytics and Search Console data'
+                }
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col items-center gap-4 py-4">
@@ -328,7 +350,10 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
                 ) : (
                   <>
                     <TrendingUp className="w-5 h-5" />
-                    Connect with Google Analytics 4
+                    {searchConsoleData?.needsReconnect || analyticsData?.needsReconnect 
+                      ? 'Reconnect with Google'
+                      : 'Connect with Google Analytics 4'
+                    }
                   </>
                 )}
               </Button>
@@ -968,6 +993,17 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
                       <AlertCircle className="w-10 h-10 mx-auto mb-2 text-gray-400" />
                       <p className="text-xs font-medium text-gray-700">Data Unavailable</p>
                       <p className="text-xs mt-1">{analyticsData?.reason || 'No data'}</p>
+                      {analyticsData?.needsReconnect && (
+                        <Button
+                          onClick={handleConnect}
+                          variant="outline"
+                          size="sm"
+                          className="mt-4"
+                        >
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          Reconnect Google Account
+                        </Button>
+                      )}
                     </div>
                   )}
 
@@ -1921,8 +1957,19 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
                       <AlertCircle className="w-16 h-16 text-gray-400 mb-4" />
                       <p className="text-lg text-gray-600 font-medium">No Search Console Data Available</p>
                       <p className="text-sm text-gray-500 mt-2">
-                        Make sure your website is verified in Google Search Console
+                        {searchConsoleData?.reason || 'Make sure your website is verified in Google Search Console'}
                       </p>
+                      {searchConsoleData?.needsReconnect && (
+                        <Button
+                          onClick={handleConnect}
+                          variant="default"
+                          size="lg"
+                          className="mt-6"
+                        >
+                          <RefreshCw className="w-4 h-4 mr-2" />
+                          Reconnect Google Account
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

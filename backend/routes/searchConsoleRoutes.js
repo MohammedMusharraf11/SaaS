@@ -1,47 +1,12 @@
 import express from 'express';
 import { google } from 'googleapis';
-import fs from 'fs/promises';
-import path from 'path';
 import lighthouseService from '../services/lighthouseService.js';
 import gscBacklinksScraper from '../services/gscBacklinksScraper.js';
 import seoCacheService from '../services/seoCacheService.js';
 import seRankingService from '../services/seRankingService.js';
+import oauthTokenService from '../services/oauthTokenService.js';
 
 const router = express.Router();
-
-// File-based token storage functions
-const getTokensFilePath = () => path.join(process.cwd(), 'data', 'oauth_tokens.json');
-
-const getTokensFromFile = async (email) => {
-  try {
-    const filePath = getTokensFilePath();
-    const data = await fs.readFile(filePath, 'utf-8');
-    const allTokens = JSON.parse(data);
-    return allTokens[email] || null;
-  } catch {
-    return null;
-  }
-};
-
-const saveTokensToFile = async (email, tokens) => {
-  try {
-    const filePath = getTokensFilePath();
-    let allTokens = {};
-    
-    try {
-      const data = await fs.readFile(filePath, 'utf-8');
-      allTokens = JSON.parse(data);
-    } catch {
-      // File doesn't exist yet
-    }
-    
-    allTokens[email] = tokens;
-    await fs.writeFile(filePath, JSON.stringify(allTokens, null, 2));
-  } catch (error) {
-    console.error('Error saving tokens:', error);
-    throw error;
-  }
-};
 
 // Get user's Search Console data
 router.get('/search-console/data', async (req, res) => {
@@ -74,41 +39,20 @@ router.get('/search-console/data', async (req, res) => {
     // Cache miss or expired - fetch fresh data
     console.log('📡 Fetching fresh data from Google Search Console...');
 
-    // Get stored tokens for this user
-    const tokens = await getTokensFromFile(email);
+    // Get OAuth client with auto-refresh from oauthTokenService
+    const oauth2Client = await oauthTokenService.getOAuthClient(email);
     
-    if (!tokens) {
-      console.log('⚠️ No tokens found for user');
+    if (!oauth2Client) {
+      console.log('❌ User not authenticated or token refresh failed');
       return res.json({
         dataAvailable: false,
-        reason: 'Google account not connected. Please connect your account first.'
+        reason: 'Authentication token expired. Please reconnect your Google account.',
+        needsReconnect: true,
+        connected: false
       });
     }
 
-    // Create OAuth2 client with user's tokens
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
-    );
-
-    oauth2Client.setCredentials(tokens);
-
-    // Check if token needs refresh
-    if (tokens.expiry_date && tokens.expiry_date < Date.now()) {
-      console.log('🔄 Refreshing expired token...');
-      try {
-        const { credentials } = await oauth2Client.refreshAccessToken();
-        await saveTokensToFile(email, credentials);
-        oauth2Client.setCredentials(credentials);
-      } catch (refreshError) {
-        console.error('❌ Token refresh failed:', refreshError.message);
-        return res.json({
-          dataAvailable: false,
-          reason: 'Authentication expired. Please reconnect your Google account.'
-        });
-      }
-    }
+    console.log('✅ OAuth client ready');
 
     // Get Search Console service
     const searchConsole = google.searchconsole({
@@ -125,17 +69,37 @@ router.get('/search-console/data', async (req, res) => {
     } catch (error) {
       console.error('❌ Error fetching sites:', error.message);
       
+      // Check if it's an auth error
+      if (error.message?.includes('invalid_grant') || error.message?.includes('expired')) {
+        console.log('🔄 Token expired, attempting refresh...');
+        const refreshed = await oauthTokenService.refreshTokens(email);
+        if (!refreshed) {
+          return res.json({
+            dataAvailable: false,
+            reason: 'Authentication token expired. Please reconnect your Google account.',
+            needsReconnect: true,
+            connected: false
+          });
+        }
+        // Retry after refresh
+        return res.redirect(`/api/search-console/data?email=${email}&forceRefresh=${forceRefresh}`);
+      }
+      
       // Check if it's a permission issue
       if (error.code === 403 || error.message.includes('insufficient')) {
         return res.json({
           dataAvailable: false,
-          reason: 'Search Console permission not granted. Please reconnect your account with Search Console access.'
+          reason: 'Search Console permission not granted. Please reconnect your account with Search Console access.',
+          needsReconnect: true,
+          connected: false
         });
       }
       
       return res.json({
         dataAvailable: false,
-        reason: 'Unable to access Search Console. Please ensure you have Search Console set up and try reconnecting.'
+        reason: 'Unable to access Search Console. Please ensure you have Search Console set up and try reconnecting.',
+        needsReconnect: true,
+        connected: false
       });
     }
 
@@ -469,22 +433,16 @@ router.get('/search-console/sites', async (req, res) => {
       return res.status(400).json({ error: 'Email parameter is required' });
     }
 
-    const tokens = await getTokensFromFile(email);
+    // Get OAuth client with auto-refresh
+    const oauth2Client = await oauthTokenService.getOAuthClient(email);
     
-    if (!tokens) {
+    if (!oauth2Client) {
       return res.json({
         sites: [],
-        message: 'Google account not connected'
+        message: 'Google account not connected',
+        needsReconnect: true
       });
     }
-
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
-    );
-
-    oauth2Client.setCredentials(tokens);
 
     const searchConsole = google.searchconsole({
       version: 'v1',
@@ -503,6 +461,16 @@ router.get('/search-console/sites', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error fetching sites:', error);
+    
+    // Check for auth errors
+    if (error.message?.includes('invalid_grant') || error.message?.includes('expired')) {
+      return res.json({
+        sites: [],
+        message: 'Authentication expired. Please reconnect.',
+        needsReconnect: true
+      });
+    }
+    
     res.status(500).json({ 
       error: 'Failed to fetch sites',
       sites: []
@@ -519,22 +487,16 @@ router.get('/search-console/backlinks', async (req, res) => {
       return res.status(400).json({ error: 'Email parameter is required' });
     }
 
-    const tokens = await getTokensFromFile(email);
+    // Get OAuth client with auto-refresh
+    const oauth2Client = await oauthTokenService.getOAuthClient(email);
     
-    if (!tokens) {
+    if (!oauth2Client) {
       return res.json({
         dataAvailable: false,
-        message: 'Google account not connected'
+        message: 'Google account not connected',
+        needsReconnect: true
       });
     }
-
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
-    );
-
-    oauth2Client.setCredentials(tokens);
 
     const searchConsole = google.searchconsole({
       version: 'v1',

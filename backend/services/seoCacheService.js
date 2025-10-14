@@ -56,7 +56,7 @@ const seoCacheService = {
   /**
    * Get cached Search Console data
    */
-  async getSearchConsoleCache(email) {
+  async getSearchConsoleCache(email, ignoreExpiry = false) {
     try {
       if (!supabase) {
         console.warn('⚠️ Supabase not configured, skipping cache');
@@ -85,13 +85,17 @@ const seoCacheService = {
         return null;
       }
 
-      // Check if cache is still valid
-      if (!this.isCacheValid(data.last_fetched_at)) {
+      // Check if cache is still valid (unless ignoreExpiry is true)
+      if (!ignoreExpiry && !this.isCacheValid(data.last_fetched_at)) {
         console.log('⏰ Search Console cache expired');
         return null;
       }
 
-      console.log('✅ Using cached Search Console data');
+      if (ignoreExpiry && !this.isCacheValid(data.last_fetched_at)) {
+        console.log('✅ Using expired Search Console cache (fallback mode)');
+      } else {
+        console.log('✅ Using cached Search Console data');
+      }
       return {
         dataAvailable: true,
         totalClicks: data.total_clicks,
@@ -104,6 +108,9 @@ const seoCacheService = {
         dailyData: data.daily_data,
         lighthouse: data.lighthouse,
         backlinks: data.backlinks,
+        pagespeed: data.pagespeed_data,
+        technicalSEO: data.technical_seo_data,
+        puppeteer: data.puppeteer_data,
         siteUrl: data.site_url,
         domain: data.domain,
         dateRange: {
@@ -149,6 +156,9 @@ const seoCacheService = {
         daily_data: data.dailyData || [],
         backlinks: data.backlinks || {},
         lighthouse: data.lighthouse || null,
+        pagespeed_data: data.pagespeed || null,
+        technical_seo_data: data.technicalSEO || null,
+        puppeteer_data: data.puppeteer || null,
         date_range_start: data.dateRange?.startDate || null,
         date_range_end: data.dateRange?.endDate || null,
         updated_at: new Date().toISOString(),
@@ -649,6 +659,202 @@ const seoCacheService = {
 
     } catch (error) {
       console.error('❌ Error in clearExpiredSERankingCache:', error);
+      return 0;
+    }
+  },
+
+  /**
+   * Get cached competitor intelligence data
+   * @param {string} email - User email
+   * @param {string} userDomain - User's own domain
+   * @param {string} competitorDomain - Competitor domain
+   * @param {boolean} ignoreExpiry - Whether to return expired cache (default: false)
+   * @returns {Object|null} Cached competitor data or null
+   */
+  async getCompetitorCache(email, userDomain, competitorDomain, ignoreExpiry = false) {
+    if (!supabase) {
+      console.warn('⚠️ Supabase not configured, skipping competitor cache check');
+      return null;
+    }
+
+    try {
+      // Get user ID
+      const userId = await this.getUserIdByEmail(email);
+      if (!userId) {
+        console.warn('⚠️ User not found, cannot retrieve competitor cache');
+        return null;
+      }
+
+      // Clean domains
+      const cleanUserDomain = userDomain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '').split('/')[0];
+      const cleanCompetitorDomain = competitorDomain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '').split('/')[0];
+
+      console.log(`🔍 Checking competitor cache: ${cleanUserDomain} vs ${cleanCompetitorDomain}`);
+
+      // Query cache
+      const { data, error } = await supabase
+        .from('competitor_cache')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('user_domain', cleanUserDomain)
+        .eq('competitor_domain', cleanCompetitorDomain)
+        .maybeSingle();
+
+      if (error) {
+        console.error('❌ Error fetching competitor cache:', error);
+        return null;
+      }
+
+      if (!data) {
+        console.log('📭 No competitor cache found');
+        return null;
+      }
+
+      // Check if cache is expired
+      const now = new Date();
+      const expiresAt = new Date(data.expires_at);
+      const isExpired = now > expiresAt;
+
+      if (isExpired && !ignoreExpiry) {
+        console.log('⏰ Competitor cache expired');
+        return null;
+      }
+
+      const cacheAge = Math.round((now - new Date(data.updated_at)) / 1000 / 60 / 60); // hours
+      console.log(`✅ Competitor cache hit! Age: ${cacheAge} hours${isExpired ? ' (expired but used anyway)' : ''}`);
+
+      // Reconstruct the data structure from separated columns
+      const competitorSite = {
+        domain: cleanCompetitorDomain,
+        lighthouse: data.lighthouse_data,
+        pagespeed: data.pagespeed_data,
+        technicalSEO: data.technical_seo_data,
+        puppeteer: data.puppeteer_data,
+        backlinks: data.backlinks_data
+      };
+
+      return {
+        success: true,
+        competitorSite: competitorSite,
+        cached: true,
+        cacheAge: cacheAge,
+        lastUpdated: data.updated_at
+      };
+
+    } catch (error) {
+      console.error('❌ Error in getCompetitorCache:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Save competitor intelligence data to cache
+   * @param {string} email - User email
+   * @param {string} userDomain - User's own domain
+   * @param {string} competitorDomain - Competitor domain
+   * @param {Object} competitorData - Competitor analysis data
+   * @param {number} cacheDurationDays - Cache duration in days (default: 7)
+   * @returns {boolean} Success status
+   */
+  async saveCompetitorCache(email, userDomain, competitorDomain, competitorData, cacheDurationDays = 7) {
+    if (!supabase) {
+      console.warn('⚠️ Supabase not configured, skipping competitor cache save');
+      return false;
+    }
+
+    try {
+      // Get user ID
+      const userId = await this.getUserIdByEmail(email);
+      if (!userId) {
+        console.warn('⚠️ User not found, cannot save competitor cache');
+        return false;
+      }
+
+      // Clean domains
+      const cleanUserDomain = userDomain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '').split('/')[0];
+      const cleanCompetitorDomain = competitorDomain.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '').split('/')[0];
+
+      console.log(`💾 Saving competitor cache: ${cleanUserDomain} vs ${cleanCompetitorDomain}`);
+
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + (cacheDurationDays * 24 * 60 * 60 * 1000));
+
+      // Remove cache metadata before saving
+      const { cached, cacheAge, lastUpdated, ...cleanData } = competitorData;
+
+      // Extract data for each service from competitorSite
+      const competitor = cleanData.competitorSite || {};
+      
+      // Upsert cache data with separated columns
+      const { error } = await supabase
+        .from('competitor_cache')
+        .upsert(
+          {
+            user_id: userId,
+            user_domain: cleanUserDomain,
+            competitor_domain: cleanCompetitorDomain,
+            lighthouse_data: competitor.lighthouse || null,
+            pagespeed_data: competitor.pagespeed || null,
+            technical_seo_data: competitor.technicalSEO || null,
+            puppeteer_data: competitor.puppeteer || null,
+            backlinks_data: competitor.backlinks || null,
+            analysis_status: 'completed',
+            error_details: null,
+            updated_at: now.toISOString(),
+            expires_at: expiresAt.toISOString()
+          },
+          {
+            onConflict: 'user_id,user_domain,competitor_domain',
+            ignoreDuplicates: false
+          });
+
+      if (error) {
+        console.error('❌ Error saving competitor cache:', error);
+        return false;
+      }
+
+      console.log(`✅ Competitor cache saved (expires in ${cacheDurationDays} days)`);
+      return true;
+
+    } catch (error) {
+      console.error('❌ Error in saveCompetitorCache:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Clear expired competitor cache entries
+   * @returns {number} Number of entries deleted
+   */
+  async clearExpiredCompetitorCache() {
+    if (!supabase) {
+      console.warn('⚠️ Supabase not configured, skipping cache cleanup');
+      return 0;
+    }
+
+    try {
+      const now = new Date().toISOString();
+
+      const { data, error } = await supabase
+        .from('competitor_cache')
+        .delete()
+        .lt('expires_at', now)
+        .select();
+
+      if (error) {
+        console.error('❌ Error clearing expired competitor cache:', error);
+        return 0;
+      }
+
+      const count = data?.length || 0;
+      if (count > 0) {
+        console.log(`🗑️ Cleared ${count} expired competitor cache entries`);
+      }
+
+      return count;
+
+    } catch (error) {
+      console.error('❌ Error in clearExpiredCompetitorCache:', error);
       return 0;
     }
   }

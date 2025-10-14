@@ -3,6 +3,7 @@ import { google } from 'googleapis';
 import { GoogleAuth } from 'google-auth-library';
 import fs from 'fs/promises';
 import path from 'path';
+import oauthTokenService from './oauthTokenService.js';
 
 const getTokensFilePath = () => path.join(process.cwd(), 'data', 'oauth_tokens.json');
 
@@ -23,27 +24,21 @@ const userAnalyticsService = {
    */
   async getUserProperties(email) {
     try {
-      const tokens = await getTokensFromFile(email);
+      console.log('📊 Fetching GA properties for:', email);
+
+      // Get OAuth client with auto-refresh
+      const oauth2Client = await oauthTokenService.getOAuthClient(email);
       
-      if (!tokens || !tokens.access_token) {
+      if (!oauth2Client) {
+        console.log('❌ User not authenticated or token refresh failed');
         return {
           success: false,
-          error: 'User not authenticated'
+          error: 'Authentication token expired. Please reconnect.',
+          needsReconnect: true
         };
       }
 
-      // Create OAuth2 client with user's token
-      const oauth2Client = new google.auth.OAuth2(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_SECRET,
-        process.env.GOOGLE_REDIRECT_URI
-      );
-      
-      oauth2Client.setCredentials({
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        expiry_date: tokens.expires_at
-      });
+      console.log('✅ OAuth client ready, fetching properties...');
 
       // Get GA4 Admin API
       const analyticsAdmin = google.analyticsadmin({
@@ -75,6 +70,8 @@ const userAnalyticsService = {
         }
       }
 
+      console.log(`✅ Found ${properties.length} GA4 properties`);
+
       return {
         success: true,
         properties
@@ -82,6 +79,16 @@ const userAnalyticsService = {
 
     } catch (error) {
       console.error('❌ Error fetching user properties:', error.message);
+      
+      // Check if it's an auth error
+      if (error.message?.includes('invalid_grant') || error.message?.includes('expired')) {
+        return {
+          success: false,
+          error: 'Authentication token expired. Please reconnect.',
+          needsReconnect: true
+        };
+      }
+
       return {
         success: false,
         error: error.message
@@ -96,15 +103,20 @@ const userAnalyticsService = {
     try {
       console.log('📊 Fetching user GA data for:', email);
       
-      const tokens = await getTokensFromFile(email);
+      // Get OAuth client with auto-refresh
+      const oauth2Client = await oauthTokenService.getOAuthClient(email);
       
-      if (!tokens || !tokens.access_token) {
+      if (!oauth2Client) {
+        console.log('❌ User not authenticated or token refresh failed');
         return {
           dataAvailable: false,
-          reason: 'User not authenticated',
-          connected: false
+          reason: 'Authentication token expired. Please reconnect.',
+          connected: false,
+          needsReconnect: true
         };
       }
+
+      console.log('✅ OAuth client ready');
 
       // If no property ID provided, try to get the first available one
       if (!propertyId) {
@@ -118,6 +130,12 @@ const userAnalyticsService = {
         }
         propertyId = propertiesResult.properties[0].id;
         console.log('📌 Using first available property:', propertyId);
+      }
+
+      // Get access token from OAuth client
+      const credentials = oauth2Client.credentials;
+      if (!credentials || !credentials.access_token) {
+        throw new Error('No access token available');
       }
 
       // Use REST API instead of gRPC client to avoid authentication issues
@@ -145,7 +163,7 @@ const userAnalyticsService = {
       const response = await fetch(reportUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${tokens.access_token}`,
+          'Authorization': `Bearer ${credentials.access_token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(requestBody)
@@ -157,11 +175,19 @@ const userAnalyticsService = {
         
         // Check if token expired
         if (response.status === 401) {
-          return {
-            dataAvailable: false,
-            reason: 'Authentication token expired. Please reconnect.',
-            connected: false
-          };
+          console.log('🔄 Token expired, attempting refresh...');
+          // Try to refresh token
+          const refreshed = await oauthTokenService.refreshTokens(email);
+          if (!refreshed) {
+            return {
+              dataAvailable: false,
+              reason: 'Authentication token expired. Please reconnect.',
+              connected: false,
+              needsReconnect: true
+            };
+          }
+          // Retry the request with new token
+          return this.getUserAnalyticsData(email, propertyId);
         }
         
         throw new Error(`GA API returned ${response.status}: ${errorText}`);

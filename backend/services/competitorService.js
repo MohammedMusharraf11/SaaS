@@ -347,10 +347,15 @@ const competitorService = {
    * Compare security & technical aspects
    */
   compareSecurity(yourData, competitorData) {
+    console.log('🔍 compareSecurity - yourData.puppeteer keys:', yourData.puppeteer ? Object.keys(yourData.puppeteer) : 'undefined');
+    console.log('🔍 compareSecurity - yourData.puppeteer?.robotsTxt:', yourData.puppeteer?.robotsTxt);
+    console.log('🔍 compareSecurity - yourData.puppeteer?.sitemap:', yourData.puppeteer?.sitemap);
+    console.log('🔍 compareSecurity - competitorData.puppeteer keys:', competitorData.puppeteer ? Object.keys(competitorData.puppeteer) : 'undefined');
+    
     const yourSecurity = yourData.puppeteer?.security || {};
     const compSecurity = competitorData.puppeteer?.security || {};
 
-    return {
+    const result = {
       your: {
         isHTTPS: yourSecurity.isHTTPS || false,
         hasCDN: !!yourSecurity.cdn,
@@ -370,6 +375,9 @@ const competitorService = {
         sitemapUrls: competitorData.puppeteer?.sitemap?.urlCount || 0
       }
     };
+    
+    console.log('🔍 compareSecurity result:', JSON.stringify(result, null, 2));
+    return result;
   },
 
   /**

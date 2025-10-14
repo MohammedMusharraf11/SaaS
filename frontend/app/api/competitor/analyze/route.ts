@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/utils/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { yourSite, competitorSite } = body
+    const { yourSite, competitorSite, email, forceRefresh } = body
 
     if (!yourSite || !competitorSite) {
       return NextResponse.json(
@@ -12,8 +13,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Get user email from session if not provided
+    let userEmail = email
+    if (!userEmail) {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      userEmail = user?.email
+    }
+
+    if (!userEmail) {
+      return NextResponse.json(
+        { error: 'User email is required. Please log in.' },
+        { status: 401 }
+      )
+    }
+
     // Call backend competitor analysis API
     console.log('Calling backend API for competitor analysis...');
+    console.log('Email:', userEmail);
+    console.log('Your Site:', yourSite);
+    console.log('Competitor:', competitorSite);
     
     const response = await fetch('http://localhost:3010/api/competitor/analyze', {
       method: 'POST',
@@ -21,20 +40,24 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        email: userEmail,
         yourSite,
         competitorSite,
+        forceRefresh: forceRefresh || false,
       }),
     })
 
     if (!response.ok) {
-      throw new Error('Backend analysis failed')
+      const errorData = await response.json().catch(() => ({}))
+      console.error('Backend error:', errorData)
+      throw new Error(errorData.error || 'Backend analysis failed')
     }
 
     const data = await response.json()
 
     return NextResponse.json({
       success: true,
-      data,
+      ...data,
     })
   } catch (error) {
     console.error('Competitor analysis error:', error)

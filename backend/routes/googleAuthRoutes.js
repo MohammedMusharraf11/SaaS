@@ -6,6 +6,7 @@ import { google } from 'googleapis';
 import crypto from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
+import oauthTokenService from '../services/oauthTokenService.js';
 
 const router = express.Router();
 
@@ -257,26 +258,34 @@ async function processOAuthTokens(code, email, res) {
       verified: userInfo.data.verified_email
     });
 
-    // Save tokens to file storage
-    await saveTokensToFile(email, {
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-      expires_at: tokens.expiry_date,
-      scope: tokens.scope,
-      user_info: userInfo.data
-    });
+    // Save tokens to database (persistent storage)
+    const saved = await oauthTokenService.storeTokens(email, tokens);
+    
+    if (saved) {
+      console.log('💾 ✅ Tokens saved to database for:', email);
+    } else {
+      console.warn('⚠️ Failed to save tokens to database, using file fallback');
+      // Fallback to file storage
+      await saveTokensToFile(email, {
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_at: tokens.expiry_date,
+        scope: tokens.scope,
+        user_info: userInfo.data
+      });
+    }
 
-    console.log('💾 Tokens saved successfully for user:', email);
+    console.log('🎉 OAuth connection established successfully for:', email);
 
     // Redirect back to frontend with success
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3002'}/dashboard?success=true`);
+    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3002'}/dashboard?success=true&connected=true`);
   } catch (error) {
     console.error('❌ Error processing tokens:', error);
     throw error;
   }
 }
 
-// Check OAuth status
+// Check OAuth connection status
 router.get('/auth/google/status', async (req, res) => {
   try {
     const { email } = req.query;
@@ -285,23 +294,14 @@ router.get('/auth/google/status', async (req, res) => {
       return res.status(400).json({ error: 'Email parameter is required' });
     }
 
-    const tokens = await getTokensFromFile(email);
+    console.log('🔍 Checking OAuth status for:', email);
+
+    // Get connection status from database
+    const status = await oauthTokenService.getConnectionStatus(email);
     
-    if (!tokens) {
-      return res.json({ connected: false, email });
-    }
-
-    // Check if token is expired
-    const now = Date.now();
-    const isExpired = tokens.expires_at && now >= tokens.expires_at;
-
     res.json({
-      connected: !isExpired,
-      email,
-      hasRefreshToken: !!tokens.refresh_token,
-      expiresAt: tokens.expires_at,
-      isExpired,
-      userInfo: tokens.user_info
+      ...status,
+      email
     });
 
   } catch (error) {
@@ -319,14 +319,21 @@ router.post('/auth/google/disconnect', async (req, res) => {
       return res.status(400).json({ error: 'Email parameter is required' });
     }
 
-    await deleteTokensFromFile(email);
-    console.log('🔓 Disconnected Google Analytics for:', email);
+    console.log('🔌 Disconnecting OAuth for:', email);
 
-    res.json({ success: true, message: 'Successfully disconnected' });
+    // Disconnect from database
+    const disconnected = await oauthTokenService.disconnect(email);
+    
+    if (disconnected) {
+      console.log('✅ Successfully disconnected OAuth for:', email);
+      res.json({ success: true, message: 'Successfully disconnected from Google' });
+    } else {
+      throw new Error('Failed to disconnect');
+    }
 
   } catch (error) {
     console.error('❌ Error disconnecting OAuth:', error);
-    res.status(500).json({ error: 'Failed to disconnect OAuth' });
+    res.status(500).json({ error: 'Failed to disconnect', details: error.message });
   }
 });
 

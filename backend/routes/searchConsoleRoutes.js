@@ -1,46 +1,12 @@
 import express from 'express';
 import { google } from 'googleapis';
-import fs from 'fs/promises';
-import path from 'path';
 import lighthouseService from '../services/lighthouseService.js';
 import gscBacklinksScraper from '../services/gscBacklinksScraper.js';
 import seoCacheService from '../services/seoCacheService.js';
+import seRankingService from '../services/seRankingService.js';
+import oauthTokenService from '../services/oauthTokenService.js';
 
 const router = express.Router();
-
-// File-based token storage functions
-const getTokensFilePath = () => path.join(process.cwd(), 'data', 'oauth_tokens.json');
-
-const getTokensFromFile = async (email) => {
-  try {
-    const filePath = getTokensFilePath();
-    const data = await fs.readFile(filePath, 'utf-8');
-    const allTokens = JSON.parse(data);
-    return allTokens[email] || null;
-  } catch {
-    return null;
-  }
-};
-
-const saveTokensToFile = async (email, tokens) => {
-  try {
-    const filePath = getTokensFilePath();
-    let allTokens = {};
-    
-    try {
-      const data = await fs.readFile(filePath, 'utf-8');
-      allTokens = JSON.parse(data);
-    } catch {
-      // File doesn't exist yet
-    }
-    
-    allTokens[email] = tokens;
-    await fs.writeFile(filePath, JSON.stringify(allTokens, null, 2));
-  } catch (error) {
-    console.error('Error saving tokens:', error);
-    throw error;
-  }
-};
 
 // Get user's Search Console data
 router.get('/search-console/data', async (req, res) => {
@@ -61,51 +27,32 @@ router.get('/search-console/data', async (req, res) => {
     if (forceRefresh !== 'true') {
       const cachedData = await seoCacheService.getSearchConsoleCache(email);
       if (cachedData) {
-        console.log('✅ Returning cached Search Console data');
+        console.log('✅ Returning cached Search Console data (SE Ranking API NOT called)');
+        console.log('💡 To test SE Ranking API, click "Refresh Analysis" button on frontend');
         return res.json(cachedData);
       }
     } else {
       console.log('🔄 Force refresh requested, skipping cache');
+      console.log('🔗 SE Ranking API will be called for fresh backlinks data');
     }
 
     // Cache miss or expired - fetch fresh data
     console.log('📡 Fetching fresh data from Google Search Console...');
 
-    // Get stored tokens for this user
-    const tokens = await getTokensFromFile(email);
+    // Get OAuth client with auto-refresh from oauthTokenService
+    const oauth2Client = await oauthTokenService.getOAuthClient(email);
     
-    if (!tokens) {
-      console.log('⚠️ No tokens found for user');
+    if (!oauth2Client) {
+      console.log('❌ User not authenticated or token refresh failed');
       return res.json({
         dataAvailable: false,
-        reason: 'Google account not connected. Please connect your account first.'
+        reason: 'Authentication token expired. Please reconnect your Google account.',
+        needsReconnect: true,
+        connected: false
       });
     }
 
-    // Create OAuth2 client with user's tokens
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
-    );
-
-    oauth2Client.setCredentials(tokens);
-
-    // Check if token needs refresh
-    if (tokens.expiry_date && tokens.expiry_date < Date.now()) {
-      console.log('🔄 Refreshing expired token...');
-      try {
-        const { credentials } = await oauth2Client.refreshAccessToken();
-        await saveTokensToFile(email, credentials);
-        oauth2Client.setCredentials(credentials);
-      } catch (refreshError) {
-        console.error('❌ Token refresh failed:', refreshError.message);
-        return res.json({
-          dataAvailable: false,
-          reason: 'Authentication expired. Please reconnect your Google account.'
-        });
-      }
-    }
+    console.log('✅ OAuth client ready');
 
     // Get Search Console service
     const searchConsole = google.searchconsole({
@@ -122,17 +69,37 @@ router.get('/search-console/data', async (req, res) => {
     } catch (error) {
       console.error('❌ Error fetching sites:', error.message);
       
+      // Check if it's an auth error
+      if (error.message?.includes('invalid_grant') || error.message?.includes('expired')) {
+        console.log('🔄 Token expired, attempting refresh...');
+        const refreshed = await oauthTokenService.refreshTokens(email);
+        if (!refreshed) {
+          return res.json({
+            dataAvailable: false,
+            reason: 'Authentication token expired. Please reconnect your Google account.',
+            needsReconnect: true,
+            connected: false
+          });
+        }
+        // Retry after refresh
+        return res.redirect(`/api/search-console/data?email=${email}&forceRefresh=${forceRefresh}`);
+      }
+      
       // Check if it's a permission issue
       if (error.code === 403 || error.message.includes('insufficient')) {
         return res.json({
           dataAvailable: false,
-          reason: 'Search Console permission not granted. Please reconnect your account with Search Console access.'
+          reason: 'Search Console permission not granted. Please reconnect your account with Search Console access.',
+          needsReconnect: true,
+          connected: false
         });
       }
       
       return res.json({
         dataAvailable: false,
-        reason: 'Unable to access Search Console. Please ensure you have Search Console set up and try reconnecting.'
+        reason: 'Unable to access Search Console. Please ensure you have Search Console set up and try reconnecting.',
+        needsReconnect: true,
+        connected: false
       });
     }
 
@@ -273,83 +240,125 @@ router.get('/search-console/data', async (req, res) => {
         position: row.position || 0
       }));
 
-    // Attempt to get backlinks/top linking pages using Puppeteer to scrape GSC web interface
-    // The public Search Console v1 API does not expose backlink lists, so we use web scraping
+    // Get backlinks data from SE Ranking API
     let backlinksResult = {
       available: false,
       topLinkingSites: [],
       topLinkingPages: [],
       totalBacklinks: 0,
       note: '',
-      requiresSetup: false,
-      sessionExpired: false
+      source: 'SE Ranking'
     };
 
-    try {
-      console.log('🔗 Attempting to scrape backlinks from GSC web interface...');
-      
-      // Use session-based Puppeteer scraping (more reliable than cookie auth)
-      const backlinksData = await gscBacklinksScraper.scrapeBacklinksWithSession(email, siteUrl, false);
-      
-      if (backlinksData && backlinksData.dataAvailable) {
-        backlinksResult.available = true;
-        backlinksResult.topLinkingSites = backlinksData.topLinkingSites || [];
-        backlinksResult.topLinkingPages = backlinksData.topLinkingPages || [];
-        backlinksResult.totalBacklinks = backlinksData.totalBacklinks || 0;
-        backlinksResult.note = backlinksData.note || '';
-        console.log(`✅ Successfully scraped ${backlinksResult.topLinkingSites.length} linking sites and ${backlinksResult.topLinkingPages.length} linking pages`);
-      } else {
-        // Check if setup is required
-        if (backlinksData?.requiresSetup) {
-          backlinksResult.requiresSetup = true;
-          backlinksResult.sessionExpired = backlinksData.sessionExpired || false;
-          backlinksResult.note = backlinksData.note || 'Backlinks scraper setup required.';
-          console.log('⚠️ Backlinks scraping requires first-time setup');
-        } else {
-          // Scraping failed or no data available
-          backlinksResult.note = backlinksData?.note || 'Backlink data not available via scraping. This property may not have backlinks yet, or GSC interface changed.';
-          console.log('⚠️ Backlinks scraping returned no data');
-        }
-      }
-    } catch (err) {
-      console.log('⚠️ Backlinks scraping failed:', err.message);
-      backlinksResult.note = `Backlinks scraping error: ${err.message}. Consider using third-party APIs (Ahrefs, Moz, Semrush) for reliable backlinks data.`;
-    }
-
-    console.log('✅ Search Console data retrieved successfully');
-    console.log(`📊 Stats: ${totalClicks} clicks, ${totalImpressions} impressions, ${organicTraffic} organic traffic`);
-
-    // Extract clean domain from siteUrl for Lighthouse analysis
+    // Extract clean domain from siteUrl for backlinks analysis
     let domain = siteUrl;
     
     // Handle different GSC URL formats
     if (domain.startsWith('sc-domain:')) {
       // Domain property format: sc-domain:example.com -> example.com
       domain = domain.replace('sc-domain:', '');
-      console.log(`📍 Extracted domain from sc-domain format: ${domain}`);
+      console.log(`� Extracted domain from sc-domain format: ${domain}`);
     } else {
       // URL prefix format: https://example.com/ -> example.com
       domain = domain.replace(/^https?:\/\//, '').replace(/\/$/, '');
       console.log(`📍 Extracted domain from URL format: ${domain}`);
     }
+
+    // Check SE Ranking cache first
+    const cachedBacklinks = await seoCacheService.getSERankingCache(email, domain);
     
+    if (cachedBacklinks && forceRefresh !== 'true') {
+      console.log('✅ Using cached SE Ranking backlinks data');
+      backlinksResult = cachedBacklinks;
+    } else {
+      if (forceRefresh === 'true') {
+        console.log('🔄 Force refresh: Fetching fresh SE Ranking data');
+      }
+      
+      try {
+        console.log('🔗 Fetching backlinks data from SE Ranking API...');
+        
+        // Fetch backlinks data from SE Ranking
+        const seRankingData = await seRankingService.getBacklinksSummary(domain);
+        
+        if (seRankingData && seRankingData.available) {
+          backlinksResult.available = true;
+          backlinksResult.topLinkingSites = seRankingData.topLinkingSites || [];
+          backlinksResult.topLinkingPages = seRankingData.topLinkingPages || [];
+          backlinksResult.totalBacklinks = seRankingData.totalBacklinks || 0;
+          backlinksResult.totalRefDomains = seRankingData.totalRefDomains || 0;
+          backlinksResult.metrics = seRankingData.metrics;
+          backlinksResult.domainMetrics = seRankingData.domainMetrics;
+          backlinksResult.topAnchors = seRankingData.topAnchors;
+          backlinksResult.topTlds = seRankingData.topTlds;
+          backlinksResult.topCountries = seRankingData.topCountries;
+          backlinksResult.note = `Data from SE Ranking API - ${seRankingData.totalBacklinks.toLocaleString()} backlinks from ${seRankingData.totalRefDomains.toLocaleString()} domains`;
+          console.log(`✅ SE Ranking: ${backlinksResult.totalBacklinks} backlinks from ${backlinksResult.totalRefDomains} domains`);
+          
+          // Cache the successful response (24 hours)
+          await seoCacheService.saveSERankingCache(email, domain, backlinksResult, 24);
+        } else {
+          backlinksResult.note = seRankingData?.reason || 'Backlink data not available from SE Ranking API';
+          console.log('⚠️ SE Ranking API returned no data');
+        }
+      } catch (err) {
+        console.log('⚠️ SE Ranking API failed:', err.message);
+        backlinksResult.note = `SE Ranking API error: ${err.message}`;
+        
+        // Try to use expired cache as fallback
+        const expiredCache = await seoCacheService.getSERankingCache(email, domain, true);
+        if (expiredCache) {
+          console.log('📦 Using expired SE Ranking cache as fallback');
+          backlinksResult = expiredCache;
+          backlinksResult.note = `${backlinksResult.note} (Using cached data due to API error)`;
+        }
+      }
+    }
+
+    console.log('✅ Search Console data retrieved successfully');
+    console.log(`📊 Stats: ${totalClicks} clicks, ${totalImpressions} impressions, ${organicTraffic} organic traffic`);
+
+    // Domain already extracted above for backlinks
     console.log(`🔦 Fetching Lighthouse data for domain: ${domain}`);
     
-    // Fetch Lighthouse/PageSpeed data using existing service
+    // Try to get cached Lighthouse data first (separate from Search Console cache)
     let lighthouseData = null;
-    try {
-      console.log('📞 Calling lighthouseService.analyzeSite...');
-      lighthouseData = await lighthouseService.analyzeSite(domain);
-      console.log('📬 Received response from lighthouseService:', lighthouseData ? 'DATA' : 'NULL');
-      if (lighthouseData) {
-        console.log(`✅ Lighthouse: Performance ${lighthouseData.categoryScores.performance}%`);
-      } else {
-        console.log(`⚠️ Lighthouse data not available`);
+    const cachedLighthouse = await seoCacheService.getLighthouseCache(email, domain);
+    
+    if (cachedLighthouse && forceRefresh !== 'true') {
+      console.log('✅ Using cached Lighthouse data');
+      lighthouseData = cachedLighthouse;
+    } else {
+      // Fetch fresh Lighthouse data
+      try {
+        console.log('📞 Calling lighthouseService.analyzeSite...');
+        lighthouseData = await lighthouseService.analyzeSite(domain);
+        console.log('📬 Received response from lighthouseService:', lighthouseData ? 'DATA' : 'NULL');
+        if (lighthouseData) {
+          console.log(`✅ Lighthouse: Performance ${lighthouseData.categoryScores.performance}%`);
+          // Save Lighthouse data to separate cache
+          await seoCacheService.saveLighthouseCache(email, domain, lighthouseData).catch(err => {
+            console.error('⚠️ Failed to cache Lighthouse data:', err);
+          });
+        } else {
+          console.log(`⚠️ Lighthouse data not available, trying to use old cache if exists`);
+          // If fresh fetch fails, try to use old cached data even if expired
+          const oldCache = await seoCacheService.getLighthouseCache(email, domain, true);
+          if (oldCache) {
+            console.log('🔄 Using expired Lighthouse cache as fallback');
+            lighthouseData = oldCache;
+          }
+        }
+      } catch (lighthouseError) {
+        console.error('❌ Lighthouse fetch failed:', lighthouseError.message);
+        console.error('❌ Error stack:', lighthouseError.stack);
+        // Try to use old cached data as fallback
+        const oldCache = await seoCacheService.getLighthouseCache(email, domain, true);
+        if (oldCache) {
+          console.log('🔄 Using expired Lighthouse cache as fallback after error');
+          lighthouseData = oldCache;
+        }
       }
-    } catch (lighthouseError) {
-      console.error('❌ Lighthouse fetch failed:', lighthouseError.message);
-      console.error('❌ Error stack:', lighthouseError.stack);
-      lighthouseData = null;
     }
 
     // Prepare response data
@@ -424,22 +433,16 @@ router.get('/search-console/sites', async (req, res) => {
       return res.status(400).json({ error: 'Email parameter is required' });
     }
 
-    const tokens = await getTokensFromFile(email);
+    // Get OAuth client with auto-refresh
+    const oauth2Client = await oauthTokenService.getOAuthClient(email);
     
-    if (!tokens) {
+    if (!oauth2Client) {
       return res.json({
         sites: [],
-        message: 'Google account not connected'
+        message: 'Google account not connected',
+        needsReconnect: true
       });
     }
-
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
-    );
-
-    oauth2Client.setCredentials(tokens);
 
     const searchConsole = google.searchconsole({
       version: 'v1',
@@ -458,6 +461,16 @@ router.get('/search-console/sites', async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error fetching sites:', error);
+    
+    // Check for auth errors
+    if (error.message?.includes('invalid_grant') || error.message?.includes('expired')) {
+      return res.json({
+        sites: [],
+        message: 'Authentication expired. Please reconnect.',
+        needsReconnect: true
+      });
+    }
+    
     res.status(500).json({ 
       error: 'Failed to fetch sites',
       sites: []
@@ -474,22 +487,16 @@ router.get('/search-console/backlinks', async (req, res) => {
       return res.status(400).json({ error: 'Email parameter is required' });
     }
 
-    const tokens = await getTokensFromFile(email);
+    // Get OAuth client with auto-refresh
+    const oauth2Client = await oauthTokenService.getOAuthClient(email);
     
-    if (!tokens) {
+    if (!oauth2Client) {
       return res.json({
         dataAvailable: false,
-        message: 'Google account not connected'
+        message: 'Google account not connected',
+        needsReconnect: true
       });
     }
-
-    const oauth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.GOOGLE_REDIRECT_URI
-    );
-
-    oauth2Client.setCredentials(tokens);
 
     const searchConsole = google.searchconsole({
       version: 'v1',

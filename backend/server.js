@@ -1,7 +1,10 @@
+import dotenv from 'dotenv';
+// Load environment variables FIRST before any other imports
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import dotenv from 'dotenv';
 
 import healthRoutes from './routes/healthRoutes.js';
 import googleAuthRoutes from './routes/googleAuthRoutes.js';
@@ -10,8 +13,6 @@ import userAnalyticsRoutes from './routes/userAnalyticsRoutes.js';
 import searchConsoleRoutes from './routes/searchConsoleRoutes.js';
 import trafficRoutes from './routes/trafficRoutes.js';
 import competitorRoutes from './routes/competitorRoutes.js';
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3010;
@@ -66,6 +67,7 @@ app.listen(PORT, () => {
   console.log(`📈 Analytics: http://localhost:${PORT}/api/analytics`);
   console.log(`🔍 Search Console: http://localhost:${PORT}/api/search-console`);
   console.log(`📊 Traffic: http://localhost:${PORT}/api/traffic`);
+  console.log(`🏆 Competitor: http://localhost:${PORT}/api/competitor`);
 });
 
 export default app;

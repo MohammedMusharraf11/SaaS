@@ -4,7 +4,16 @@ import { createClient } from '@/utils/supabase/server'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { yourSite, competitorSite, email, forceRefresh } = body
+    const { 
+      yourSite, 
+      competitorSite, 
+      email, 
+      forceRefresh,
+      yourInstagram,
+      competitorInstagram,
+      yourFacebook,
+      competitorFacebook 
+    } = body
 
     if (!yourSite || !competitorSite) {
       return NextResponse.json(
@@ -33,6 +42,10 @@ export async function POST(request: NextRequest) {
     console.log('Email:', userEmail);
     console.log('Your Site:', yourSite);
     console.log('Competitor:', competitorSite);
+    console.log('Your Instagram:', yourInstagram || 'Not provided');
+    console.log('Competitor Instagram:', competitorInstagram || 'Not provided');
+    console.log('Your Facebook:', yourFacebook || 'Not provided');
+    console.log('Competitor Facebook:', competitorFacebook || 'Not provided');
     
     const response = await fetch('http://localhost:3010/api/competitor/analyze', {
       method: 'POST',
@@ -43,6 +56,10 @@ export async function POST(request: NextRequest) {
         email: userEmail,
         yourSite,
         competitorSite,
+        yourInstagram,
+        competitorInstagram,
+        yourFacebook,
+        competitorFacebook,
         forceRefresh: forceRefresh || false,
       }),
     })

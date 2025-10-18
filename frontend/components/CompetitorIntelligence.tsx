@@ -6,13 +6,17 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Loader2, Search, TrendingUp, Target, AlertCircle, Clock, Plus } from 'lucide-react'
+import { Loader2, Search, TrendingUp, Target, AlertCircle, Clock, Plus, FileText } from 'lucide-react'
 import CompetitorResults from './CompetitorResults'
 import { createClient } from '@/utils/supabase/client'
 
 export default function CompetitorIntelligence() {
   const [userDomain, setUserDomain] = useState<string>('')
   const [competitorUrl, setCompetitorUrl] = useState('')
+  const [yourInstagram, setYourInstagram] = useState('')
+  const [competitorInstagram, setCompetitorInstagram] = useState('')
+  const [yourFacebook, setYourFacebook] = useState('')
+  const [competitorFacebook, setCompetitorFacebook] = useState('')
   const [loading, setLoading] = useState(false)
   const [loadingDomain, setLoadingDomain] = useState(true)
   const [error, setError] = useState('')
@@ -98,17 +102,34 @@ export default function CompetitorIntelligence() {
     setLoading(true)
 
     try {
+      const requestBody = {
+        email: userEmail,
+        yourSite: cleanUrl(userDomain),
+        competitorSite: cleanUrl(competitorUrl),
+        yourInstagram: yourInstagram || undefined,
+        competitorInstagram: competitorInstagram || undefined,
+        yourFacebook: yourFacebook || undefined,
+        competitorFacebook: competitorFacebook || undefined,
+        forceRefresh: false,
+      };
+      
+      console.log('🔍 Sending request to /api/competitor/analyze:');
+      console.log('   Request Body:', JSON.stringify(requestBody, null, 2));
+      console.log('   Instagram fields filled?', {
+        yourInstagram: !!yourInstagram,
+        competitorInstagram: !!competitorInstagram
+      });
+      console.log('   Facebook fields filled?', {
+        yourFacebook: !!yourFacebook,
+        competitorFacebook: !!competitorFacebook
+      });
+      
       const response = await fetch('/api/competitor/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email: userEmail,
-          yourSite: cleanUrl(userDomain),
-          competitorSite: cleanUrl(competitorUrl),
-          forceRefresh: false,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (!response.ok) {
@@ -116,6 +137,11 @@ export default function CompetitorIntelligence() {
       }
 
       const data = await response.json()
+      console.log('✅ Received response from /api/competitor/analyze:');
+      console.log('   Has instagram data:', !!data.yourSite?.instagram || !!data.competitorSite?.instagram || !!data.comparison?.instagram);
+      console.log('   Has facebook data:', !!data.yourSite?.facebook || !!data.competitorSite?.facebook || !!data.comparison?.facebook);
+      console.log('   Full response:', data);
+      
       setResults(data)
       setIsCached(data.cached || false)
     } catch (err) {
@@ -191,6 +217,86 @@ export default function CompetitorIntelligence() {
               </p>
             </div>
 
+            {/* Social Media Usernames - Optional */}
+            <div className="border-t pt-4 mt-6">
+              <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                📱 Social Media (Optional)
+                <span className="text-xs font-normal text-muted-foreground">
+                  - Add for engagement comparison
+                </span>
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Instagram Usernames */}
+                <div className="space-y-3">
+                  <Label htmlFor="yourInstagram" className="text-xs font-medium">
+                    📸 Your Instagram Username
+                  </Label>
+                  <Input
+                    id="yourInstagram"
+                    type="text"
+                    placeholder="your_username"
+                    value={yourInstagram}
+                    onChange={(e) => setYourInstagram(e.target.value)}
+                    disabled={loading}
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="competitorInstagram" className="text-xs font-medium">
+                    📸 Competitor Instagram Username
+                  </Label>
+                  <Input
+                    id="competitorInstagram"
+                    type="text"
+                    placeholder="competitor_username"
+                    value={competitorInstagram}
+                    onChange={(e) => setCompetitorInstagram(e.target.value)}
+                    disabled={loading}
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Facebook Usernames */}
+                <div className="space-y-3">
+                  <Label htmlFor="yourFacebook" className="text-xs font-medium">
+                    📘 Your Facebook Page (for Meta Ads Monitoring)
+                  </Label>
+                  <Input
+                    id="yourFacebook"
+                    type="text"
+                    placeholder="e.g., nike, cocacola, teslamotors"
+                    value={yourFacebook}
+                    onChange={(e) => setYourFacebook(e.target.value)}
+                    disabled={loading}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-gray-500">Enter Facebook page name to monitor Meta Ads (optional)</p>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="competitorFacebook" className="text-xs font-medium">
+                    📘 Competitor Facebook Page (for Meta Ads Monitoring)
+                  </Label>
+                  <Input
+                    id="competitorFacebook"
+                    type="text"
+                    placeholder="e.g., pepsi, redbull, adidas"
+                    value={competitorFacebook}
+                    onChange={(e) => setCompetitorFacebook(e.target.value)}
+                    disabled={loading}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-gray-500">Enter Facebook page name to monitor Meta Ads (optional)</p>
+                </div>
+              </div>
+              
+              <p className="text-xs text-muted-foreground mt-2">
+                💡 <strong>Instagram:</strong> Enter username from instagram.com/<strong>username</strong> | <strong>Facebook:</strong> Enter page name from facebook.com/<strong>pagename</strong>
+              </p>
+            </div>
+
             {/* Error Alert */}
             {error && (
               <Alert variant="destructive">
@@ -246,40 +352,101 @@ export default function CompetitorIntelligence() {
         </>
       )}
 
-      {/* Info Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">SEO Comparison</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">
-              Compare meta tags, keywords, and on-page SEO elements
-            </p>
-          </CardContent>
-        </Card>
+      {/* Redesigned Competitor Intelligence Dashboard (Traffic, Content Updates, Market Share, Paid Ads) */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {/* Top row: Traffic (left) and Content Updates (right) */}
+        <div className="space-y-4">
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Website Traffic (Referral)
+                </div>
+                <div className="text-xs text-muted-foreground">Your vs Competitor</div>
+              </CardTitle>
+              <CardDescription>
+                Organic & referral traffic trends (last 30 days)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-56 bg-white border border-dashed rounded-lg flex items-center justify-center text-sm text-muted-foreground">
+                Chart placeholder
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Performance Metrics</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">
-              Analyze page speed, load times, and Core Web Vitals
-            </p>
-          </CardContent>
-        </Card>
+          {/* Market Share card below Traffic */}
+          <Card className="bg-gradient-to-br from-white to-gray-50">
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Market Share (Visibility)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row items-center gap-4">
+                <div className="w-full md:w-1/2">
+                  <div className="h-40 flex items-center justify-center">
+                    <div className="w-36 h-36 rounded-full bg-white shadow flex items-center justify-center text-2xl font-bold">61%</div>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Your market share vs Competitor</p>
+                  <div className="mt-4">
+                    <Button className="bg-orange-500 text-white">View Full Report</Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Content Analysis</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">
-              Review content strategy, keyword usage, and structure
-            </p>
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Content Updates
+              </CardTitle>
+              <CardDescription>
+                Publishing frequency and content freshness
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-40 bg-white border border-dashed rounded-lg flex items-center justify-center text-sm text-muted-foreground">
+                Bar chart placeholder
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium">Paid Ads Monitoring</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-sm text-muted-foreground">
+                <table className="w-full text-left text-xs">
+                  <tbody>
+                    <tr>
+                      <td className="py-2">Visibility index</td>
+                      <td className="py-2">57% / 43%</td>
+                    </tr>
+                    <tr className="bg-gray-50">
+                      <td className="py-2">Active Ads (detected)</td>
+                      <td className="py-2">25 / 19</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2">Spend signal</td>
+                      <td className="py-2">High ($10-15k est.) / Medium ($7-10k)</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div className="mt-4">
+                  <Button className="bg-orange-500 text-white">View Full Report</Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   )

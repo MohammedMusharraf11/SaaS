@@ -12,7 +12,7 @@
     "@google-analytics/data": "^5.2.0",
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.75.0",
-    "axios": "^1.6.0",
+    "axios": "^1.12.2",
     "chrome-launcher": "^1.2.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -23,6 +23,7 @@
     "jsdom": "^27.0.0",
     "jspdf": "^3.0.3",
     "lighthouse": "^11.0.0",
+    "node-fetch": "^3.3.2",
     "puppeteer": "^24.23.0"
   },
   "devDependencies": {

@@ -4,6 +4,10 @@ import competitorAnalysisService from '../services/competitorAnalysisService.js'
 import seoCacheService from '../services/seoCacheService.js';
 import seRankingService from '../services/seRankingService.js';
 import geminiService from '../services/geminiService.js';
+import instagramEngagementService from '../services/instagramEngagementService.js';
+import facebookEngagementService from '../services/facebookEngagementService.js';
+import { getGoogleAdsMonitoring } from '../services/googleAdsMonitoringService.js';
+import { getMetaAdsMonitoring } from '../services/metaAdsMonitoringService.js';
 
 const router = express.Router();
 
@@ -14,13 +18,30 @@ const router = express.Router();
  */
 router.post('/analyze', async (req, res) => {
   try {
-    const { yourSite, competitorSite, email, forceRefresh } = req.body;
+    console.log('\n🔍 RAW REQUEST BODY:', JSON.stringify(req.body, null, 2));
+    
+    const { 
+      yourSite, 
+      competitorSite, 
+      email, 
+      forceRefresh, 
+      yourInstagram, 
+      competitorInstagram,
+      yourFacebook,
+      competitorFacebook 
+    } = req.body;
 
     console.log(`\n📊 Competitor Analysis Request:`);
     console.log(`   Your Site: ${yourSite}`);
     console.log(`   Competitor: ${competitorSite}`);
     console.log(`   Email: ${email}`);
     console.log(`   Force Refresh: ${forceRefresh || false}`);
+    console.log(`   Your Instagram: ${yourInstagram || 'Not provided'}`);
+    console.log(`   Competitor Instagram: ${competitorInstagram || 'Not provided'}`);
+    console.log(`   Your Facebook: ${yourFacebook || 'Not provided'}`);
+    console.log(`   Competitor Facebook: ${competitorFacebook || 'Not provided'}`);
+    console.log(`   Has Instagram? ${!!(yourInstagram || competitorInstagram)}`);
+    console.log(`   Has Facebook? ${!!(yourFacebook || competitorFacebook)}`);
 
     // Validation
     if (!yourSite || !competitorSite) {
@@ -55,6 +76,77 @@ router.post('/analyze', async (req, res) => {
         if (yourSiteData.pagespeed) {
           console.log('🔍 Your site pagespeed structure:', JSON.stringify(yourSiteData.pagespeed, null, 2));
         }
+
+        // Fetch fresh Google Ads monitoring data for cached competitor
+        console.log(`   🟢 Fetching Google Ads monitoring for cached competitor: ${competitorSite}`);
+        try {
+          const googleAdsData = await getGoogleAdsMonitoring(competitorSite);
+          if (googleAdsData && !googleAdsData.error) {
+            cachedResult.competitorSite.googleAds = googleAdsData;
+            console.log(`   ✅ Got competitor Google Ads data (Total Ads: ${googleAdsData.totalAds})`);
+          } else {
+            cachedResult.competitorSite.googleAds = { success: false, error: googleAdsData.error };
+            console.warn(`   ⚠️ Failed to fetch competitor Google Ads data:`, googleAdsData.error);
+          }
+        } catch (error) {
+          cachedResult.competitorSite.googleAds = { success: false, error: error.message };
+          console.warn(`   ⚠️ Exception in Google Ads monitoring:`, error.message);
+        }
+
+        // Fetch fresh Google Ads monitoring data for YOUR cached site
+        console.log(`   🟢 Fetching Google Ads monitoring for your cached site: ${yourSite}`);
+        try {
+          const yourGoogleAdsData = await getGoogleAdsMonitoring(yourSite);
+          if (yourGoogleAdsData && !yourGoogleAdsData.error) {
+            yourSiteData.googleAds = yourGoogleAdsData;
+            console.log(`   ✅ Got your site Google Ads data (Total Ads: ${yourGoogleAdsData.totalAds})`);
+          } else {
+            yourSiteData.googleAds = { success: false, error: yourGoogleAdsData.error };
+            console.warn(`   ⚠️ Failed to fetch your site Google Ads data:`, yourGoogleAdsData.error);
+          }
+        } catch (error) {
+          yourSiteData.googleAds = { success: false, error: error.message };
+          console.warn(`   ⚠️ Exception in your site Google Ads monitoring:`, error.message);
+        }
+
+
+        // Fetch fresh Meta Ads monitoring data for cached competitor (username only, no domain fallback)
+        if (competitorFacebook) {
+          console.log(`   🟣 Fetching Meta Ads monitoring for cached competitor (username only): ${competitorFacebook}`);
+          try {
+            const metaAdsData = await getMetaAdsMonitoring(competitorFacebook);
+            if (metaAdsData && !metaAdsData.error) {
+              cachedResult.competitorSite.metaAds = metaAdsData;
+              console.log(`   ✅ Got competitor Meta Ads data (Total Ads: ${metaAdsData.totalAds})`);
+            } else {
+              cachedResult.competitorSite.metaAds = { success: false, error: metaAdsData.error };
+              console.warn(`   ⚠️ Failed to fetch competitor Meta Ads data:`, metaAdsData.error);
+            }
+          } catch (error) {
+            cachedResult.competitorSite.metaAds = { success: false, error: error.message };
+            console.warn(`   ⚠️ Exception in Meta Ads monitoring:`, error.message);
+          }
+        } else {
+          cachedResult.competitorSite.metaAds = { success: false, error: 'No competitor Facebook username provided.' };
+          console.warn('   ⚠️ No competitor Facebook username provided for Meta Ads monitoring.');
+        }
+
+        // Fetch fresh Meta Ads monitoring data for YOUR cached site
+        const yourMetaQuery = yourFacebook || yourSite;
+        console.log(`   🟣 Fetching Meta Ads monitoring for your cached site: ${yourMetaQuery}`);
+        try {
+          const yourMetaAdsData = await getMetaAdsMonitoring(yourMetaQuery);
+          if (yourMetaAdsData && !yourMetaAdsData.error) {
+            yourSiteData.metaAds = yourMetaAdsData;
+            console.log(`   ✅ Got your site Meta Ads data (Total Ads: ${yourMetaAdsData.totalAds})`);
+          } else {
+            yourSiteData.metaAds = { success: false, error: yourMetaAdsData.error };
+            console.warn(`   ⚠️ Failed to fetch your site Meta Ads data:`, yourMetaAdsData.error);
+          }
+        } catch (error) {
+          yourSiteData.metaAds = { success: false, error: error.message };
+          console.warn(`   ⚠️ Exception in your site Meta Ads monitoring:`, error.message);
+        }
         
         // Reconstruct full result with comparison
         const fullResult = {
@@ -77,6 +169,7 @@ router.post('/analyze', async (req, res) => {
         
         console.log('🔍 Final yourSite.pagespeed in response:', fullResult.yourSite.pagespeed ? 'EXISTS' : 'MISSING');
         console.log('🔍 Generated comparison.seo:', JSON.stringify(fullResult.comparison.seo, null, 2));
+        console.log('🔍 Ads data included - Google:', !!fullResult.competitorSite.googleAds, 'Meta:', !!fullResult.competitorSite.metaAds);
         
         return res.json(fullResult);
       }
@@ -88,10 +181,10 @@ router.post('/analyze', async (req, res) => {
     console.log('📭 No cache found, running fresh competitor analysis...');
 
     // Get YOUR site data from existing caches (Lighthouse, SE Ranking, etc.)
-    const yourSiteData = await getCachedUserSiteData(email, yourSite);
+    const yourSiteData = await getCachedUserSiteData(email, yourSite, yourInstagram, yourFacebook);
     
-    // Fetch fresh data for competitor (Lighthouse, PageSpeed, Technical SEO)
-    const competitorData = await competitorService.analyzeSingleSite(competitorSite);
+    // Fetch fresh data for competitor (Lighthouse, PageSpeed, Technical SEO, Traffic, Content Updates)
+    const competitorData = await competitorService.analyzeSingleSite(competitorSite, null, false);
 
     // Fetch SE Ranking backlinks for competitor (fresh data)
     console.log(`   🔗 Fetching SE Ranking backlinks for competitor: ${competitorSite}`);
@@ -99,6 +192,118 @@ router.post('/analyze', async (req, res) => {
     if (competitorBacklinks) {
       competitorData.backlinks = competitorBacklinks;
       console.log(`   ✅ Got competitor backlinks data`);
+    }
+
+    // Fetch Instagram data for competitor if username provided
+    // Fetch Instagram data for competitor if username provided
+    if (competitorInstagram) {
+      console.log(`   📸 Fetching Instagram engagement for competitor: ${competitorInstagram}`);
+      try {
+        const instagramData = await instagramEngagementService.getCompleteEngagementMetrics(competitorInstagram);
+        if (instagramData.success) {
+          competitorData.instagram = instagramData;
+          console.log(`   ✅ Got competitor Instagram data (${instagramData.profile.followers.toLocaleString()} followers)`);
+        }
+      } catch (error) {
+        console.warn(`   ⚠️ Failed to fetch competitor Instagram data:`, error.message);
+      }
+    }
+
+    // Fetch Facebook data for competitor if page provided
+    if (competitorFacebook) {
+      console.log(`   📘 Fetching Facebook engagement for competitor: ${competitorFacebook}`);
+      try {
+        const facebookData = await facebookEngagementService.getFullEngagementAnalysis(competitorFacebook);
+        if (facebookData) {
+          competitorData.facebook = {
+            success: true,
+            ...facebookData
+          };
+          console.log(`   ✅ Got competitor Facebook data (${facebookData.metrics.followers.toLocaleString()} followers)`);
+        }
+      } catch (error) {
+        console.warn(`   ⚠️ Failed to fetch competitor Facebook data:`, error.message);
+      }
+    }
+
+    // Fetch Google Ads monitoring data for competitor
+    console.log(`   🟢 Fetching Google Ads monitoring for competitor: ${competitorSite}`);
+    try {
+      const googleAdsData = await getGoogleAdsMonitoring(competitorSite);
+      if (googleAdsData && !googleAdsData.error) {
+        competitorData.googleAds = googleAdsData;
+        console.log(`   ✅ Got competitor Google Ads data (Total Ads: ${googleAdsData.totalAds})`);
+      } else {
+        competitorData.googleAds = { success: false, error: googleAdsData.error };
+        console.warn(`   ⚠️ Failed to fetch competitor Google Ads data:`, googleAdsData.error);
+      }
+    } catch (error) {
+      competitorData.googleAds = { success: false, error: error.message };
+      console.warn(`   ⚠️ Exception in Google Ads monitoring:`, error.message);
+    }
+
+    // Fetch Google Ads monitoring data for YOUR site
+    console.log(`   🟢 Fetching Google Ads monitoring for your site: ${yourSite}`);
+    try {
+      const yourGoogleAdsData = await getGoogleAdsMonitoring(yourSite);
+      if (yourGoogleAdsData && !yourGoogleAdsData.error) {
+        yourSiteData.googleAds = yourGoogleAdsData;
+        console.log(`   ✅ Got your site Google Ads data (Total Ads: ${yourGoogleAdsData.totalAds})`);
+      } else {
+        yourSiteData.googleAds = { success: false, error: yourGoogleAdsData.error };
+        console.warn(`   ⚠️ Failed to fetch your site Google Ads data:`, yourGoogleAdsData.error);
+      }
+    } catch (error) {
+      yourSiteData.googleAds = { success: false, error: error.message };
+      console.warn(`   ⚠️ Exception in your site Google Ads monitoring:`, error.message);
+    }
+
+
+    // Fetch Meta Ads monitoring data for competitor (using Facebook username only)
+    console.log(`[MetaAds] Competitor Facebook username passed:`, competitorFacebook);
+    if (competitorFacebook) {
+      console.log(`   🟣 Fetching Meta Ads monitoring for competitor (username only): ${competitorFacebook}`);
+      try {
+        const metaAdsData = await getMetaAdsMonitoring(competitorFacebook);
+        console.log(`[MetaAds] Result for competitor username '${competitorFacebook}':`, metaAdsData);
+        if (metaAdsData && !metaAdsData.error) {
+          competitorData.metaAds = metaAdsData;
+          console.log(`   ✅ Got competitor Meta Ads data (Total Ads: ${metaAdsData.totalAds})`);
+        } else {
+          competitorData.metaAds = { success: false, error: metaAdsData.error };
+          console.warn(`   ⚠️ Failed to fetch competitor Meta Ads data:`, metaAdsData.error);
+        }
+      } catch (error) {
+        competitorData.metaAds = { success: false, error: error.message };
+        console.warn(`   ⚠️ Exception in Meta Ads monitoring:`, error.message);
+      }
+    } else {
+      competitorData.metaAds = { success: false, error: 'No competitor Facebook username provided.' };
+      console.warn('   ⚠️ No competitor Facebook username provided for Meta Ads monitoring.');
+    }
+
+
+    // Fetch Meta Ads monitoring data for YOUR site (using Facebook username only)
+    console.log(`[MetaAds] Your Facebook username passed:`, yourFacebook);
+    if (yourFacebook) {
+      console.log(`   🟣 Fetching Meta Ads monitoring for your site (username only): ${yourFacebook}`);
+      try {
+        const yourMetaAdsData = await getMetaAdsMonitoring(yourFacebook);
+        console.log(`[MetaAds] Result for your username '${yourFacebook}':`, yourMetaAdsData);
+        if (yourMetaAdsData && !yourMetaAdsData.error) {
+          yourSiteData.metaAds = yourMetaAdsData;
+          console.log(`   ✅ Got your site Meta Ads data (Total Ads: ${yourMetaAdsData.totalAds})`);
+        } else {
+          yourSiteData.metaAds = { success: false, error: yourMetaAdsData.error };
+          console.warn(`   ⚠️ Failed to fetch your site Meta Ads data:`, yourMetaAdsData.error);
+        }
+      } catch (error) {
+        yourSiteData.metaAds = { success: false, error: error.message };
+        console.warn(`   ⚠️ Exception in your site Meta Ads monitoring:`, error.message);
+      }
+    } else {
+      yourSiteData.metaAds = { success: false, error: 'No Facebook username provided for your site.' };
+      console.warn('   ⚠️ No Facebook username provided for your site Meta Ads monitoring.');
     }
 
     // Build comparison result
@@ -123,6 +328,10 @@ router.post('/analyze', async (req, res) => {
     console.log('📊 Result structure:');
     console.log('   Your Site has backlinks?', !!result.yourSite.backlinks);
     console.log('   Competitor has backlinks?', !!result.competitorSite.backlinks);
+    console.log('   Your Site has traffic?', !!result.yourSite.traffic);
+    console.log('   Competitor has traffic?', !!result.competitorSite.traffic);
+    console.log('   Your Site has content updates?', !!result.yourSite.contentUpdates);
+    console.log('   Competitor has content updates?', !!result.competitorSite.contentUpdates);
     if (result.yourSite.backlinks) {
       console.log('   Your Site backlinks keys:', Object.keys(result.yourSite.backlinks));
       console.log('   Your Site totalBacklinks:', result.yourSite.backlinks.totalBacklinks || result.yourSite.backlinks.total_backlinks);
@@ -133,6 +342,14 @@ router.post('/analyze', async (req, res) => {
 
     // Cache the complete comparison (7 days)
     await seoCacheService.saveCompetitorCache(email, yourSite, competitorSite, result, 7);
+
+    console.log('📊 FINAL RESULT STRUCTURE:');
+    console.log('   yourSite.traffic:', result.yourSite.traffic ? 'EXISTS' : 'MISSING');
+    console.log('   competitorSite.traffic:', result.competitorSite.traffic ? 'EXISTS' : 'MISSING');
+    console.log('   yourSite.contentUpdates:', result.yourSite.contentUpdates ? 'EXISTS' : 'MISSING');
+    console.log('   competitorSite.contentUpdates:', result.competitorSite.contentUpdates ? 'EXISTS' : 'MISSING');
+    console.log('   comparison.traffic:', result.comparison.traffic ? 'EXISTS' : 'MISSING');
+    console.log('   comparison.contentUpdates:', result.comparison.contentUpdates ? 'EXISTS' : 'MISSING');
 
     res.json(result);
 
@@ -200,7 +417,7 @@ router.get('/health', (req, res) => {
  * Get cached data for user's own site (avoids redundant API calls)
  * Pulls from Lighthouse cache, SE Ranking cache, etc.
  */
-async function getCachedUserSiteData(email, domain) {
+async function getCachedUserSiteData(email, domain, instagramUsername = null, facebookPage = null) {
   console.log(`   📦 Fetching cached data for user site: ${domain}`);
   
   const siteData = {};
@@ -332,6 +549,98 @@ async function getCachedUserSiteData(email, domain) {
     console.warn(`   ⚠️ Error fetching cached user site data:`, error.message);
   }
 
+  // STEP 4: Get traffic data for user's site (GA/GSC or SimilarWeb)
+  console.log(`   📊 Fetching traffic data for user site...`);
+  try {
+    const userAnalyticsService = (await import('../services/userAnalyticsService.js')).default;
+    const similarWebTrafficService = (await import('../services/similarWebTrafficService.js')).default;
+    
+    const gaData = await userAnalyticsService.getUserAnalyticsData(email);
+    if (gaData && gaData.dataAvailable && gaData.sessions !== undefined) {
+      // Transform GA data to match SimilarWeb structure
+      const totalSessions = gaData.sessions || 0;
+      const avgPageViews = gaData.pageViews / totalSessions || 0;
+      
+      siteData.traffic = {
+        success: true,
+        source: 'google_analytics',
+        timestamp: new Date().toISOString(),
+        metrics: {
+          monthlyVisits: totalSessions,
+          avgVisitDuration: gaData.avgSessionDuration || 0, // in seconds
+          pagesPerVisit: avgPageViews.toFixed(2),
+          bounceRate: gaData.bounceRate ? (gaData.bounceRate * 100).toFixed(1) + '%' : 'N/A',
+          trafficSources: {
+            // GA doesn't provide source breakdown in basic call
+            direct: 'N/A',
+            search: 'N/A',
+            social: 'N/A',
+            referral: 'N/A',
+            mail: 'N/A',
+            paid: 'N/A'
+          }
+        }
+      };
+      console.log(`   ✅ Got traffic data from Google Analytics (${totalSessions} sessions)`);
+    } else {
+      // Fallback to SimilarWeb
+      console.log(`   ℹ️ GA data not available, trying SimilarWeb...`);
+      const similarWebData = await similarWebTrafficService.getCompetitorTraffic(domain);
+      if (similarWebData && similarWebData.success) {
+        siteData.traffic = similarWebData;
+        console.log(`   ✅ Got traffic data from SimilarWeb (fallback)`);
+      } else {
+        console.log(`   ⚠️ No traffic data available from any source`);
+      }
+    }
+  } catch (error) {
+    console.warn(`   ⚠️ Failed to fetch traffic data:`, error.message);
+  }
+
+  // STEP 5: Get content updates data for user's site
+  console.log(`   📝 Fetching content updates for user site...`);
+  try {
+    const contentUpdatesService = (await import('../services/contentUpdatesService.js')).default;
+    const contentData = await contentUpdatesService.getContentUpdates(domain);
+    if (contentData) {
+      siteData.contentUpdates = contentData;
+      console.log(`   ✅ Got content updates data`);
+    }
+  } catch (error) {
+    console.warn(`   ⚠️ Failed to fetch content updates:`, error.message);
+  }
+
+  // STEP 6: Get Instagram engagement data if username provided
+  if (instagramUsername) {
+    console.log(`   📸 Fetching Instagram engagement for: ${instagramUsername}`);
+    try {
+      const instagramData = await instagramEngagementService.getCompleteEngagementMetrics(instagramUsername);
+      if (instagramData.success) {
+        siteData.instagram = instagramData;
+        console.log(`   ✅ Got Instagram engagement data (${instagramData.profile.followers.toLocaleString()} followers)`);
+      }
+    } catch (error) {
+      console.warn(`   ⚠️ Failed to fetch Instagram data:`, error.message);
+    }
+  }
+
+  // STEP 7: Get Facebook engagement data if page provided
+  if (facebookPage) {
+    console.log(`   📘 Fetching Facebook engagement for: ${facebookPage}`);
+    try {
+      const facebookData = await facebookEngagementService.getFullEngagementAnalysis(facebookPage);
+      if (facebookData) {
+        siteData.facebook = {
+          success: true,
+          ...facebookData
+        };
+        console.log(`   ✅ Got Facebook engagement data (${facebookData.metrics.followers.toLocaleString()} followers)`);
+      }
+    } catch (error) {
+      console.warn(`   ⚠️ Failed to fetch Facebook data:`, error.message);
+    }
+  }
+
   // Summary of what we found
   console.log(`   📊 Cached data summary:`);
   console.log(`      - Lighthouse: ${siteData.lighthouse ? '✅' : '❌'}`);
@@ -339,11 +648,15 @@ async function getCachedUserSiteData(email, domain) {
   console.log(`      - Technical SEO: ${siteData.technicalSEO ? '✅' : '❌'}`);
   console.log(`      - Puppeteer: ${siteData.puppeteer ? '✅' : '❌'}`);
   console.log(`      - Backlinks: ${siteData.backlinks ? '✅' : '❌'}`);
+  console.log(`      - Traffic: ${siteData.traffic ? '✅' : '❌'}`);
+  console.log(`      - Content Updates: ${siteData.contentUpdates ? '✅' : '❌'}`);
+  console.log(`      - Instagram: ${siteData.instagram ? '✅' : '❌'}`);
+  console.log(`      - Facebook: ${siteData.facebook ? '✅' : '❌'}`);
 
   // If no cached data found at all, fetch everything
   if (Object.keys(siteData).length === 0) {
     console.log(`   📭 No cached data found, will fetch fresh data`);
-    const freshData = await competitorService.analyzeSingleSite(domain);
+    const freshData = await competitorService.analyzeSingleSite(domain, email, true);
     return freshData;
   }
 
@@ -387,6 +700,10 @@ function generateComparison(yourData, competitorData) {
     performance: null,
     seo: null,
     backlinks: null,
+    traffic: null,
+    contentUpdates: null,
+    instagram: null, // NEW: Instagram engagement
+    facebook: null, // NEW: Facebook engagement
     summary: []
   };
 
@@ -593,17 +910,243 @@ function generateComparison(yourData, competitorData) {
       };
     }
 
+    // NEW: Compare Traffic
+    if (yourData.traffic || competitorData.traffic) {
+      const yourTraffic = yourData.traffic || {};
+      const compTraffic = competitorData.traffic || {};
+      
+      const yourVisits = typeof yourTraffic.metrics?.monthlyVisits === 'number' 
+        ? yourTraffic.metrics.monthlyVisits : 0;
+      const compVisits = typeof compTraffic.metrics?.monthlyVisits === 'number' 
+        ? compTraffic.metrics.monthlyVisits : 0;
+      
+      comparison.traffic = {
+        your: {
+          source: yourTraffic.source || 'N/A',
+          monthlyVisits: yourTraffic.metrics?.monthlyVisits || 'N/A',
+          avgVisitDuration: yourTraffic.metrics?.avgVisitDuration || 'N/A',
+          pagesPerVisit: yourTraffic.metrics?.pagesPerVisit || 'N/A',
+          bounceRate: yourTraffic.metrics?.bounceRate || 'N/A',
+          trafficSources: yourTraffic.metrics?.trafficSources || {}
+        },
+        competitor: {
+          source: compTraffic.source || 'N/A',
+          monthlyVisits: compTraffic.metrics?.monthlyVisits || 'N/A',
+          avgVisitDuration: compTraffic.metrics?.avgVisitDuration || 'N/A',
+          pagesPerVisit: compTraffic.metrics?.pagesPerVisit || 'N/A',
+          bounceRate: compTraffic.metrics?.bounceRate || 'N/A',
+          trafficSources: compTraffic.metrics?.trafficSources || {}
+        },
+        difference: compVisits - yourVisits,
+        winner: yourVisits > compVisits ? 'yours' : compVisits > yourVisits ? 'competitor' : 'tie'
+      };
+
+      if (yourVisits > 0 && compVisits > 0) {
+        if (yourVisits > compVisits) {
+          comparison.summary.push('📊 Higher website traffic than competitor');
+        } else if (compVisits > yourVisits) {
+          comparison.summary.push('📊 Competitor has more website traffic');
+        }
+      }
+    }
+
+    // NEW: Compare Content Updates
+    if (yourData.contentUpdates || competitorData.contentUpdates) {
+      const yourContent = yourData.contentUpdates || {};
+      const compContent = competitorData.contentUpdates || {};
+      
+      comparison.contentUpdates = {
+        your: {
+          hasRSS: yourContent.rss?.found || false,
+          hasSitemap: yourContent.sitemap?.found || false,
+          recentPosts: yourContent.rss?.recentPosts?.length || 0,
+          totalPosts: yourContent.rss?.totalPosts || 0,
+          lastUpdated: yourContent.contentActivity?.lastContentDate || 'Unknown',
+          updateFrequency: yourContent.contentActivity?.updateFrequency || 'unknown',
+          averagePostsPerMonth: yourContent.contentActivity?.averagePostsPerMonth || 0,
+          isActive: yourContent.contentActivity?.isActive || false,
+          contentVelocity: yourContent.contentActivity?.contentVelocity || 'unknown'
+        },
+        competitor: {
+          hasRSS: compContent.rss?.found || false,
+          hasSitemap: compContent.sitemap?.found || false,
+          recentPosts: compContent.rss?.recentPosts?.length || 0,
+          totalPosts: compContent.rss?.totalPosts || 0,
+          lastUpdated: compContent.contentActivity?.lastContentDate || 'Unknown',
+          updateFrequency: compContent.contentActivity?.updateFrequency || 'unknown',
+          averagePostsPerMonth: compContent.contentActivity?.averagePostsPerMonth || 0,
+          isActive: compContent.contentActivity?.isActive || false,
+          contentVelocity: compContent.contentActivity?.contentVelocity || 'unknown'
+        },
+        winner: (yourContent.contentActivity?.averagePostsPerMonth || 0) > 
+                (compContent.contentActivity?.averagePostsPerMonth || 0) ? 'yours' : 'competitor'
+      };
+
+      const yourPosts = yourContent.contentActivity?.averagePostsPerMonth || 0;
+      const compPosts = compContent.contentActivity?.averagePostsPerMonth || 0;
+      
+      if (yourPosts > 0 && compPosts > 0) {
+        if (yourPosts > compPosts) {
+          comparison.summary.push('📝 More active content publishing');
+        } else if (compPosts > yourPosts) {
+          comparison.summary.push('📝 Competitor publishes content more frequently');
+        }
+      }
+    }
+
+    // NEW: Compare Instagram Engagement
+    if (yourData.instagram || competitorData.instagram) {
+      const yourInsta = yourData.instagram || {};
+      const compInsta = competitorData.instagram || {};
+      
+      const yourFollowers = yourInsta.profile?.followers || 0;
+      const compFollowers = compInsta.profile?.followers || 0;
+      const yourInteractions = yourInsta.engagement?.summary?.avgInteractionsPerPost || 0;
+      const compInteractions = compInsta.engagement?.summary?.avgInteractionsPerPost || 0;
+      const yourEngagementRate = yourInsta.profile?.avgEngagementRate || 0;
+      const compEngagementRate = compInsta.profile?.avgEngagementRate || 0;
+      
+      comparison.instagram = {
+        your: {
+          username: yourInsta.profile?.username || 'N/A',
+          followers: yourFollowers,
+          verified: yourInsta.profile?.verified || false,
+          avgInteractions: yourInteractions,
+          avgLikes: yourInsta.engagement?.summary?.avgLikesPerPost || 0,
+          avgComments: yourInsta.engagement?.summary?.avgCommentsPerPost || 0,
+          engagementRate: (yourEngagementRate * 100).toFixed(2) + '%',
+          qualityScore: yourInsta.profile?.qualityScore ? (yourInsta.profile.qualityScore * 100).toFixed(1) + '%' : 'N/A',
+          consistency: yourInsta.engagement?.summary?.consistency || 'N/A',
+          bestPostingDays: yourInsta.engagement?.postingPattern?.bestDays?.slice(0, 3).map(d => d.day) || [],
+          bestPostingHours: yourInsta.engagement?.postingPattern?.bestHours?.slice(0, 3).map(h => h.hour) || []
+        },
+        competitor: {
+          username: compInsta.profile?.username || 'N/A',
+          followers: compFollowers,
+          verified: compInsta.profile?.verified || false,
+          avgInteractions: compInteractions,
+          avgLikes: compInsta.engagement?.summary?.avgLikesPerPost || 0,
+          avgComments: compInsta.engagement?.summary?.avgCommentsPerPost || 0,
+          engagementRate: (compEngagementRate * 100).toFixed(2) + '%',
+          qualityScore: compInsta.profile?.qualityScore ? (compInsta.profile.qualityScore * 100).toFixed(1) + '%' : 'N/A',
+          consistency: compInsta.engagement?.summary?.consistency || 'N/A',
+          bestPostingDays: compInsta.engagement?.postingPattern?.bestDays?.slice(0, 3).map(d => d.day) || [],
+          bestPostingHours: compInsta.engagement?.postingPattern?.bestHours?.slice(0, 3).map(h => h.hour) || []
+        },
+        winner: {
+          followers: yourFollowers > compFollowers ? 'yours' : compFollowers > yourFollowers ? 'competitor' : 'tie',
+          engagement: yourEngagementRate > compEngagementRate ? 'yours' : compEngagementRate > yourEngagementRate ? 'competitor' : 'tie',
+          interactions: yourInteractions > compInteractions ? 'yours' : compInteractions > yourInteractions ? 'competitor' : 'tie'
+        }
+      };
+
+      // Add to summary
+      if (yourFollowers > 0 || compFollowers > 0) {
+        if (yourFollowers > compFollowers) {
+          comparison.summary.push('📸 Larger Instagram following');
+        } else if (compFollowers > yourFollowers) {
+          comparison.summary.push('📸 Competitor has larger Instagram following');
+        }
+        
+        if (yourEngagementRate > compEngagementRate) {
+          comparison.summary.push('💬 Higher Instagram engagement rate');
+        } else if (compEngagementRate > yourEngagementRate) {
+          comparison.summary.push('💬 Competitor has higher Instagram engagement');
+        }
+      }
+    }
+
+    // NEW: Compare Facebook Engagement
+    if (yourData.facebook || competitorData.facebook) {
+      const yourFB = yourData.facebook || {};
+      const compFB = competitorData.facebook || {};
+      
+      const yourFollowers = yourFB.metrics?.followers || 0;
+      const compFollowers = compFB.metrics?.followers || 0;
+      const yourLikes = yourFB.metrics?.likes || 0;
+      const compLikes = compFB.metrics?.likes || 0;
+      const yourEngagementRate = yourFB.metrics?.engagementRate || 0;
+      const compEngagementRate = compFB.metrics?.engagementRate || 0;
+      const yourTalkingAbout = yourFB.metrics?.talkingAbout || 0;
+      const compTalkingAbout = compFB.metrics?.talkingAbout || 0;
+      
+      comparison.facebook = {
+        your: {
+          pageName: yourFB.profile?.name || 'N/A',
+          username: yourFB.profile?.username || 'N/A',
+          followers: yourFollowers,
+          likes: yourLikes,
+          talkingAbout: yourTalkingAbout,
+          engagementRate: yourEngagementRate.toFixed(2) + '%',
+          rating: yourFB.profile?.rating || 0,
+          ratingPercent: yourFB.profile?.ratingPercent || 0,
+          ratingCount: yourFB.profile?.ratingCount || 0,
+          category: yourFB.profile?.category || 'N/A',
+          activityLevel: yourFB.metrics?.activityLevel || 'Unknown',
+          estimatedPostsPerWeek: yourFB.metrics?.estimatedPostsPerWeek || 0,
+          link: yourFB.profile?.link || ''
+        },
+        competitor: {
+          pageName: compFB.profile?.name || 'N/A',
+          username: compFB.profile?.username || 'N/A',
+          followers: compFollowers,
+          likes: compLikes,
+          talkingAbout: compTalkingAbout,
+          engagementRate: compEngagementRate.toFixed(2) + '%',
+          rating: compFB.profile?.rating || 0,
+          ratingPercent: compFB.profile?.ratingPercent || 0,
+          ratingCount: compFB.profile?.ratingCount || 0,
+          category: compFB.profile?.category || 'N/A',
+          activityLevel: compFB.metrics?.activityLevel || 'Unknown',
+          estimatedPostsPerWeek: compFB.metrics?.estimatedPostsPerWeek || 0,
+          link: compFB.profile?.link || ''
+        },
+        winner: {
+          followers: yourFollowers > compFollowers ? 'yours' : compFollowers > yourFollowers ? 'competitor' : 'tie',
+          likes: yourLikes > compLikes ? 'yours' : compLikes > yourLikes ? 'competitor' : 'tie',
+          engagement: yourEngagementRate > compEngagementRate ? 'yours' : compEngagementRate > yourEngagementRate ? 'competitor' : 'tie',
+          talkingAbout: yourTalkingAbout > compTalkingAbout ? 'yours' : compTalkingAbout > yourTalkingAbout ? 'competitor' : 'tie'
+        }
+      };
+
+      // Add to summary
+      if (yourFollowers > 0 || compFollowers > 0) {
+        if (yourFollowers > compFollowers) {
+          comparison.summary.push('📘 Larger Facebook following');
+        } else if (compFollowers > yourFollowers) {
+          comparison.summary.push('📘 Competitor has larger Facebook following');
+        }
+        
+        if (yourEngagementRate > compEngagementRate) {
+          comparison.summary.push('👍 Higher Facebook engagement rate');
+        } else if (compEngagementRate > yourEngagementRate) {
+          comparison.summary.push('👍 Competitor has higher Facebook engagement');
+        }
+        
+        if (yourTalkingAbout > compTalkingAbout) {
+          comparison.summary.push('💬 More people talking about your Facebook page');
+        } else if (compTalkingAbout > yourTalkingAbout) {
+          comparison.summary.push('💬 More people talking about competitor\'s Facebook page');
+        }
+      }
+    }
+
     // Overall winner
     const wins = [
       comparison.performance?.winner,
       comparison.seo?.winner,
-      comparison.backlinks?.winner
+      comparison.backlinks?.winner,
+      comparison.traffic?.winner,
+      comparison.contentUpdates?.winner,
+      comparison.instagram?.winner?.engagement // Instagram engagement as tiebreaker
     ].filter(w => w === 'yours').length;
 
     const losses = [
       comparison.performance?.winner,
       comparison.seo?.winner,
-      comparison.backlinks?.winner
+      comparison.backlinks?.winner,
+      comparison.traffic?.winner, // NEW
+      comparison.contentUpdates?.winner // NEW
     ].filter(w => w === 'competitor').length;
 
     if (wins > losses) {

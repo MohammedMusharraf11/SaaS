@@ -10,15 +10,13 @@ dotenv.config();
 import { createClient } from '@supabase/supabase-js';
 import { google } from 'googleapis';
 
-// Validate environment variables
+// Validate environment variables (optional for some services)
 if (!process.env.SUPABASE_URL) {
-  console.error('❌ SUPABASE_URL is not set in environment variables');
-  throw new Error('SUPABASE_URL environment variable is required');
+  console.warn('⚠️ SUPABASE_URL is not set in environment variables - OAuth features will be limited');
 }
 
 if (!process.env.SUPABASE_SERVICE_KEY) {
-  console.error('❌ SUPABASE_SERVICE_KEY is not set in environment variables');
-  throw new Error('SUPABASE_SERVICE_KEY environment variable is required');
+  console.warn('⚠️ SUPABASE_SERVICE_KEY is not set in environment variables - OAuth features will be limited');
 }
 
 console.log('🔍 Supabase Config Check:');

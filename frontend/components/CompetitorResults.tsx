@@ -71,6 +71,39 @@ export default function CompetitorResults({ data }: CompetitorResultsProps) {
   }
 
   const { yourSite, competitorSite, comparison } = actualData
+  // DEBUG: Log full competitorSite object to verify ads data
+  console.log('COMPETITOR_SITE FULL DATA:', competitorSite);
+
+  // DEBUG: Log what data we have
+  console.log('🔍 CompetitorResults Debug:')
+  console.log('   yourSite.traffic:', yourSite?.traffic ? 'EXISTS' : 'MISSING')
+  console.log('   competitorSite.traffic:', competitorSite?.traffic ? 'EXISTS' : 'MISSING')
+  console.log('   yourSite.contentUpdates:', yourSite?.contentUpdates ? 'EXISTS' : 'MISSING')
+  console.log('   competitorSite.contentUpdates:', competitorSite?.contentUpdates ? 'EXISTS' : 'MISSING')
+  console.log('   comparison.traffic:', comparison?.traffic ? 'EXISTS' : 'MISSING')
+  console.log('   comparison.contentUpdates:', comparison?.contentUpdates ? 'EXISTS' : 'MISSING')
+  console.log('   yourSite.instagram:', yourSite?.instagram ? 'EXISTS' : 'MISSING')
+  console.log('   competitorSite.instagram:', competitorSite?.instagram ? 'EXISTS' : 'MISSING')
+  console.log('   comparison.instagram:', comparison?.instagram ? 'EXISTS' : 'MISSING')
+  console.log('   yourSite.facebook:', yourSite?.facebook ? 'EXISTS' : 'MISSING')
+  console.log('   competitorSite.facebook:', competitorSite?.facebook ? 'EXISTS' : 'MISSING')
+  console.log('   comparison.facebook:', comparison?.facebook ? 'EXISTS' : 'MISSING')
+  console.log('   competitorSite.googleAds:', competitorSite?.googleAds ? 'EXISTS' : 'MISSING')
+  console.log('   competitorSite.metaAds:', competitorSite?.metaAds ? 'EXISTS' : 'MISSING')
+  
+  // Check the actual condition for showing cards
+  const showTrafficCard = !!(yourSite?.traffic || competitorSite?.traffic || comparison?.traffic)
+  const showContentCard = !!(yourSite?.contentUpdates || competitorSite?.contentUpdates || comparison?.contentUpdates)
+  const showInstagramCard = !!(yourSite?.instagram || competitorSite?.instagram || comparison?.instagram)
+  const showFacebookCard = !!(yourSite?.facebook || competitorSite?.facebook || comparison?.facebook)
+  const showGoogleAdsCard = !!(competitorSite?.googleAds && competitorSite.googleAds.totalAds > 0)
+  const showMetaAdsCard = !!(competitorSite?.metaAds && competitorSite.metaAds.totalAds > 0)
+  console.log('   showTrafficCard:', showTrafficCard)
+  console.log('   showContentCard:', showContentCard)
+  console.log('   showInstagramCard:', showInstagramCard)
+  console.log('   showFacebookCard:', showFacebookCard)
+  console.log('   showGoogleAdsCard:', showGoogleAdsCard)
+  console.log('   showMetaAdsCard:', showMetaAdsCard)
 
   // Safety check for required data - but be more lenient
   if (!yourSite || !competitorSite || !comparison) {
@@ -220,6 +253,306 @@ export default function CompetitorResults({ data }: CompetitorResultsProps) {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      
+      {/* Facebook Engagement Card - Always show if facebook data exists */}
+      {showFacebookCard && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              📘 Facebook Page Engagement
+            </CardTitle>
+            <CardDescription>
+              Facebook page metrics and audience engagement analysis
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Your Facebook */}
+              <div className="space-y-4">
+                <h3 className="font-semibold flex items-center gap-2">
+                  {comparison?.facebook?.your?.pageName || yourSite?.facebook?.profile?.name || 'N/A'}
+                  {comparison?.facebook?.winner?.engagement === 'yours' && (
+                    <Badge className="bg-green-600">Higher Engagement</Badge>
+                  )}
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+                    <div className="text-xs text-blue-700 font-medium">Followers</div>
+                    <div className="text-2xl font-bold text-blue-900 mt-1">
+                      {(comparison?.facebook?.your?.followers || 0).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg">
+                    <div className="text-xs text-indigo-700 font-medium">Page Likes</div>
+                    <div className="text-2xl font-bold text-indigo-900 mt-1">
+                      {(comparison?.facebook?.your?.likes || 0).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
+                    <div className="text-xs text-purple-700 font-medium">Talking About</div>
+                    <div className="text-xl font-bold text-purple-900 mt-1">
+                      {(comparison?.facebook?.your?.talkingAbout || 0).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
+                    <div className="text-xs text-green-700 font-medium">Engagement Rate</div>
+                    <div className="text-xl font-bold text-green-900 mt-1">
+                      {comparison?.facebook?.your?.engagementRate || '0%'}
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 bg-white border rounded-lg space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Category</span>
+                    <span className="font-semibold text-xs">{comparison?.facebook?.your?.category || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Rating</span>
+                    <span className="font-semibold">
+                      {comparison?.facebook?.your?.rating?.toFixed(1) || '0'} ⭐ 
+                      ({comparison?.facebook?.your?.ratingPercent || 0}%)
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Reviews</span>
+                    <span className="font-semibold">{(comparison?.facebook?.your?.ratingCount || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Activity Level</span>
+                    <Badge variant={comparison?.facebook?.your?.activityLevel === 'High' ? 'default' : 'secondary'}>
+                      {comparison?.facebook?.your?.activityLevel || 'Unknown'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Est. Posts/Week</span>
+                    <span className="font-semibold">{comparison?.facebook?.your?.estimatedPostsPerWeek || 0}</span>
+                  </div>
+                </div>
+              </div>
+              {/* Competitor Facebook */}
+              <div className="space-y-4">
+                <h3 className="font-semibold flex items-center gap-2">
+                  {comparison?.facebook?.competitor?.pageName || competitorSite?.facebook?.profile?.name || 'N/A'}
+                  {comparison?.facebook?.winner?.engagement === 'competitor' && (
+                    <Badge className="bg-green-600">Higher Engagement</Badge>
+                  )}
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg">
+                    <div className="text-xs text-red-700 font-medium">Followers</div>
+                    <div className="text-2xl font-bold text-red-900 mt-1">
+                      {(comparison?.facebook?.competitor?.followers || 0).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg">
+                    <div className="text-xs text-orange-700 font-medium">Page Likes</div>
+                    <div className="text-2xl font-bold text-orange-900 mt-1">
+                      {(comparison?.facebook?.competitor?.likes || 0).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="p-4 bg-gradient-to-br from-pink-50 to-pink-100 rounded-lg">
+                    <div className="text-xs text-pink-700 font-medium">Talking About</div>
+                    <div className="text-xl font-bold text-pink-900 mt-1">
+                      {(comparison?.facebook?.competitor?.talkingAbout || 0).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="p-4 bg-gradient-to-br from-teal-50 to-teal-100 rounded-lg">
+                    <div className="text-xs text-teal-700 font-medium">Engagement Rate</div>
+                    <div className="text-xl font-bold text-teal-900 mt-1">
+                      {comparison?.facebook?.competitor?.engagementRate || '0%'}
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 bg-white border rounded-lg space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Category</span>
+                    <span className="font-semibold text-xs">{comparison?.facebook?.competitor?.category || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Rating</span>
+                    <span className="font-semibold">
+                      {comparison?.facebook?.competitor?.rating?.toFixed(1) || '0'} ⭐ 
+                      ({comparison?.facebook?.competitor?.ratingPercent || 0}%)
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Reviews</span>
+                    <span className="font-semibold">{(comparison?.facebook?.competitor?.ratingCount || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Activity Level</span>
+                    <Badge variant={comparison?.facebook?.competitor?.activityLevel === 'High' ? 'default' : 'secondary'}>
+                      {comparison?.facebook?.competitor?.activityLevel || 'Unknown'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Est. Posts/Week</span>
+                    <span className="font-semibold">{comparison?.facebook?.competitor?.estimatedPostsPerWeek || 0}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Google Ads Monitoring Card - Side by Side Comparison */}
+      {(yourSite?.googleAds || competitorSite?.googleAds) && (
+        <Card className="border-2 border-yellow-400">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-yellow-500" />
+              Paid Ads Monitoring (Google Ads)
+            </CardTitle>
+            <CardDescription>Compare Google Ads campaigns for both sites</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Your Site Google Ads */}
+              <div className="border rounded-lg p-4 bg-blue-50">
+                <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  Your Site: {yourSite.domain}
+                </h3>
+                {yourSite?.googleAds && !yourSite.googleAds.error && yourSite.googleAds.totalAds > 0 ? (
+                  <>
+                    <div className="mb-3">
+                      <div><span className="font-semibold">Advertiser:</span> {yourSite.googleAds.advertiser || yourSite.domain}</div>
+                      <div><span className="font-semibold">Total Ads (last 30 days):</span> {yourSite.googleAds.totalAds}</div>
+                      {yourSite.googleAds.transparencyUrl && (
+                        <a href={yourSite.googleAds.transparencyUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-sm">View Transparency Center</a>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <div className="font-semibold text-sm">Sample Ads:</div>
+                      {(yourSite.googleAds.adSamples || []).slice(0, 2).map((ad: any, idx: number) => (
+                        <div key={ad.id || idx} className="border rounded p-2 bg-white text-sm">
+                          <div><span className="font-semibold">Format:</span> {ad.format}</div>
+                          <div><span className="font-semibold">Shown:</span> {ad.totalDaysShown} days</div>
+                          {ad.detailsLink && (
+                            <a href={ad.detailsLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-xs">View Details</a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-gray-500">No Google Ads data available</div>
+                )}
+              </div>
+
+              {/* Competitor Google Ads */}
+              <div className="border rounded-lg p-4 bg-red-50">
+                <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  Competitor: {competitorSite.domain}
+                </h3>
+                {competitorSite?.googleAds && !competitorSite.googleAds.error && competitorSite.googleAds.totalAds > 0 ? (
+                  <>
+                    <div className="mb-3">
+                      <div><span className="font-semibold">Advertiser:</span> {competitorSite.googleAds.advertiser || competitorSite.domain}</div>
+                      <div><span className="font-semibold">Total Ads (last 30 days):</span> {competitorSite.googleAds.totalAds}</div>
+                      {competitorSite.googleAds.transparencyUrl && (
+                        <a href={competitorSite.googleAds.transparencyUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-sm">View Transparency Center</a>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <div className="font-semibold text-sm">Sample Ads:</div>
+                      {(competitorSite.googleAds.adSamples || []).slice(0, 2).map((ad: any, idx: number) => (
+                        <div key={ad.id || idx} className="border rounded p-2 bg-white text-sm">
+                          <div><span className="font-semibold">Format:</span> {ad.format}</div>
+                          <div><span className="font-semibold">Shown:</span> {ad.totalDaysShown} days</div>
+                          {ad.detailsLink && (
+                            <a href={ad.detailsLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-xs">View Details</a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-gray-500">No Google Ads data available</div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Meta Ads Monitoring Card - Side by Side Comparison */}
+      {(yourSite?.metaAds || competitorSite?.metaAds) && (
+        <Card className="border-2 border-blue-400">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-blue-500" />
+              Paid Ads Monitoring (Meta/Facebook)
+            </CardTitle>
+            <CardDescription>Compare Meta/Facebook ad campaigns for both sites</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Your Site Meta Ads */}
+              <div className="border rounded-lg p-4 bg-blue-50">
+                <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  Your Site: {yourSite.domain}
+                </h3>
+                {yourSite?.metaAds && !yourSite.metaAds.error && yourSite.metaAds.totalAds > 0 ? (
+                  <>
+                    <div className="mb-3">
+                      <div><span className="font-semibold">Total Ads:</span> {yourSite.metaAds.totalAds}</div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="font-semibold text-sm">Sample Ads:</div>
+                      {(yourSite.metaAds.adSamples || []).slice(0, 2).map((ad: any, idx: number) => (
+                        <div key={ad.id || idx} className="border rounded p-2 bg-white text-sm">
+                          <div><span className="font-semibold">Page:</span> {ad.pageName}</div>
+                          <div><span className="font-semibold">Active:</span> {ad.isActive ? 'Yes' : 'No'}</div>
+                          <div className="text-xs text-gray-600">{ad.text?.slice(0, 80) || 'N/A'}{ad.text && ad.text.length > 80 ? '...' : ''}</div>
+                          {ad.pageProfile && (
+                            <a href={ad.pageProfile} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-xs">View Profile</a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-gray-500">No Meta Ads data available</div>
+                )}
+              </div>
+
+              {/* Competitor Meta Ads */}
+              <div className="border rounded-lg p-4 bg-red-50">
+                <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  Competitor: {competitorSite.domain}
+                </h3>
+                {competitorSite?.metaAds && !competitorSite.metaAds.error && competitorSite.metaAds.totalAds > 0 ? (
+                  <>
+                    <div className="mb-3">
+                      <div><span className="font-semibold">Total Ads:</span> {competitorSite.metaAds.totalAds}</div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="font-semibold text-sm">Sample Ads:</div>
+                      {(competitorSite.metaAds.adSamples || []).slice(0, 2).map((ad: any, idx: number) => (
+                        <div key={ad.id || idx} className="border rounded p-2 bg-white text-sm">
+                          <div><span className="font-semibold">Page:</span> {ad.pageName}</div>
+                          <div><span className="font-semibold">Active:</span> {ad.isActive ? 'Yes' : 'No'}</div>
+                          <div className="text-xs text-gray-600">{ad.text?.slice(0, 80) || 'N/A'}{ad.text && ad.text.length > 80 ? '...' : ''}</div>
+                          {ad.pageProfile && (
+                            <a href={ad.pageProfile} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-xs">View Profile</a>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-gray-500">No Meta Ads data available</div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {/* Header with Overall Winner */}
       <Card className="border-2 border-primary">
         <CardHeader>
@@ -741,6 +1074,489 @@ export default function CompetitorResults({ data }: CompetitorResultsProps) {
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Traffic Trends Comparison */}
+      {(yourSite?.traffic || competitorSite?.traffic || comparison?.traffic) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Website Traffic Trends
+            </CardTitle>
+            <CardDescription>
+              Monthly traffic comparison between your site and competitor
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Show message if no data available */}
+            {!comparison?.traffic && !yourSite?.traffic && !competitorSite?.traffic ? (
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+                <p className="text-gray-600">Traffic data not available for comparison</p>
+              </div>
+            ) : (
+              <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Your Site Traffic */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    {yourSite.domain}
+                    {comparison?.traffic?.winner === 'yours' && (
+                      <Badge className="bg-green-600">Higher Traffic</Badge>
+                    )}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+                      <div className="text-xs text-blue-700 font-medium">Monthly Visits</div>
+                      <div className="text-2xl font-bold text-blue-900 mt-1">
+                        {typeof (comparison?.traffic?.your?.monthlyVisits || yourSite?.traffic?.metrics?.monthlyVisits) === 'number' 
+                          ? (comparison?.traffic?.your?.monthlyVisits || yourSite?.traffic?.metrics?.monthlyVisits).toLocaleString()
+                          : (comparison?.traffic?.your?.monthlyVisits || yourSite?.traffic?.metrics?.monthlyVisits || 'N/A')}
+                      </div>
+                      <div className="text-xs text-blue-600 mt-1">
+                        Source: {(comparison?.traffic?.your?.source || yourSite?.traffic?.source) === 'google_analytics' ? 'Google Analytics' : 
+                                 (comparison?.traffic?.your?.source || yourSite?.traffic?.source) === 'similarweb_rapidapi' ? 'SimilarWeb' : 
+                                 (comparison?.traffic?.your?.source || yourSite?.traffic?.source || 'Unknown')}
+                      </div>
+                    </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <div className="text-xs text-gray-600">Bounce Rate</div>
+                    <div className="text-2xl font-bold text-gray-900 mt-1">
+                      {typeof comparison?.traffic?.your?.bounceRate === 'number' 
+                        ? `${comparison.traffic.your.bounceRate.toFixed(1)}%`
+                        : (comparison?.traffic?.your?.bounceRate || 'N/A')}
+                    </div>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <div className="text-xs text-gray-600">Pages/Visit</div>
+                    <div className="text-2xl font-bold text-gray-900 mt-1">
+                      {typeof comparison?.traffic?.your?.pagesPerVisit === 'number' 
+                        ? comparison.traffic.your.pagesPerVisit.toFixed(1)
+                        : (comparison?.traffic?.your?.pagesPerVisit || 'N/A')}
+                    </div>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <div className="text-xs text-gray-600">Avg Duration</div>
+                    <div className="text-lg font-bold text-gray-900 mt-1">
+                      {typeof comparison?.traffic?.your?.avgVisitDuration === 'number' 
+                        ? `${Math.floor(comparison.traffic.your.avgVisitDuration / 60)}m ${comparison.traffic.your.avgVisitDuration % 60}s`
+                        : (comparison?.traffic?.your?.avgVisitDuration || 'N/A')}
+                    </div>
+                  </div>
+                </div>
+                {comparison?.traffic?.your?.trafficSources && Object.keys(comparison.traffic.your.trafficSources).length > 0 && (
+                  <div className="p-4 bg-white border rounded-lg">
+                    <h4 className="text-sm font-semibold mb-3">Traffic Sources</h4>
+                    <div className="space-y-2">
+                      {Object.entries(comparison.traffic.your.trafficSources).map(([source, value]: [string, any]) => (
+                        typeof value === 'number' && value > 0 && (
+                          <div key={source} className="flex items-center justify-between text-sm">
+                            <span className="capitalize">{source}</span>
+                            <span className="font-semibold">{value.toFixed(1)}%</span>
+                          </div>
+                        )
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Competitor Traffic */}
+              <div className="space-y-4">
+                <h3 className="font-semibold flex items-center gap-2">
+                  {competitorSite.domain}
+                  {comparison?.traffic?.winner === 'competitor' && (
+                    <Badge className="bg-green-600">Higher Traffic</Badge>
+                  )}
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg">
+                    <div className="text-xs text-red-700 font-medium">Monthly Visits</div>
+                    <div className="text-2xl font-bold text-red-900 mt-1">
+                      {typeof comparison?.traffic?.competitor?.monthlyVisits === 'number' 
+                        ? comparison.traffic.competitor.monthlyVisits.toLocaleString()
+                        : (comparison?.traffic?.competitor?.monthlyVisits || 'N/A')}
+                    </div>
+                    <div className="text-xs text-red-600 mt-1">
+                      Source: {comparison?.traffic?.competitor?.source === 'similarweb_rapidapi' ? 'SimilarWeb' : 
+                               (comparison?.traffic?.competitor?.source || 'Unknown')}
+                    </div>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <div className="text-xs text-gray-600">Bounce Rate</div>
+                    <div className="text-2xl font-bold text-gray-900 mt-1">
+                      {typeof comparison?.traffic?.competitor?.bounceRate === 'number' 
+                        ? `${comparison.traffic.competitor.bounceRate.toFixed(1)}%`
+                        : (comparison?.traffic?.competitor?.bounceRate || 'N/A')}
+                    </div>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <div className="text-xs text-gray-600">Pages/Visit</div>
+                    <div className="text-2xl font-bold text-gray-900 mt-1">
+                      {typeof comparison?.traffic?.competitor?.pagesPerVisit === 'number' 
+                        ? comparison.traffic.competitor.pagesPerVisit.toFixed(1)
+                        : (comparison?.traffic?.competitor?.pagesPerVisit || 'N/A')}
+                    </div>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <div className="text-xs text-gray-600">Avg Duration</div>
+                    <div className="text-lg font-bold text-gray-900 mt-1">
+                      {typeof comparison?.traffic?.competitor?.avgVisitDuration === 'number' 
+                        ? `${Math.floor(comparison.traffic.competitor.avgVisitDuration / 60)}m ${comparison.traffic.competitor.avgVisitDuration % 60}s`
+                        : (comparison?.traffic?.competitor?.avgVisitDuration || 'N/A')}
+                    </div>
+                  </div>
+                </div>
+                {comparison?.traffic?.competitor?.trafficSources && Object.keys(comparison.traffic.competitor.trafficSources).length > 0 && (
+                  <div className="p-4 bg-white border rounded-lg">
+                    <h4 className="text-sm font-semibold mb-3">Traffic Sources</h4>
+                    <div className="space-y-2">
+                      {Object.entries(comparison.traffic.competitor.trafficSources).map(([source, value]: [string, any]) => (
+                        typeof value === 'number' && value > 0 && (
+                          <div key={source} className="flex items-center justify-between text-sm">
+                            <span className="capitalize">{source}</span>
+                            <span className="font-semibold">{value.toFixed(1)}%</span>
+                          </div>
+                        )
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Traffic Gap Insight */}
+            {comparison?.traffic?.difference && comparison.traffic.difference !== 0 && (
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <TrendingUp className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-blue-900">Traffic Gap</p>
+                    <p className="text-sm text-blue-700 mt-1">
+                      {comparison?.traffic?.winner === 'yours' 
+                        ? `Your site has ${Math.abs(comparison.traffic.difference).toLocaleString()} more monthly visits than the competitor.`
+                        : `Competitor has ${Math.abs(comparison.traffic.difference).toLocaleString()} more monthly visits. Consider improving your SEO and content marketing strategy.`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Content Updates Comparison */}
+      {(yourSite?.contentUpdates || competitorSite?.contentUpdates || comparison?.contentUpdates) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Content Update Activity
+            </CardTitle>
+            <CardDescription>
+              Publishing frequency and content freshness analysis
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!comparison?.contentUpdates && !yourSite?.contentUpdates && !competitorSite?.contentUpdates ? (
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+                <p className="text-gray-600">Content updates data not available</p>
+              </div>
+            ) : (
+              <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Your Site Content Updates */}
+              <div className="space-y-4">
+                <h3 className="font-semibold flex items-center gap-2">
+                  {yourSite.domain}
+                  {comparison?.contentUpdates?.winner === 'yours' && (
+                    <Badge className="bg-green-600">More Active</Badge>
+                  )}
+                </h3>
+                <div className="space-y-3">
+                  <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+                    <div className="text-xs text-blue-700 font-medium">Content Velocity</div>
+                    <div className="text-2xl font-bold text-blue-900 mt-1 capitalize">
+                      {comparison?.contentUpdates?.your?.contentVelocity || yourSite?.contentUpdates?.contentActivity?.contentVelocity || 'Unknown'}
+                    </div>
+                    <div className="text-xs text-blue-600 mt-1">
+                      {comparison?.contentUpdates?.your?.averagePostsPerMonth || yourSite?.contentUpdates?.contentActivity?.averagePostsPerMonth || 0} posts/month
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 bg-white border rounded-lg">
+                      <div className="text-xs text-gray-600">Update Frequency</div>
+                      <div className="text-sm font-bold text-gray-900 mt-1 capitalize">
+                        {comparison.contentUpdates.your.updateFrequency}
+                      </div>
+                    </div>
+                    <div className="p-3 bg-white border rounded-lg">
+                      <div className="text-xs text-gray-600">Status</div>
+                      <div className="text-sm font-bold mt-1">
+                        <Badge variant={comparison.contentUpdates.your.isActive ? "default" : "secondary"}>
+                          {comparison.contentUpdates.your.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-white border rounded-lg space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">RSS Feed</span>
+                      {comparison.contentUpdates.your.hasRSS ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-red-600" />
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Recent Posts</span>
+                      <span className="font-semibold">{comparison.contentUpdates.your.recentPosts}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Last Updated</span>
+                      <span className="font-semibold text-xs">
+                        {comparison.contentUpdates.your.lastUpdated !== 'Unknown' 
+                          ? new Date(comparison.contentUpdates.your.lastUpdated).toLocaleDateString()
+                          : 'Unknown'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Competitor Content Updates */}
+              <div className="space-y-4">
+                <h3 className="font-semibold flex items-center gap-2">
+                  {competitorSite.domain}
+                  {comparison.contentUpdates.winner === 'competitor' && (
+                    <Badge className="bg-green-600">More Active</Badge>
+                  )}
+                </h3>
+                <div className="space-y-3">
+                  <div className="p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg">
+                    <div className="text-xs text-red-700 font-medium">Content Velocity</div>
+                    <div className="text-2xl font-bold text-red-900 mt-1 capitalize">
+                      {comparison.contentUpdates.competitor.contentVelocity}
+                    </div>
+                    <div className="text-xs text-red-600 mt-1">
+                      {comparison.contentUpdates.competitor.averagePostsPerMonth} posts/month
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 bg-white border rounded-lg">
+                      <div className="text-xs text-gray-600">Update Frequency</div>
+                      <div className="text-sm font-bold text-gray-900 mt-1 capitalize">
+                        {comparison.contentUpdates.competitor.updateFrequency}
+                      </div>
+                    </div>
+                    <div className="p-3 bg-white border rounded-lg">
+                      <div className="text-xs text-gray-600">Status</div>
+                      <div className="text-sm font-bold mt-1">
+                        <Badge variant={comparison.contentUpdates.competitor.isActive ? "default" : "secondary"}>
+                          {comparison.contentUpdates.competitor.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-white border rounded-lg space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">RSS Feed</span>
+                      {comparison.contentUpdates.competitor.hasRSS ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-red-600" />
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Recent Posts</span>
+                      <span className="font-semibold">{comparison.contentUpdates.competitor.recentPosts}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Last Updated</span>
+                      <span className="font-semibold text-xs">
+                        {comparison.contentUpdates.competitor.lastUpdated !== 'Unknown' 
+                          ? new Date(comparison.contentUpdates.competitor.lastUpdated).toLocaleDateString()
+                          : 'Unknown'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Content Gap Insight */}
+            {comparison?.contentUpdates?.your?.averagePostsPerMonth !== comparison?.contentUpdates?.competitor?.averagePostsPerMonth && (
+              <div className="mt-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <FileText className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-purple-900">Content Publishing Gap</p>
+                    <p className="text-sm text-purple-700 mt-1">
+                      {comparison?.contentUpdates?.winner === 'yours' 
+                        ? `You're publishing ${(comparison.contentUpdates.your.averagePostsPerMonth || 0) - (comparison.contentUpdates.competitor.averagePostsPerMonth || 0)} more posts per month than your competitor. Keep it up!`
+                        : `Competitor publishes ${(comparison.contentUpdates.competitor.averagePostsPerMonth || 0) - (comparison.contentUpdates.your.averagePostsPerMonth || 0)} more posts per month. Consider increasing your content production to ${comparison.contentUpdates.competitor.averagePostsPerMonth}+ posts/month.`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Instagram Engagement Comparison */}
+      {(comparison?.instagram || yourSite?.instagram || competitorSite?.instagram) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              📸 Instagram Engagement
+            </CardTitle>
+            <CardDescription>
+              Social media presence and engagement metrics comparison
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Your Instagram */}
+              <div className="space-y-4">
+                <h3 className="font-semibold flex items-center gap-2">
+                  @{comparison?.instagram?.your?.username || yourSite?.instagram?.profile?.username || 'N/A'}
+                  {comparison?.instagram?.your?.verified && (
+                    <Badge className="bg-blue-600">✓ Verified</Badge>
+                  )}
+                  {comparison?.instagram?.winner?.engagement === 'yours' && (
+                    <Badge className="bg-green-600">Better Engagement</Badge>
+                  )}
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 bg-gradient-to-br from-pink-50 to-purple-100 rounded-lg">
+                    <div className="text-xs text-purple-700 font-medium">Followers</div>
+                    <div className="text-2xl font-bold text-purple-900 mt-1">
+                      {(comparison?.instagram?.your?.followers || 0).toLocaleString()}
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
+                    <div className="text-xs text-blue-700 font-medium">Engagement Rate</div>
+                    <div className="text-2xl font-bold text-blue-900 mt-1">
+                      {comparison?.instagram?.your?.engagementRate || '0%'}
+                    </div>
+                  </div>
+                  
+                  <div className="p-3 bg-white border rounded-lg">
+                    <div className="text-xs text-gray-600">Avg Interactions</div>
+                    <div className="text-lg font-bold text-gray-900 mt-1">
+                      {(comparison?.instagram?.your?.avgInteractions || 0).toLocaleString()}
+                    </div>
+                  </div>
+                  
+                  <div className="p-3 bg-white border rounded-lg">
+                    <div className="text-xs text-gray-600">Consistency</div>
+                    <div className="text-sm font-bold text-gray-900 mt-1">
+                      {comparison?.instagram?.your?.consistency || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+
+                {comparison?.instagram?.your?.bestPostingDays && comparison.instagram.your.bestPostingDays.length > 0 && (
+                  <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-100 border border-green-200 rounded-lg">
+                    <p className="text-xs font-semibold text-green-800 mb-2">🎯 Best Posting Times</p>
+                    <div className="text-sm text-green-900">
+                      <p><strong>Days:</strong> {comparison.instagram.your.bestPostingDays.join(', ')}</p>
+                      {comparison?.instagram?.your?.bestPostingHours && (
+                        <p className="mt-1"><strong>Hours:</strong> {comparison.instagram.your.bestPostingHours.join(', ')}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Competitor Instagram */}
+              <div className="space-y-4">
+                <h3 className="font-semibold flex items-center gap-2">
+                  @{comparison?.instagram?.competitor?.username || competitorSite?.instagram?.profile?.username || 'N/A'}
+                  {comparison?.instagram?.competitor?.verified && (
+                    <Badge className="bg-blue-600">✓ Verified</Badge>
+                  )}
+                  {comparison?.instagram?.winner?.engagement === 'competitor' && (
+                    <Badge className="bg-green-600">Better Engagement</Badge>
+                  )}
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 bg-gradient-to-br from-orange-50 to-red-100 rounded-lg">
+                    <div className="text-xs text-red-700 font-medium">Followers</div>
+                    <div className="text-2xl font-bold text-red-900 mt-1">
+                      {(comparison?.instagram?.competitor?.followers || 0).toLocaleString()}
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 bg-gradient-to-br from-yellow-50 to-orange-100 rounded-lg">
+                    <div className="text-xs text-orange-700 font-medium">Engagement Rate</div>
+                    <div className="text-2xl font-bold text-orange-900 mt-1">
+                      {comparison?.instagram?.competitor?.engagementRate || '0%'}
+                    </div>
+                  </div>
+                  
+                  <div className="p-3 bg-white border rounded-lg">
+                    <div className="text-xs text-gray-600">Avg Interactions</div>
+                    <div className="text-lg font-bold text-gray-900 mt-1">
+                      {(comparison?.instagram?.competitor?.avgInteractions || 0).toLocaleString()}
+                    </div>
+                  </div>
+                  
+                  <div className="p-3 bg-white border rounded-lg">
+                    <div className="text-xs text-gray-600">Consistency</div>
+                    <div className="text-sm font-bold text-gray-900 mt-1">
+                      {comparison?.instagram?.competitor?.consistency || 'N/A'}
+                    </div>
+                  </div>
+                </div>
+
+                {comparison?.instagram?.competitor?.bestPostingDays && comparison.instagram.competitor.bestPostingDays.length > 0 && (
+                  <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-100 border border-green-200 rounded-lg">
+                    <p className="text-xs font-semibold text-green-800 mb-2">🎯 Best Posting Times</p>
+                    <div className="text-sm text-green-900">
+                      <p><strong>Days:</strong> {comparison.instagram.competitor.bestPostingDays.join(', ')}</p>
+                      {comparison?.instagram?.competitor?.bestPostingHours && (
+                        <p className="mt-1"><strong>Hours:</strong> {comparison.instagram.competitor.bestPostingHours.join(', ')}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Instagram Insight */}
+            {comparison?.instagram && (
+              <div className="mt-6 p-4 bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">📸</span>
+                  <div>
+                    <p className="font-semibold text-pink-900">Instagram Strategy Insight</p>
+                    <p className="text-sm text-pink-700 mt-1">
+                      {comparison.instagram.winner.followers === 'yours' 
+                        ? `You have ${((comparison.instagram.your.followers - comparison.instagram.competitor.followers) / comparison.instagram.competitor.followers * 100).toFixed(0)}% more followers than your competitor. `
+                        : `Your competitor has ${((comparison.instagram.competitor.followers - comparison.instagram.your.followers) / comparison.instagram.your.followers * 100).toFixed(0)}% more followers. Consider increasing posting frequency and engagement. `}
+                      {comparison.instagram.winner.engagement === 'yours'
+                        ? 'Your engagement rate is higher - keep up the great content!'
+                        : 'Focus on improving engagement rate through interactive content and optimal posting times.'}
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </CardContent>

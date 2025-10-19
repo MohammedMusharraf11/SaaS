@@ -77,20 +77,24 @@ router.post('/analyze', async (req, res) => {
           console.log('🔍 Your site pagespeed structure:', JSON.stringify(yourSiteData.pagespeed, null, 2));
         }
 
-        // Fetch fresh Google Ads monitoring data for cached competitor
-        console.log(`   🟢 Fetching Google Ads monitoring for cached competitor: ${competitorSite}`);
-        try {
-          const googleAdsData = await getGoogleAdsMonitoring(competitorSite);
-          if (googleAdsData && !googleAdsData.error) {
-            cachedResult.competitorSite.googleAds = googleAdsData;
-            console.log(`   ✅ Got competitor Google Ads data (Total Ads: ${googleAdsData.totalAds})`);
-          } else {
-            cachedResult.competitorSite.googleAds = { success: false, error: googleAdsData.error };
-            console.warn(`   ⚠️ Failed to fetch competitor Google Ads data:`, googleAdsData.error);
+        // Use cached Google Ads data or fetch fresh if not available
+        if (!cachedResult.competitorSite.googleAds) {
+          console.log(`   🟢 Fetching Google Ads monitoring for cached competitor: ${competitorSite}`);
+          try {
+            const googleAdsData = await getGoogleAdsMonitoring(competitorSite);
+            if (googleAdsData && !googleAdsData.error) {
+              cachedResult.competitorSite.googleAds = googleAdsData;
+              console.log(`   ✅ Got competitor Google Ads data (Total Ads: ${googleAdsData.totalAds})`);
+            } else {
+              cachedResult.competitorSite.googleAds = { success: false, error: googleAdsData.error };
+              console.warn(`   ⚠️ Failed to fetch competitor Google Ads data:`, googleAdsData.error);
+            }
+          } catch (error) {
+            cachedResult.competitorSite.googleAds = { success: false, error: error.message };
+            console.warn(`   ⚠️ Exception in Google Ads monitoring:`, error.message);
           }
-        } catch (error) {
-          cachedResult.competitorSite.googleAds = { success: false, error: error.message };
-          console.warn(`   ⚠️ Exception in Google Ads monitoring:`, error.message);
+        } else {
+          console.log(`   ✅ Using cached Google Ads data for competitor`);
         }
 
         // Fetch fresh Google Ads monitoring data for YOUR cached site
@@ -109,45 +113,53 @@ router.post('/analyze', async (req, res) => {
           console.warn(`   ⚠️ Exception in your site Google Ads monitoring:`, error.message);
         }
 
-        // Fetch ChangeDetection data for cached competitor
-        console.log(`   📝 Fetching content changes monitoring for cached competitor: ${competitorSite}`);
-        try {
-          const changeDetectionService = (await import('../services/changeDetectionService.js')).default;
-          console.log(`   🔧 ChangeDetection service loaded for competitor`);
-          const competitorChangeData = await changeDetectionService.analyzeContentChanges(competitorSite);
-          console.log(`   📊 Competitor ChangeDetection response:`, JSON.stringify(competitorChangeData, null, 2));
-          if (competitorChangeData.success) {
-            cachedResult.competitorSite.contentChanges = competitorChangeData;
-            console.log(`   ✅ Got competitor ChangeDetection data (${competitorChangeData.monitoring?.checkCount || 0} checks, ${competitorChangeData.monitoring?.changeCount || 0} changes)`);
-            console.log(`   📌 Competitor Activity Level: ${competitorChangeData.activity?.activityLevel || 'unknown'}`);
-          } else {
-            console.warn(`   ⚠️ Competitor ChangeDetection failed: ${competitorChangeData.error || 'Unknown error'}`);
+        // Use cached ChangeDetection data or fetch fresh if not available
+        if (!cachedResult.competitorSite.contentChanges) {
+          console.log(`   📝 Fetching content changes monitoring for cached competitor: ${competitorSite}`);
+          try {
+            const changeDetectionService = (await import('../services/changeDetectionService.js')).default;
+            console.log(`   🔧 ChangeDetection service loaded for competitor`);
+            const competitorChangeData = await changeDetectionService.analyzeContentChanges(competitorSite);
+            console.log(`   📊 Competitor ChangeDetection response:`, JSON.stringify(competitorChangeData, null, 2));
+            if (competitorChangeData.success) {
+              cachedResult.competitorSite.contentChanges = competitorChangeData;
+              console.log(`   ✅ Got competitor ChangeDetection data (${competitorChangeData.monitoring?.checkCount || 0} checks, ${competitorChangeData.monitoring?.changeCount || 0} changes)`);
+              console.log(`   📌 Competitor Activity Level: ${competitorChangeData.activity?.activityLevel || 'unknown'}`);
+            } else {
+              console.warn(`   ⚠️ Competitor ChangeDetection failed: ${competitorChangeData.error || 'Unknown error'}`);
+            }
+          } catch (error) {
+            console.error(`   ❌ Failed to fetch competitor content changes:`, error.message);
+            console.error(`   Stack trace:`, error.stack);
           }
-        } catch (error) {
-          console.error(`   ❌ Failed to fetch competitor content changes:`, error.message);
-          console.error(`   Stack trace:`, error.stack);
+        } else {
+          console.log(`   ✅ Using cached ChangeDetection data for competitor`);
         }
 
 
-        // Fetch fresh Meta Ads monitoring data for cached competitor (username only, no domain fallback)
-        if (competitorFacebook) {
-          console.log(`   🟣 Fetching Meta Ads monitoring for cached competitor (username only): ${competitorFacebook}`);
-          try {
-            const metaAdsData = await getMetaAdsMonitoring(competitorFacebook);
-            if (metaAdsData && !metaAdsData.error) {
-              cachedResult.competitorSite.metaAds = metaAdsData;
-              console.log(`   ✅ Got competitor Meta Ads data (Total Ads: ${metaAdsData.totalAds})`);
-            } else {
-              cachedResult.competitorSite.metaAds = { success: false, error: metaAdsData.error };
-              console.warn(`   ⚠️ Failed to fetch competitor Meta Ads data:`, metaAdsData.error);
+        // Use cached Meta Ads data or fetch fresh if not available
+        if (!cachedResult.competitorSite.metaAds) {
+          if (competitorFacebook) {
+            console.log(`   🟣 Fetching Meta Ads monitoring for cached competitor (username only): ${competitorFacebook}`);
+            try {
+              const metaAdsData = await getMetaAdsMonitoring(competitorFacebook);
+              if (metaAdsData && !metaAdsData.error) {
+                cachedResult.competitorSite.metaAds = metaAdsData;
+                console.log(`   ✅ Got competitor Meta Ads data (Total Ads: ${metaAdsData.totalAds})`);
+              } else {
+                cachedResult.competitorSite.metaAds = { success: false, error: metaAdsData.error };
+                console.warn(`   ⚠️ Failed to fetch competitor Meta Ads data:`, metaAdsData.error);
+              }
+            } catch (error) {
+              cachedResult.competitorSite.metaAds = { success: false, error: error.message };
+              console.warn(`   ⚠️ Exception in Meta Ads monitoring:`, error.message);
             }
-          } catch (error) {
-            cachedResult.competitorSite.metaAds = { success: false, error: error.message };
-            console.warn(`   ⚠️ Exception in Meta Ads monitoring:`, error.message);
+          } else {
+            cachedResult.competitorSite.metaAds = { success: false, error: 'No competitor Facebook username provided.' };
+            console.warn('   ⚠️ No competitor Facebook username provided for Meta Ads monitoring.');
           }
         } else {
-          cachedResult.competitorSite.metaAds = { success: false, error: 'No competitor Facebook username provided.' };
-          console.warn('   ⚠️ No competitor Facebook username provided for Meta Ads monitoring.');
+          console.log(`   ✅ Using cached Meta Ads data for competitor`);
         }
 
         // Fetch fresh Meta Ads monitoring data for YOUR cached site
@@ -167,35 +179,43 @@ router.post('/analyze', async (req, res) => {
           console.warn(`   ⚠️ Exception in your site Meta Ads monitoring:`, error.message);
         }
 
-        // Fetch Instagram engagement for cached COMPETITOR
-        if (competitorInstagram) {
-          console.log(`   📸 Fetching Instagram engagement for cached competitor: ${competitorInstagram}`);
-          try {
-            const competitorInstagramData = await instagramEngagementService.getCompleteEngagementMetrics(competitorInstagram);
-            if (competitorInstagramData.success) {
-              cachedResult.competitorSite.instagram = competitorInstagramData;
-              console.log(`   ✅ Got competitor Instagram data (${competitorInstagramData.profile.followers.toLocaleString()} followers)`);
+        // Use cached Instagram data or fetch fresh if not available
+        if (!cachedResult.competitorSite.instagram) {
+          if (competitorInstagram) {
+            console.log(`   📸 Fetching Instagram engagement for cached competitor: ${competitorInstagram}`);
+            try {
+              const competitorInstagramData = await instagramEngagementService.getCompleteEngagementMetrics(competitorInstagram);
+              if (competitorInstagramData.success) {
+                cachedResult.competitorSite.instagram = competitorInstagramData;
+                console.log(`   ✅ Got competitor Instagram data (${competitorInstagramData.profile.followers.toLocaleString()} followers)`);
+              }
+            } catch (error) {
+              console.warn(`   ⚠️ Failed to fetch competitor Instagram data:`, error.message);
             }
-          } catch (error) {
-            console.warn(`   ⚠️ Failed to fetch competitor Instagram data:`, error.message);
           }
+        } else {
+          console.log(`   ✅ Using cached Instagram data for competitor`);
         }
 
-        // Fetch Facebook engagement for cached COMPETITOR
-        if (competitorFacebook) {
-          console.log(`   📘 Fetching Facebook engagement for cached competitor: ${competitorFacebook}`);
-          try {
-            const competitorFacebookData = await facebookEngagementService.getFullEngagementAnalysis(competitorFacebook);
-            if (competitorFacebookData) {
-              cachedResult.competitorSite.facebook = {
-                success: true,
-                ...competitorFacebookData
-              };
-              console.log(`   ✅ Got competitor Facebook data (${competitorFacebookData.metrics.followers.toLocaleString()} followers)`);
+        // Use cached Facebook data or fetch fresh if not available
+        if (!cachedResult.competitorSite.facebook) {
+          if (competitorFacebook) {
+            console.log(`   📘 Fetching Facebook engagement for cached competitor: ${competitorFacebook}`);
+            try {
+              const competitorFacebookData = await facebookEngagementService.getFullEngagementAnalysis(competitorFacebook);
+              if (competitorFacebookData) {
+                cachedResult.competitorSite.facebook = {
+                  success: true,
+                  ...competitorFacebookData
+                };
+                console.log(`   ✅ Got competitor Facebook data (${competitorFacebookData.metrics.followers.toLocaleString()} followers)`);
+              }
+            } catch (error) {
+              console.warn(`   ⚠️ Failed to fetch competitor Facebook data:`, error.message);
             }
-          } catch (error) {
-            console.warn(`   ⚠️ Failed to fetch competitor Facebook data:`, error.message);
           }
+        } else {
+          console.log(`   ✅ Using cached Facebook data for competitor`);
         }
         
         // Reconstruct full result with comparison

@@ -9,7 +9,7 @@ import axios from 'axios';
 
 class FacebookEngagementService {
     constructor() {
-        this.rapidApiKey = 'd844ab0f41msh81ef5a49f61ca81p1ce760jsn100d5e352ffa';
+        this.rapidApiKey = process.env.RAPIDAPI_KEY;
         this.rapidApiHost = 'facebook-pages-scraper2.p.rapidapi.com';
         this.baseURL = `https://${this.rapidApiHost}`;
     }

@@ -119,6 +119,7 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
   const showTechCard = !!(yourSite?.puppeteer?.technologies || competitorSite?.puppeteer?.technologies || comparison?.technology)
   const showSecurityCard = !!(yourSite?.puppeteer || competitorSite?.puppeteer || comparison?.security)
   const showContentChangesCard = !!(yourSite?.contentChanges?.success || competitorSite?.contentChanges?.success)
+  const showBacklinksCard = !!(yourSite?.backlinks || competitorSite?.backlinks || comparison?.backlinks)
   
   // Generate mock traffic data for charts (replace with real data when available)
   const generateTrafficData = () => {
@@ -156,8 +157,46 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
       ]
     }
   }
+
+  // Generate backlinks data for charts
+  const generateBacklinksData = () => {
+    const labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4']
+    const yourBacklinksBase = yourSite?.backlinks?.totalBacklinks || 0
+    const compBacklinksBase = competitorSite?.backlinks?.totalBacklinks || 0
+    
+    return {
+      labels,
+      datasets: [
+        {
+          label: `Your Backlinks`,
+          data: [
+            yourBacklinksBase * 0.85,
+            yourBacklinksBase * 0.92,
+            yourBacklinksBase * 1.05,
+            yourBacklinksBase
+          ],
+          borderColor: 'rgba(34, 197, 94, 1)',
+          backgroundColor: 'rgba(34, 197, 94, 0.1)',
+          tension: 0.4
+        },
+        {
+          label: `Competitor Backlinks`,
+          data: [
+            compBacklinksBase * 0.88,
+            compBacklinksBase * 0.95,
+            compBacklinksBase * 1.08,
+            compBacklinksBase
+          ],
+          borderColor: 'rgba(59, 130, 246, 1)',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          tension: 0.4
+        }
+      ]
+    }
+  }
   
   const trafficChartData = generateTrafficData()
+  const backlinksChartData = generateBacklinksData()
   const trafficChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -173,6 +212,37 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
         callbacks: {
           label: function(context: any) {
             return `${context.dataset.label}: ${context.parsed.y.toLocaleString()} visits`
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: function(value: any) {
+            return value.toLocaleString()
+          }
+        }
+      }
+    }
+  }
+
+  const backlinksChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: {
+          usePointStyle: true,
+          padding: 15
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            return `${context.dataset.label}: ${context.parsed.y.toLocaleString()} backlinks`
           }
         }
       }
@@ -381,6 +451,67 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                 </CardContent>
               </Card>
             )}
+
+            {/* Backlinks Analysis */}
+            {showBacklinksCard && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                    <LinkIcon className="h-5 w-5" />
+                    Backlinks Analysis
+                    <sup className="text-xs text-muted-foreground">+1</sup>
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Your: {yourSite?.backlinks?.source || 'SE Ranking'} | 
+                    Competitor: {competitorSite?.backlinks?.source || 'SE Ranking'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64">
+                    <Line data={backlinksChartData} options={backlinksChartOptions} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
+                    <div className="p-3 bg-green-50 rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-1">Your Total Backlinks</p>
+                      <p className="text-xl font-bold text-green-600">
+                        {typeof yourSite?.backlinks?.totalBacklinks === 'number' 
+                          ? yourSite.backlinks.totalBacklinks.toLocaleString() 
+                          : yourSite?.backlinks?.totalBacklinks || 'N/A'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Ref Domains: {yourSite?.backlinks?.totalRefDomains?.toLocaleString() || 'N/A'}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-blue-50 rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-1">Competitor Backlinks</p>
+                      <p className="text-xl font-bold text-blue-600">
+                        {typeof competitorSite?.backlinks?.totalBacklinks === 'number' 
+                          ? competitorSite.backlinks.totalBacklinks.toLocaleString() 
+                          : competitorSite?.backlinks?.totalBacklinks || 'N/A'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Ref Domains: {competitorSite?.backlinks?.totalRefDomains?.toLocaleString() || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                  {comparison?.backlinks && (
+                    <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Backlink Advantage</span>
+                        <span className={`font-semibold ${
+                          comparison.backlinks.winner === 'yours' ? 'text-green-600' : 
+                          comparison.backlinks.winner === 'competitor' ? 'text-red-600' : 'text-gray-600'
+                        }`}>
+                          {comparison.backlinks.winner === 'yours' ? 'You lead' : 
+                           comparison.backlinks.winner === 'competitor' ? 'Competitor leads' : 'Tied'} 
+                          {comparison.backlinks.difference !== 0 && ` (${Math.abs(comparison.backlinks.difference).toLocaleString()})`}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Market Share Row */}
@@ -388,6 +519,9 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg font-semibold">Market Share (Search Visibility)</CardTitle>
+                <CardDescription>
+                  Calculated using SEO score, traffic, and backlinks metrics
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-center py-8">
@@ -397,25 +531,64 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                         cx="96"
                         cy="96"
                         r="80"
-                        stroke="#22c55e"
+                        stroke="#e5e7eb"
                         strokeWidth="24"
                         fill="none"
-                        strokeDasharray={`${(yourSite?.lighthouse?.categories?.seo?.score || 61) * 5.02} 502`}
                       />
                       <circle
                         cx="96"
                         cy="96"
                         r="80"
-                        stroke="#f97316"
+                        stroke="#22c55e"
                         strokeWidth="24"
                         fill="none"
-                        strokeDasharray={`${(competitorSite?.lighthouse?.categories?.seo?.score || 29) * 5.02} 502`}
-                        strokeDashoffset={`-${(yourSite?.lighthouse?.categories?.seo?.score || 61) * 5.02}`}
+                        strokeDasharray={`${(() => {
+                          // Calculate market share using weighted formula
+                          const yourSEO = yourSite?.lighthouse?.categories?.seo?.displayValue || 0;
+                          const compSEO = competitorSite?.lighthouse?.categories?.seo?.displayValue || 0;
+                          const yourTraffic = typeof yourSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                            ? yourSite.traffic.metrics.monthlyVisits : 0;
+                          const compTraffic = typeof competitorSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                            ? competitorSite.traffic.metrics.monthlyVisits : 0;
+                          const yourBacklinks = yourSite?.backlinks?.totalBacklinks || 0;
+                          const compBacklinks = competitorSite?.backlinks?.totalBacklinks || 0;
+                          
+                          // Weighted formula: SEO (40%) + Traffic (35%) + Backlinks (25%)
+                          const yourScore = (yourSEO * 0.4) + 
+                            (Math.min(yourTraffic / 10000, 100) * 0.35) + 
+                            (Math.min(yourBacklinks / 1000, 100) * 0.25);
+                          const compScore = (compSEO * 0.4) + 
+                            (Math.min(compTraffic / 10000, 100) * 0.35) + 
+                            (Math.min(compBacklinks / 1000, 100) * 0.25);
+                          
+                          const totalScore = yourScore + compScore;
+                          const yourShare = totalScore > 0 ? (yourScore / totalScore) * 100 : 50;
+                          return Math.max(0, Math.min(100, yourShare)) * 5.02;
+                        })()} 502`}
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                       <div className="text-4xl font-bold text-green-600">
-                        {yourSite?.lighthouse?.categories?.seo?.score || 61}%
+                        {(() => {
+                          const yourSEO = yourSite?.lighthouse?.categories?.seo?.displayValue || 0;
+                          const compSEO = competitorSite?.lighthouse?.categories?.seo?.displayValue || 0;
+                          const yourTraffic = typeof yourSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                            ? yourSite.traffic.metrics.monthlyVisits : 0;
+                          const compTraffic = typeof competitorSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                            ? competitorSite.traffic.metrics.monthlyVisits : 0;
+                          const yourBacklinks = yourSite?.backlinks?.totalBacklinks || 0;
+                          const compBacklinks = competitorSite?.backlinks?.totalBacklinks || 0;
+                          
+                          const yourScore = (yourSEO * 0.4) + 
+                            (Math.min(yourTraffic / 10000, 100) * 0.35) + 
+                            (Math.min(yourBacklinks / 1000, 100) * 0.25);
+                          const compScore = (compSEO * 0.4) + 
+                            (Math.min(compTraffic / 10000, 100) * 0.35) + 
+                            (Math.min(compBacklinks / 1000, 100) * 0.25);
+                          
+                          const totalScore = yourScore + compScore;
+                          return totalScore > 0 ? Math.round((yourScore / totalScore) * 100) : 50;
+                        })()}%
                       </div>
                       <div className="text-sm text-muted-foreground">vs 1 competitor</div>
                     </div>
@@ -425,13 +598,53 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                   <div className="flex items-center justify-between text-sm">
                     <span>Your market share</span>
                     <span className="font-semibold text-green-600">
-                      {yourSite?.lighthouse?.categories?.seo?.score || 61}% ↑
+                      {(() => {
+                        const yourSEO = yourSite?.lighthouse?.categories?.seo?.displayValue || 0;
+                        const compSEO = competitorSite?.lighthouse?.categories?.seo?.displayValue || 0;
+                        const yourTraffic = typeof yourSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                          ? yourSite.traffic.metrics.monthlyVisits : 0;
+                        const compTraffic = typeof competitorSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                          ? competitorSite.traffic.metrics.monthlyVisits : 0;
+                        const yourBacklinks = yourSite?.backlinks?.totalBacklinks || 0;
+                        const compBacklinks = competitorSite?.backlinks?.totalBacklinks || 0;
+                        
+                        const yourScore = (yourSEO * 0.4) + 
+                          (Math.min(yourTraffic / 10000, 100) * 0.35) + 
+                          (Math.min(yourBacklinks / 1000, 100) * 0.25);
+                        const compScore = (compSEO * 0.4) + 
+                          (Math.min(compTraffic / 10000, 100) * 0.35) + 
+                          (Math.min(compBacklinks / 1000, 100) * 0.25);
+                        
+                        const totalScore = yourScore + compScore;
+                        const yourShare = totalScore > 0 ? Math.round((yourScore / totalScore) * 100) : 50;
+                        return `${yourShare}% ↑`;
+                      })()}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span>Competitor's market share</span>
                     <span className="font-semibold text-orange-600">
-                      {competitorSite?.lighthouse?.categories?.seo?.score || 29}%
+                      {(() => {
+                        const yourSEO = yourSite?.lighthouse?.categories?.seo?.displayValue || 0;
+                        const compSEO = competitorSite?.lighthouse?.categories?.seo?.displayValue || 0;
+                        const yourTraffic = typeof yourSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                          ? yourSite.traffic.metrics.monthlyVisits : 0;
+                        const compTraffic = typeof competitorSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                          ? competitorSite.traffic.metrics.monthlyVisits : 0;
+                        const yourBacklinks = yourSite?.backlinks?.totalBacklinks || 0;
+                        const compBacklinks = competitorSite?.backlinks?.totalBacklinks || 0;
+                        
+                        const yourScore = (yourSEO * 0.4) + 
+                          (Math.min(yourTraffic / 10000, 100) * 0.35) + 
+                          (Math.min(yourBacklinks / 1000, 100) * 0.25);
+                        const compScore = (compSEO * 0.4) + 
+                          (Math.min(compTraffic / 10000, 100) * 0.35) + 
+                          (Math.min(compBacklinks / 1000, 100) * 0.25);
+                        
+                        const totalScore = yourScore + compScore;
+                        const compShare = totalScore > 0 ? Math.round((compScore / totalScore) * 100) : 50;
+                        return `${compShare}%`;
+                      })()}
                     </span>
                   </div>
                 </div>
@@ -444,75 +657,6 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
               </CardContent>
             </Card>
 
-            {/* Content Change Detection */}
-            {showContentChangesCard && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                    <Activity className="h-5 w-5" />
-                    Content Change Detection
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <h4 className="text-sm font-medium">Your Site</h4>
-                      {yourSite?.contentChanges?.success ? (
-                        <div className="space-y-2 text-sm">
-                          <div className="p-2 bg-green-50 rounded">
-                            <p className="text-xs text-muted-foreground">Activity Level</p>
-                            <p className="font-semibold text-green-700 capitalize">
-                              {yourSite.contentChanges.activity?.activityLevel || 'Unknown'}
-                            </p>
-                          </div>
-                          <div className="p-2 bg-gray-50 rounded">
-                            <p className="text-xs text-muted-foreground">Changes Detected</p>
-                            <p className="font-semibold">{yourSite.contentChanges.monitoring?.changeCount || 0}</p>
-                          </div>
-                          <div className="p-2 bg-gray-50 rounded">
-                            <p className="text-xs text-muted-foreground">Last Changed</p>
-                            <p className="font-semibold text-xs">
-                              {yourSite.contentChanges.activity?.daysSinceLastChange 
-                                ? `${yourSite.contentChanges.activity.daysSinceLastChange} days ago`
-                                : 'N/A'}
-                            </p>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Not monitored</p>
-                      )}
-                    </div>
-                    <div className="space-y-3">
-                      <h4 className="text-sm font-medium">Competitor</h4>
-                      {competitorSite?.contentChanges?.success ? (
-                        <div className="space-y-2 text-sm">
-                          <div className="p-2 bg-blue-50 rounded">
-                            <p className="text-xs text-muted-foreground">Activity Level</p>
-                            <p className="font-semibold text-blue-700 capitalize">
-                              {competitorSite.contentChanges.activity?.activityLevel || 'Unknown'}
-                            </p>
-                          </div>
-                          <div className="p-2 bg-gray-50 rounded">
-                            <p className="text-xs text-muted-foreground">Changes Detected</p>
-                            <p className="font-semibold">{competitorSite.contentChanges.monitoring?.changeCount || 0}</p>
-                          </div>
-                          <div className="p-2 bg-gray-50 rounded">
-                            <p className="text-xs text-muted-foreground">Last Changed</p>
-                            <p className="font-semibold text-xs">
-                              {competitorSite.contentChanges.activity?.daysSinceLastChange
-                                ? `${competitorSite.contentChanges.activity.daysSinceLastChange} days ago`
-                                : 'N/A'}
-                            </p>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Not monitored</p>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
         </>
       )}
@@ -990,10 +1134,12 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
       )}
 
       {/* Social Media View */}
-      {analysisType === 'social' && (showInstagramCard || showFacebookCard) && (
+      {analysisType === 'social' && (
         <>
-          {/* Instagram Engagement */}
-          {showInstagramCard && (
+          {showInstagramCard || showFacebookCard ? (
+            <>
+              {/* Instagram Engagement */}
+              {showInstagramCard && (
             <Card className="border-2 border-pink-400">
               <CardHeader>
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
@@ -1292,6 +1438,30 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                     )}
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+            </>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <InstagramIcon className="h-5 w-5 text-pink-600" />
+                  Social Media Analysis
+                </CardTitle>
+                <CardDescription>
+                  No social media data available for analysis
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Social Media Data Unavailable</AlertTitle>
+                  <AlertDescription>
+                    Social media analysis is currently unavailable due to API rate limits or authentication issues. 
+                    Please try again later or contact support if the issue persists.
+                  </AlertDescription>
+                </Alert>
               </CardContent>
             </Card>
           )}

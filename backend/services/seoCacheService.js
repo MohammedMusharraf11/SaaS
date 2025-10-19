@@ -730,7 +730,14 @@ const seoCacheService = {
         pagespeed: data.pagespeed_data,
         technicalSEO: data.technical_seo_data,
         puppeteer: data.puppeteer_data,
-        backlinks: data.backlinks_data
+        backlinks: data.backlinks_data,
+        googleAds: data.google_ads_data,
+        metaAds: data.meta_ads_data,
+        instagram: data.instagram_data,
+        facebook: data.facebook_data,
+        traffic: data.traffic_data,
+        contentChanges: data.content_changes_data,
+        contentUpdates: data.content_updates_data
       };
 
       return {
@@ -798,6 +805,13 @@ const seoCacheService = {
             technical_seo_data: competitor.technicalSEO || null,
             puppeteer_data: competitor.puppeteer || null,
             backlinks_data: competitor.backlinks || null,
+            google_ads_data: competitor.googleAds || null,
+            meta_ads_data: competitor.metaAds || null,
+            instagram_data: competitor.instagram || null,
+            facebook_data: competitor.facebook || null,
+            traffic_data: competitor.traffic || null,
+            content_changes_data: competitor.contentChanges || null,
+            content_updates_data: competitor.contentUpdates || null,
             analysis_status: 'completed',
             error_details: null,
             updated_at: now.toISOString(),

@@ -69,8 +69,8 @@ router.post('/analyze', async (req, res) => {
         console.log('✅ Returning cached competitor analysis');
         console.log('🔍 Cached competitor puppeteer.seo.headings:', cachedResult.competitorSite.puppeteer?.seo?.headings);
         
-        // Get YOUR site data from existing caches
-        const yourSiteData = await getCachedUserSiteData(email, yourSite);
+        // Get YOUR site data from existing caches (with Instagram and Facebook usernames)
+        const yourSiteData = await getCachedUserSiteData(email, yourSite, yourInstagram, yourFacebook);
         console.log('🔍 Your site puppeteer.seo.headings:', yourSiteData.puppeteer?.seo?.headings);
         console.log('🔍 Your site pagespeed data:', yourSiteData.pagespeed ? 'EXISTS' : 'MISSING');
         if (yourSiteData.pagespeed) {
@@ -107,6 +107,25 @@ router.post('/analyze', async (req, res) => {
         } catch (error) {
           yourSiteData.googleAds = { success: false, error: error.message };
           console.warn(`   ⚠️ Exception in your site Google Ads monitoring:`, error.message);
+        }
+
+        // Fetch ChangeDetection data for cached competitor
+        console.log(`   📝 Fetching content changes monitoring for cached competitor: ${competitorSite}`);
+        try {
+          const changeDetectionService = (await import('../services/changeDetectionService.js')).default;
+          console.log(`   🔧 ChangeDetection service loaded for competitor`);
+          const competitorChangeData = await changeDetectionService.analyzeContentChanges(competitorSite);
+          console.log(`   📊 Competitor ChangeDetection response:`, JSON.stringify(competitorChangeData, null, 2));
+          if (competitorChangeData.success) {
+            cachedResult.competitorSite.contentChanges = competitorChangeData;
+            console.log(`   ✅ Got competitor ChangeDetection data (${competitorChangeData.monitoring?.checkCount || 0} checks, ${competitorChangeData.monitoring?.changeCount || 0} changes)`);
+            console.log(`   📌 Competitor Activity Level: ${competitorChangeData.activity?.activityLevel || 'unknown'}`);
+          } else {
+            console.warn(`   ⚠️ Competitor ChangeDetection failed: ${competitorChangeData.error || 'Unknown error'}`);
+          }
+        } catch (error) {
+          console.error(`   ❌ Failed to fetch competitor content changes:`, error.message);
+          console.error(`   Stack trace:`, error.stack);
         }
 
 
@@ -147,6 +166,37 @@ router.post('/analyze', async (req, res) => {
           yourSiteData.metaAds = { success: false, error: error.message };
           console.warn(`   ⚠️ Exception in your site Meta Ads monitoring:`, error.message);
         }
+
+        // Fetch Instagram engagement for cached COMPETITOR
+        if (competitorInstagram) {
+          console.log(`   📸 Fetching Instagram engagement for cached competitor: ${competitorInstagram}`);
+          try {
+            const competitorInstagramData = await instagramEngagementService.getCompleteEngagementMetrics(competitorInstagram);
+            if (competitorInstagramData.success) {
+              cachedResult.competitorSite.instagram = competitorInstagramData;
+              console.log(`   ✅ Got competitor Instagram data (${competitorInstagramData.profile.followers.toLocaleString()} followers)`);
+            }
+          } catch (error) {
+            console.warn(`   ⚠️ Failed to fetch competitor Instagram data:`, error.message);
+          }
+        }
+
+        // Fetch Facebook engagement for cached COMPETITOR
+        if (competitorFacebook) {
+          console.log(`   📘 Fetching Facebook engagement for cached competitor: ${competitorFacebook}`);
+          try {
+            const competitorFacebookData = await facebookEngagementService.getFullEngagementAnalysis(competitorFacebook);
+            if (competitorFacebookData) {
+              cachedResult.competitorSite.facebook = {
+                success: true,
+                ...competitorFacebookData
+              };
+              console.log(`   ✅ Got competitor Facebook data (${competitorFacebookData.metrics.followers.toLocaleString()} followers)`);
+            }
+          } catch (error) {
+            console.warn(`   ⚠️ Failed to fetch competitor Facebook data:`, error.message);
+          }
+        }
         
         // Reconstruct full result with comparison
         const fullResult = {
@@ -168,6 +218,13 @@ router.post('/analyze', async (req, res) => {
         };
         
         console.log('🔍 Final yourSite.pagespeed in response:', fullResult.yourSite.pagespeed ? 'EXISTS' : 'MISSING');
+        console.log('🔍 Final yourSite.contentChanges in response:', fullResult.yourSite.contentChanges ? 'EXISTS' : 'MISSING');
+        console.log('🔍 Final yourSite.instagram in response:', fullResult.yourSite.instagram ? 'EXISTS' : 'MISSING');
+        console.log('🔍 Final competitorSite.instagram in response:', fullResult.competitorSite.instagram ? 'EXISTS' : 'MISSING');
+        if (fullResult.yourSite.instagram) {
+          console.log('📱 YOUR INSTAGRAM IN RESPONSE:', JSON.stringify(fullResult.yourSite.instagram, null, 2));
+        }
+        console.log('🔍 Final competitorSite.contentChanges in response:', fullResult.competitorSite.contentChanges ? 'EXISTS' : 'MISSING');
         console.log('🔍 Generated comparison.seo:', JSON.stringify(fullResult.comparison.seo, null, 2));
         console.log('🔍 Ads data included - Google:', !!fullResult.competitorSite.googleAds, 'Meta:', !!fullResult.competitorSite.metaAds);
         
@@ -182,9 +239,17 @@ router.post('/analyze', async (req, res) => {
 
     // Get YOUR site data from existing caches (Lighthouse, SE Ranking, etc.)
     const yourSiteData = await getCachedUserSiteData(email, yourSite, yourInstagram, yourFacebook);
+    console.log('🔍 yourSiteData.contentChanges after getCachedUserSiteData:', yourSiteData.contentChanges ? 'EXISTS' : 'MISSING');
+    if (yourSiteData.contentChanges) {
+      console.log('🔍 yourSiteData.contentChanges.success:', yourSiteData.contentChanges.success);
+    }
     
     // Fetch fresh data for competitor (Lighthouse, PageSpeed, Technical SEO, Traffic, Content Updates)
     const competitorData = await competitorService.analyzeSingleSite(competitorSite, null, false);
+    console.log('🔍 competitorData.contentChanges after analyzeSingleSite:', competitorData.contentChanges ? 'EXISTS' : 'MISSING');
+    if (competitorData.contentChanges) {
+      console.log('🔍 competitorData.contentChanges.success:', competitorData.contentChanges.success);
+    }
 
     // Fetch SE Ranking backlinks for competitor (fresh data)
     console.log(`   🔗 Fetching SE Ranking backlinks for competitor: ${competitorSite}`);
@@ -346,9 +411,16 @@ router.post('/analyze', async (req, res) => {
     console.log('📊 FINAL RESULT STRUCTURE:');
     console.log('   yourSite.traffic:', result.yourSite.traffic ? 'EXISTS' : 'MISSING');
     console.log('   competitorSite.traffic:', result.competitorSite.traffic ? 'EXISTS' : 'MISSING');
+    console.log('   yourSite.contentChanges:', result.yourSite.contentChanges ? 'EXISTS' : 'MISSING');
+    console.log('   yourSite.contentChanges.success:', result.yourSite.contentChanges?.success);
+    console.log('   yourSite.contentChanges FULL:', JSON.stringify(result.yourSite.contentChanges, null, 2));
+    console.log('   competitorSite.contentChanges:', result.competitorSite.contentChanges ? 'EXISTS' : 'MISSING');
+    console.log('   competitorSite.contentChanges.success:', result.competitorSite.contentChanges?.success);
+    console.log('   competitorSite.contentChanges FULL:', JSON.stringify(result.competitorSite.contentChanges, null, 2));
     console.log('   yourSite.contentUpdates:', result.yourSite.contentUpdates ? 'EXISTS' : 'MISSING');
     console.log('   competitorSite.contentUpdates:', result.competitorSite.contentUpdates ? 'EXISTS' : 'MISSING');
     console.log('   comparison.traffic:', result.comparison.traffic ? 'EXISTS' : 'MISSING');
+    console.log('   comparison.contentChanges:', result.comparison.contentChanges ? 'EXISTS' : 'MISSING');
     console.log('   comparison.contentUpdates:', result.comparison.contentUpdates ? 'EXISTS' : 'MISSING');
 
     res.json(result);
@@ -597,17 +669,41 @@ async function getCachedUserSiteData(email, domain, instagramUsername = null, fa
     console.warn(`   ⚠️ Failed to fetch traffic data:`, error.message);
   }
 
-  // STEP 5: Get content updates data for user's site
-  console.log(`   📝 Fetching content updates for user site...`);
+  // STEP 5: Get content updates data using ChangeDetection.io for user's site
+  console.log(`   📝 Fetching content changes monitoring for user site...`);
   try {
-    const contentUpdatesService = (await import('../services/contentUpdatesService.js')).default;
-    const contentData = await contentUpdatesService.getContentUpdates(domain);
-    if (contentData) {
-      siteData.contentUpdates = contentData;
-      console.log(`   ✅ Got content updates data`);
+    const changeDetectionService = (await import('../services/changeDetectionService.js')).default;
+    console.log(`   🔧 ChangeDetection service loaded successfully`);
+    const changeData = await changeDetectionService.analyzeContentChanges(domain);
+    console.log(`   📊 ChangeDetection response:`, JSON.stringify(changeData, null, 2));
+    if (changeData.success) {
+      siteData.contentChanges = changeData;
+      console.log(`   ✅ Got ChangeDetection monitoring data (${changeData.monitoring?.checkCount || 0} checks, ${changeData.monitoring?.changeCount || 0} changes)`);
+      console.log(`   📌 Activity Level: ${changeData.activity?.activityLevel || 'unknown'}`);
+    } else {
+      console.warn(`   ⚠️ ChangeDetection failed: ${changeData.error || 'Unknown error'}, falling back to RSS/Sitemap...`);
+      // Fallback to RSS/Sitemap if ChangeDetection fails
+      const contentUpdatesService = (await import('../services/contentUpdatesService.js')).default;
+      const contentData = await contentUpdatesService.getContentUpdates(domain);
+      if (contentData) {
+        siteData.contentUpdates = contentData;
+        console.log(`   ✅ Got content updates data (fallback)`);
+      }
     }
   } catch (error) {
-    console.warn(`   ⚠️ Failed to fetch content updates:`, error.message);
+    console.error(`   ❌ Failed to fetch content changes:`, error.message);
+    console.error(`   Stack trace:`, error.stack);
+    // Try RSS/Sitemap fallback
+    try {
+      const contentUpdatesService = (await import('../services/contentUpdatesService.js')).default;
+      const contentData = await contentUpdatesService.getContentUpdates(domain);
+      if (contentData) {
+        siteData.contentUpdates = contentData;
+        console.log(`   ✅ Got content updates data (fallback after error)`);
+      }
+    } catch (fallbackError) {
+      console.error(`   ❌ Fallback also failed:`, fallbackError.message);
+    }
   }
 
   // STEP 6: Get Instagram engagement data if username provided
@@ -649,7 +745,8 @@ async function getCachedUserSiteData(email, domain, instagramUsername = null, fa
   console.log(`      - Puppeteer: ${siteData.puppeteer ? '✅' : '❌'}`);
   console.log(`      - Backlinks: ${siteData.backlinks ? '✅' : '❌'}`);
   console.log(`      - Traffic: ${siteData.traffic ? '✅' : '❌'}`);
-  console.log(`      - Content Updates: ${siteData.contentUpdates ? '✅' : '❌'}`);
+  console.log(`      - Content Changes (ChangeDetection): ${siteData.contentChanges ? '✅' : '❌'}`);
+  console.log(`      - Content Updates (RSS/Sitemap): ${siteData.contentUpdates ? '✅' : '❌'}`);
   console.log(`      - Instagram: ${siteData.instagram ? '✅' : '❌'}`);
   console.log(`      - Facebook: ${siteData.facebook ? '✅' : '❌'}`);
 
@@ -701,6 +798,7 @@ function generateComparison(yourData, competitorData) {
     seo: null,
     backlinks: null,
     traffic: null,
+    contentChanges: null, // NEW: ChangeDetection.io monitoring
     contentUpdates: null,
     instagram: null, // NEW: Instagram engagement
     facebook: null, // NEW: Facebook engagement
@@ -950,7 +1048,75 @@ function generateComparison(yourData, competitorData) {
       }
     }
 
-    // NEW: Compare Content Updates
+    // NEW: Compare Content Changes (ChangeDetection.io)
+    if (yourData.contentChanges || competitorData.contentChanges) {
+      const yourChanges = yourData.contentChanges || {};
+      const compChanges = competitorData.contentChanges || {};
+      
+      comparison.contentChanges = {
+        your: {
+          isMonitored: yourChanges.success || false,
+          uuid: yourChanges.uuid || null,
+          lastChecked: yourChanges.monitoring?.lastChecked || 0,
+          lastChanged: yourChanges.monitoring?.lastChanged || 0,
+          checkCount: yourChanges.monitoring?.checkCount || 0,
+          changeCount: yourChanges.monitoring?.changeCount || 0,
+          isActive: yourChanges.activity?.isActive || false,
+          daysSinceLastChange: yourChanges.activity?.daysSinceLastChange || null,
+          changeFrequency: yourChanges.activity?.changeFrequency || 'unknown',
+          activityLevel: yourChanges.activity?.activityLevel || 'unknown',
+          triggers: yourChanges.triggers || [],
+          historyCount: yourChanges.history?.length || 0
+        },
+        competitor: {
+          isMonitored: compChanges.success || false,
+          uuid: compChanges.uuid || null,
+          lastChecked: compChanges.monitoring?.lastChecked || 0,
+          lastChanged: compChanges.monitoring?.lastChanged || 0,
+          checkCount: compChanges.monitoring?.checkCount || 0,
+          changeCount: compChanges.monitoring?.changeCount || 0,
+          isActive: compChanges.activity?.isActive || false,
+          daysSinceLastChange: compChanges.activity?.daysSinceLastChange || null,
+          changeFrequency: compChanges.activity?.changeFrequency || 'unknown',
+          activityLevel: compChanges.activity?.activityLevel || 'unknown',
+          triggers: compChanges.triggers || [],
+          historyCount: compChanges.history?.length || 0
+        },
+        winner: null
+      };
+
+      // Determine winner based on activity level priority
+      const activityPriority = { 'very active': 5, 'active': 4, 'moderate': 3, 'low': 2, 'inactive': 1, 'unknown': 0 };
+      const yourActivityScore = activityPriority[yourChanges.activity?.activityLevel] || 0;
+      const compActivityScore = activityPriority[compChanges.activity?.activityLevel] || 0;
+      
+      if (yourActivityScore > compActivityScore) {
+        comparison.contentChanges.winner = 'yours';
+      } else if (compActivityScore > yourActivityScore) {
+        comparison.contentChanges.winner = 'competitor';
+      } else {
+        // If activity level is same, compare change frequency
+        const yourChangeCount = yourChanges.monitoring?.changeCount || 0;
+        const compChangeCount = compChanges.monitoring?.changeCount || 0;
+        comparison.contentChanges.winner = yourChangeCount > compChangeCount ? 'yours' : 
+                                           compChangeCount > yourChangeCount ? 'competitor' : 'tie';
+      }
+
+      // Add summary insights
+      if (yourChanges.activity?.isActive && !compChanges.activity?.isActive) {
+        comparison.summary.push('📝 Your site has more recent content changes');
+      } else if (compChanges.activity?.isActive && !yourChanges.activity?.isActive) {
+        comparison.summary.push('📝 Competitor has more recent content changes');
+      }
+
+      if (yourActivityScore > compActivityScore) {
+        comparison.summary.push('🔄 Higher content update frequency');
+      } else if (compActivityScore > yourActivityScore) {
+        comparison.summary.push('🔄 Competitor updates content more frequently');
+      }
+    }
+
+    // NEW: Compare Content Updates (RSS/Sitemap fallback)
     if (yourData.contentUpdates || competitorData.contentUpdates) {
       const yourContent = yourData.contentUpdates || {};
       const compContent = competitorData.contentUpdates || {};
@@ -982,14 +1148,17 @@ function generateComparison(yourData, competitorData) {
                 (compContent.contentActivity?.averagePostsPerMonth || 0) ? 'yours' : 'competitor'
       };
 
-      const yourPosts = yourContent.contentActivity?.averagePostsPerMonth || 0;
-      const compPosts = compContent.contentActivity?.averagePostsPerMonth || 0;
-      
-      if (yourPosts > 0 && compPosts > 0) {
-        if (yourPosts > compPosts) {
-          comparison.summary.push('📝 More active content publishing');
-        } else if (compPosts > yourPosts) {
-          comparison.summary.push('📝 Competitor publishes content more frequently');
+      // Only add RSS/Sitemap insights if ChangeDetection comparison not available
+      if (!comparison.contentChanges) {
+        const yourPosts = yourContent.contentActivity?.averagePostsPerMonth || 0;
+        const compPosts = compContent.contentActivity?.averagePostsPerMonth || 0;
+        
+        if (yourPosts > 0 && compPosts > 0) {
+          if (yourPosts > compPosts) {
+            comparison.summary.push('📝 More active content publishing');
+          } else if (compPosts > yourPosts) {
+            comparison.summary.push('📝 Competitor publishes content more frequently');
+          }
         }
       }
     }

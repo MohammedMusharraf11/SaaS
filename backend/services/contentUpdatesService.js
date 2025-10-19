@@ -60,22 +60,22 @@ class ContentUpdatesService {
       }
     };
 
-    try {
+        try {
       // Try to find and parse RSS feed
       const rssData = await this.findAndParseRSS(baseUrl);
       if (rssData.found) {
         result.rss = rssData;
       }
 
-      // Try to find and parse sitemap
+      // Try to find and parse sitemap (independent of RSS)
       const sitemapData = await this.findAndParseSitemap(baseUrl);
       if (sitemapData.found) {
         result.sitemap = sitemapData;
       }
 
-      // Analyze content activity
+      // Analyze content activity from both sources
       result.contentActivity = this.analyzeContentActivity(result.rss, result.sitemap);
-
+      
       console.log(`✅ Content updates analysis complete for ${cleanDomain}`);
       return result;
     } catch (error) {
@@ -242,25 +242,31 @@ class ContentUpdatesService {
     };
 
     // Try robots.txt first
+        // Try robots.txt first
     try {
       const https = await import('https');
       const robotsUrl = `${baseUrl}/robots.txt`;
-      const robotsResponse = await axios.get(robotsUrl, { 
+      const robotsResponse = await axios.get(robotsUrl, {
         timeout: 5000,
         httpsAgent: new https.Agent({ rejectUnauthorized: false })
       });
-      
-      const sitemapMatch = robotsResponse.data.match(/Sitemap:\s*(.+)/i);
-      if (sitemapMatch) {
-        const sitemapUrl = sitemapMatch[1].trim();
-        const sitemapData = await this.parseSitemap(sitemapUrl);
-        if (sitemapData.found) {
-          return sitemapData;
+
+      // Find ALL sitemaps in robots.txt (not just the first one)
+      const sitemapMatches = robotsResponse.data.match(/Sitemap:\s*(.+)/gi);
+      if (sitemapMatches && sitemapMatches.length > 0) {
+        // Try each sitemap URL found
+        for (const match of sitemapMatches) {
+          const sitemapUrl = match.replace(/Sitemap:\s*/i, '').trim();
+          const sitemapData = await this.parseSitemap(sitemapUrl);
+          if (sitemapData.found) {
+            return sitemapData;
+          }
         }
       }
     } catch (error) {
       console.log('Could not find sitemap in robots.txt, trying common paths...');
     }
+
 
     // Try common sitemap paths
     for (const path of this.sitemapPaths) {
@@ -308,21 +314,55 @@ class ContentUpdatesService {
       const doc = dom.window.document;
 
       // Check if it's a sitemap index
+
       const sitemapIndex = doc.querySelector('sitemapindex');
       if (sitemapIndex) {
         // Parse sitemap index
         const sitemaps = Array.from(doc.querySelectorAll('sitemap'));
         console.log(`  Found sitemap index with ${sitemaps.length} sitemaps`);
-        
-        // Parse first sitemap from index
-        if (sitemaps.length > 0) {
-          const firstSitemapLoc = sitemaps[0].querySelector('loc');
-          if (firstSitemapLoc) {
-            return await this.parseSitemap(firstSitemapLoc.textContent);
+
+        // Parse ALL sitemaps from index and aggregate results
+        const allUrls = [];
+        for (const sitemapElement of sitemaps) {
+          const sitemapLoc = sitemapElement.querySelector('loc');
+          if (sitemapLoc) {
+            try {
+              const subSitemapData = await this.parseSitemap(sitemapLoc.textContent);
+              if (subSitemapData.found && subSitemapData.totalUrls > 0) {
+                // Add URLs from this sitemap to aggregated results
+                const urlElements = await this.fetchSitemapUrls(sitemapLoc.textContent);
+                allUrls.push(...urlElements);
+              }
+            } catch (err) {
+              console.log(`  Failed to parse sitemap: ${sitemapLoc.textContent}`);
+            }
           }
+        }
+
+        // If we collected URLs from multiple sitemaps, aggregate them
+        if (allUrls.length > 0) {
+          result.found = true;
+          result.totalUrls = allUrls.length;
+          
+          // Sort by lastmod and get recent ones
+          const sortedUrls = allUrls
+            .filter(url => url.lastmod)
+            .sort((a, b) => new Date(b.lastmod) - new Date(a.lastmod));
+          
+          const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+          result.recentlyModified = sortedUrls
+            .filter(url => new Date(url.lastmod) >= thirtyDaysAgo)
+            .slice(0, 20);
+          
+          if (sortedUrls.length > 0) {
+            result.lastModified = sortedUrls[0].lastmod;
+          }
+          
+          return result;
         }
         return result;
       }
+
 
       // Parse regular sitemap
       const urlElements = Array.from(doc.querySelectorAll('url'));
@@ -494,7 +534,10 @@ class ContentUpdatesService {
       insights: {
         moreActive: null,
         contentGap: null,
-        recommendation: null
+        recommendation: null,
+        recommendations: [],
+        seoImpact: null,
+        contentStrategy: null
       }
     };
 
@@ -514,10 +557,78 @@ class ContentUpdatesService {
     // Calculate content gap
     comparison.insights.contentGap = {
       postsPerMonthDiff: compActivity.averagePostsPerMonth - userActivity.averagePostsPerMonth,
-      recentActivityDiff: compActivity.recentActivityCount - userActivity.recentActivityCount
+      recentActivityDiff: compActivity.recentActivityCount - userActivity.recentActivityCount,
+      velocityGap: `${compActivity.contentVelocity} vs ${userActivity.contentVelocity}`,
+      frequencyGap: `${compActivity.updateFrequency} vs ${userActivity.updateFrequency}`
     };
 
-    // Generate recommendation
+    // Generate comprehensive recommendations
+    const recommendations = [];
+    
+    // Content Frequency Recommendations
+    if (comparison.insights.moreActive === 'competitor') {
+      recommendations.push({
+        priority: 'high',
+        category: 'Publishing Frequency',
+        issue: `Competitor publishes ${compActivity.averagePostsPerMonth} posts/month vs your ${userActivity.averagePostsPerMonth}`,
+        action: `Increase content output to at least ${Math.ceil(compActivity.averagePostsPerMonth * 0.8)} posts/month`,
+        impact: 'Higher publishing frequency improves SEO rankings and organic traffic'
+      });
+    }
+
+    // RSS Feed Recommendations
+    if (!userData.rss.found && competitorData.rss.found) {
+      recommendations.push({
+        priority: 'medium',
+        category: 'RSS Feed',
+        issue: 'Your site is missing an RSS feed while competitor has one',
+        action: 'Add an RSS feed to enable content syndication and improve discoverability',
+        impact: 'RSS feeds help with content distribution and can improve backlink opportunities'
+      });
+    }
+
+    // Sitemap Recommendations
+    if (!userData.sitemap.found && competitorData.sitemap.found) {
+      recommendations.push({
+        priority: 'high',
+        category: 'XML Sitemap',
+        issue: 'Your site is missing an XML sitemap',
+        action: 'Create and submit an XML sitemap to search engines',
+        impact: 'Sitemaps help search engines discover and index your content more efficiently'
+      });
+    }
+
+    // Content Freshness Recommendations
+    if (userActivity.updateFrequency === 'inactive' && compActivity.updateFrequency !== 'inactive') {
+      recommendations.push({
+        priority: 'critical',
+        category: 'Content Freshness',
+        issue: `Your content hasn't been updated recently (${userActivity.updateFrequency})`,
+        action: 'Establish a regular publishing schedule and update existing content',
+        impact: 'Fresh content signals to search engines that your site is actively maintained'
+      });
+    }
+
+    // Content Velocity Recommendations
+    if (userActivity.contentVelocity === 'minimal' && compActivity.contentVelocity !== 'minimal') {
+      recommendations.push({
+        priority: 'high',
+        category: 'Content Velocity',
+        issue: `Low content output (${userActivity.contentVelocity}) compared to competitor (${compActivity.contentVelocity})`,
+        action: 'Develop a content calendar and increase publishing pace',
+        impact: 'Consistent content velocity helps build authority and improves search visibility'
+      });
+    }
+
+    comparison.insights.recommendations = recommendations;
+
+    // SEO Impact Assessment
+    comparison.insights.seoImpact = this.assessSEOImpact(userData, competitorData);
+
+    // Content Strategy Suggestion
+    comparison.insights.contentStrategy = this.generateContentStrategy(userData, competitorData);
+
+    // Generate main recommendation
     if (comparison.insights.moreActive === 'competitor') {
       comparison.insights.recommendation = `Your competitor is more active with ${compActivity.recentActivityCount} recent updates vs your ${userActivity.recentActivityCount}. Consider increasing your content publishing frequency to ${compActivity.averagePostsPerMonth} posts per month.`;
     } else if (comparison.insights.moreActive === 'user') {
@@ -527,6 +638,132 @@ class ContentUpdatesService {
     }
 
     return comparison;
+  }
+
+  /**
+   * Assess SEO impact of content activity
+   */
+  assessSEOImpact(userData, competitorData) {
+    const userActivity = userData.contentActivity;
+    const compActivity = competitorData.contentActivity;
+    
+    const impact = {
+      score: 0,
+      level: 'low',
+      factors: []
+    };
+
+    // Factor 1: Content Freshness (30 points)
+    if (userActivity.isActive) {
+      impact.score += 30;
+      impact.factors.push('✅ Content is actively updated');
+    } else {
+      impact.factors.push('❌ Content is not regularly updated');
+    }
+
+    // Factor 2: Publishing Frequency (25 points)
+    if (userActivity.averagePostsPerMonth >= compActivity.averagePostsPerMonth) {
+      impact.score += 25;
+      impact.factors.push('✅ Publishing frequency matches or exceeds competitor');
+    } else {
+      impact.factors.push(`❌ Publishing ${userActivity.averagePostsPerMonth} vs competitor's ${compActivity.averagePostsPerMonth} posts/month`);
+    }
+
+    // Factor 3: RSS Feed Presence (15 points)
+    if (userData.rss.found) {
+      impact.score += 15;
+      impact.factors.push('✅ RSS feed available for syndication');
+    } else {
+      impact.factors.push('❌ No RSS feed found');
+    }
+
+    // Factor 4: Sitemap Presence (20 points)
+    if (userData.sitemap.found) {
+      impact.score += 20;
+      impact.factors.push(`✅ XML sitemap with ${userData.sitemap.totalUrls} URLs`);
+    } else {
+      impact.factors.push('❌ No XML sitemap found');
+    }
+
+    // Factor 5: Recent Activity (10 points)
+    if (userActivity.recentActivityCount >= compActivity.recentActivityCount) {
+      impact.score += 10;
+      impact.factors.push('✅ Recent activity matches or exceeds competitor');
+    } else {
+      impact.factors.push('❌ Lower recent activity than competitor');
+    }
+
+    // Determine impact level
+    if (impact.score >= 80) {
+      impact.level = 'excellent';
+    } else if (impact.score >= 60) {
+      impact.level = 'good';
+    } else if (impact.score >= 40) {
+      impact.level = 'moderate';
+    } else {
+      impact.level = 'poor';
+    }
+
+    return impact;
+  }
+
+  /**
+   * Generate content strategy recommendations
+   */
+  generateContentStrategy(userData, competitorData) {
+    const userActivity = userData.contentActivity;
+    const compActivity = competitorData.contentActivity;
+    
+    const strategy = {
+      quickWins: [],
+      longTermGoals: [],
+      competitiveAdvantages: [],
+      priorities: []
+    };
+
+    // Quick Wins
+    if (!userData.rss.found) {
+      strategy.quickWins.push('Add RSS feed for content syndication');
+    }
+    if (!userData.sitemap.found) {
+      strategy.quickWins.push('Create and submit XML sitemap');
+    }
+    if (userActivity.recentActivityCount === 0) {
+      strategy.quickWins.push('Publish new content to signal activity');
+    }
+
+    // Long-Term Goals
+    if (userActivity.averagePostsPerMonth < compActivity.averagePostsPerMonth) {
+      strategy.longTermGoals.push(`Scale to ${compActivity.averagePostsPerMonth}+ posts/month`);
+    }
+    if (userActivity.contentVelocity !== 'high') {
+      strategy.longTermGoals.push('Build high-velocity content production system');
+    }
+    strategy.longTermGoals.push('Establish consistent weekly publishing schedule');
+
+    // Competitive Advantages
+    if (userActivity.averagePostsPerMonth > compActivity.averagePostsPerMonth) {
+      strategy.competitiveAdvantages.push('Higher publishing frequency');
+    }
+    if (userActivity.isActive && !compActivity.isActive) {
+      strategy.competitiveAdvantages.push('More active content updates');
+    }
+    if (userData.sitemap.totalUrls > competitorData.sitemap.totalUrls) {
+      strategy.competitiveAdvantages.push(`Larger content library (${userData.sitemap.totalUrls} vs ${competitorData.sitemap.totalUrls} pages)`);
+    }
+
+    // Priorities
+    if (!userActivity.isActive) {
+      strategy.priorities.push({ priority: 1, task: 'Resume regular content publishing' });
+    }
+    if (userActivity.averagePostsPerMonth < compActivity.averagePostsPerMonth) {
+      strategy.priorities.push({ priority: 2, task: 'Increase content output pace' });
+    }
+    if (!userData.rss.found || !userData.sitemap.found) {
+      strategy.priorities.push({ priority: 3, task: 'Add missing technical infrastructure (RSS/Sitemap)' });
+    }
+
+    return strategy;
   }
 
   /**

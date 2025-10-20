@@ -3,7 +3,7 @@ import axios from 'axios';
 
 class SimilarWebTrafficService {
   constructor() {
-    this.rapidApiKey = process.env.RAPIDAPI_KEY || 'beb04a38acmsh6d3e993c54c2d4fp1a525fjsnecb3ffee9285';
+    this.rapidApiKey = process.env.RAPIDAPI_KEY || 'd844ab0f41msh81ef5a49f61ca81p1ce760jsn100d5e352ffa';
     this.baseUrl = 'https://similarweb-traffic.p.rapidapi.com';
   }
 

@@ -20,7 +20,7 @@ import {
   Instagram as InstagramIcon, 
   Facebook as FacebookIcon 
 } from 'lucide-react'
-import CompetitorResults from './CompetitorResults'
+import CompetitorResults from './CompetitorResults_New'
 import { createClient } from '@/utils/supabase/client'
 
 interface Competitor {
@@ -50,9 +50,9 @@ export default function CompetitorIntelligence() {
   const [isCached, setIsCached] = useState(false)
   const [selectedCompetitor, setSelectedCompetitor] = useState<Competitor | null>(null)
   
-  // Filter states
+  // New filter states
   const [timePeriod, setTimePeriod] = useState('last-30-days')
-  const [analysisType, setAnalysisType] = useState<'seo' | 'ads' | 'content' | 'social' | 'technical'>('seo')
+  const [analysisType, setAnalysisType] = useState('seo')
 
   // Get user email and domain on mount
   useEffect(() => {
@@ -209,7 +209,7 @@ export default function CompetitorIntelligence() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6">
+      <div className="max-w-7xl mx-auto px-6 py-6">
         
         {/* Filter Bar */}
         {selectedCompetitor && !loading && results && (
@@ -252,7 +252,7 @@ export default function CompetitorIntelligence() {
 
                 {/* Analysis Type Selector */}
                 <div className="min-w-[140px]">
-                  <Select value={analysisType} onValueChange={(value: any) => setAnalysisType(value)}>
+                  <Select value={analysisType} onValueChange={setAnalysisType}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -261,7 +261,6 @@ export default function CompetitorIntelligence() {
                       <SelectItem value="ads">Ads</SelectItem>
                       <SelectItem value="content">Content</SelectItem>
                       <SelectItem value="social">Social Media</SelectItem>
-                      <SelectItem value="technical">Technical</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -276,11 +275,11 @@ export default function CompetitorIntelligence() {
           </div>
         )}
 
-        {/* Main Grid Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 lg:gap-6">
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           
           {/* Sidebar - Competitors List */}
-          <div className="xl:col-span-1">
+          <div className="lg:col-span-1">
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -498,7 +497,7 @@ export default function CompetitorIntelligence() {
           </div>
 
           {/* Main Content Area - Results */}
-          <div className="xl:col-span-4">
+          <div className="lg:col-span-3">
             {error && (
               <Alert variant="destructive" className="mb-4">
                 <AlertCircle className="h-4 w-4" />
@@ -546,11 +545,7 @@ export default function CompetitorIntelligence() {
                     </AlertDescription>
                   </Alert>
                 )}
-                <CompetitorResults 
-                  data={results} 
-                  analysisType={analysisType}
-                  timePeriod={timePeriod}
-                />
+                <CompetitorResults data={results} />
               </div>
             )}
           </div>

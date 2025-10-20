@@ -147,10 +147,25 @@ const competitorService = {
           .catch(err => ({ status: 'rejected', reason: err }));
       }
 
-      // NEW: Get content updates data
-      console.log(`   📝 Step 6/6: Content updates analysis...`);
-      const contentUpdatesResult = await contentUpdatesService.getContentUpdates(domain)
-        .catch(err => ({ status: 'rejected', reason: err }));
+      // NEW: Get content changes monitoring using ChangeDetection.io
+      console.log(`   📝 Step 6/6: Content changes monitoring analysis...`);
+      let contentChangesResult;
+      let contentUpdatesResult;
+      
+      try {
+        const changeDetectionService = (await import('./changeDetectionService.js')).default;
+        contentChangesResult = await changeDetectionService.analyzeContentChanges(domain);
+        console.log(`   ${contentChangesResult.success ? '✅' : '⚠️'} ChangeDetection: ${contentChangesResult.success ? 'Success' : 'Failed'}`);
+        
+        // Also get RSS/Sitemap as fallback/supplementary data
+        contentUpdatesResult = await contentUpdatesService.getContentUpdates(domain)
+          .catch(err => ({ status: 'rejected', reason: err }));
+      } catch (err) {
+        console.warn(`   ⚠️ ChangeDetection failed, using RSS/Sitemap only`);
+        contentChangesResult = { status: 'rejected', reason: err };
+        contentUpdatesResult = await contentUpdatesService.getContentUpdates(domain)
+          .catch(err => ({ status: 'rejected', reason: err }));
+      }
 
       return {
         // Puppeteer analysis (on-page, content, technology)
@@ -183,9 +198,15 @@ const competitorService = {
           error: trafficResult.reason?.message || 'Traffic data unavailable'
         },
 
-        // NEW: Content updates
-        contentUpdates: contentUpdatesResult.status !== 'rejected' ? contentUpdatesResult : {
-          error: contentUpdatesResult.reason?.message || 'Content updates unavailable'
+        // NEW: Content changes monitoring (ChangeDetection.io)
+        contentChanges: contentChangesResult && contentChangesResult.success ? contentChangesResult : {
+          success: false,
+          error: contentChangesResult?.error || 'ChangeDetection unavailable'
+        },
+
+        // NEW: Content updates (RSS/Sitemap fallback)
+        contentUpdates: contentUpdatesResult && contentUpdatesResult.status !== 'rejected' ? contentUpdatesResult : {
+          error: contentUpdatesResult?.reason?.message || 'Content updates unavailable'
         }
       };
 

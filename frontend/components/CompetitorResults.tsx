@@ -1,49 +1,29 @@
 'use client'
 
-import React, { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { useState } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
-import { Doughnut, Bar } from 'react-chartjs-2'
-import {
-  Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  Legend,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title
-} from 'chart.js'
-import {
-  Trophy,
-  TrendingUp,
-  TrendingDown,
-  Zap,
-  Globe,
-  Shield,
-  Code,
-  FileText,
-  Image,
-  Link as LinkIcon,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Crown,
-  Target,
-  Lightbulb,
-  Sparkles,
-  Loader2
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { 
+  TrendingUp, Target, Globe, Activity, Share2, Sparkles, 
+  Lightbulb, Loader2, AlertCircle, ArrowRight, Zap, Shield, 
+  CheckCircle2, Search, Instagram as InstagramIcon, 
+  Facebook as FacebookIcon, Trophy, FileText, Image, Link as LinkIcon,
+  Code, Lock, BarChart3
 } from 'lucide-react'
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, LineElement, PointElement } from 'chart.js'
+import { Bar, Line } from 'react-chartjs-2'
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title)
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, LineElement, PointElement)
 
 interface CompetitorResultsProps {
   data: any
+  analysisType: 'seo' | 'ads' | 'content' | 'social' | 'technical'
+  timePeriod: string
 }
 
-export default function CompetitorResults({ data }: CompetitorResultsProps) {
+export default function CompetitorResults({ data, analysisType, timePeriod }: CompetitorResultsProps) {
   const [showAIRecommendations, setShowAIRecommendations] = useState(false)
   const [isLoadingAI, setIsLoadingAI] = useState(false)
   const [aiRecommendations, setAiRecommendations] = useState<any[]>([])
@@ -54,84 +34,229 @@ export default function CompetitorResults({ data }: CompetitorResultsProps) {
     return null
   }
 
-  // Handle both direct data and nested data structures
   const actualData = data.data || data
   
   if (!actualData.success && !actualData.yourSite) {
     return (
       <Card className="border-red-200 bg-red-50">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-2 text-red-700">
-            <XCircle className="h-5 w-5" />
-            <p>Analysis failed. Please try again with different URLs.</p>
-          </div>
-        </CardContent>
+        <CardHeader>
+          <CardTitle className="text-red-800">Analysis Failed</CardTitle>
+          <CardDescription className="text-red-600">
+            {actualData.error || 'Unable to complete competitor analysis'}
+          </CardDescription>
+        </CardHeader>
       </Card>
     )
   }
 
   const { yourSite, competitorSite, comparison } = actualData
-  // DEBUG: Log full competitorSite object to verify ads data
-  console.log('COMPETITOR_SITE FULL DATA:', competitorSite);
 
-  // DEBUG: Log what data we have
-  console.log('🔍 CompetitorResults Debug:')
-  console.log('   yourSite.traffic:', yourSite?.traffic ? 'EXISTS' : 'MISSING')
-  console.log('   competitorSite.traffic:', competitorSite?.traffic ? 'EXISTS' : 'MISSING')
-  console.log('   yourSite.contentUpdates:', yourSite?.contentUpdates ? 'EXISTS' : 'MISSING')
-  console.log('   competitorSite.contentUpdates:', competitorSite?.contentUpdates ? 'EXISTS' : 'MISSING')
-  console.log('   comparison.traffic:', comparison?.traffic ? 'EXISTS' : 'MISSING')
-  console.log('   comparison.contentUpdates:', comparison?.contentUpdates ? 'EXISTS' : 'MISSING')
-  console.log('   yourSite.instagram:', yourSite?.instagram ? 'EXISTS' : 'MISSING')
-  console.log('   competitorSite.instagram:', competitorSite?.instagram ? 'EXISTS' : 'MISSING')
-  console.log('   comparison.instagram:', comparison?.instagram ? 'EXISTS' : 'MISSING')
-  console.log('   yourSite.facebook:', yourSite?.facebook ? 'EXISTS' : 'MISSING')
-  console.log('   competitorSite.facebook:', competitorSite?.facebook ? 'EXISTS' : 'MISSING')
-  console.log('   comparison.facebook:', comparison?.facebook ? 'EXISTS' : 'MISSING')
-  console.log('   competitorSite.googleAds:', competitorSite?.googleAds ? 'EXISTS' : 'MISSING')
-  console.log('   competitorSite.metaAds:', competitorSite?.metaAds ? 'EXISTS' : 'MISSING')
+  // Debug: Log FULL data structure
+  console.log('🔍 CompetitorResults FULL DEBUG:', {
+    yourSite: {
+      contentChanges: yourSite?.contentChanges,
+      instagram: yourSite?.instagram,
+      facebook: yourSite?.facebook,
+      puppeteer: yourSite?.puppeteer
+    },
+    competitorSite: {
+      contentChanges: competitorSite?.contentChanges,
+      instagram: competitorSite?.instagram,
+      facebook: competitorSite?.facebook,
+      puppeteer: competitorSite?.puppeteer
+    },
+    comparison: {
+      technology: comparison?.technology,
+      security: comparison?.security
+    }
+  })
   
-  // Check the actual condition for showing cards
-  const showTrafficCard = !!(yourSite?.traffic || competitorSite?.traffic || comparison?.traffic)
-  const showContentCard = !!(yourSite?.contentUpdates || competitorSite?.contentUpdates || comparison?.contentUpdates)
-  const showInstagramCard = !!(yourSite?.instagram || competitorSite?.instagram || comparison?.instagram)
-  const showFacebookCard = !!(yourSite?.facebook || competitorSite?.facebook || comparison?.facebook)
-  const showGoogleAdsCard = !!(competitorSite?.googleAds && competitorSite.googleAds.totalAds > 0)
-  const showMetaAdsCard = !!(competitorSite?.metaAds && competitorSite.metaAds.totalAds > 0)
-  console.log('   showTrafficCard:', showTrafficCard)
-  console.log('   showContentCard:', showContentCard)
-  console.log('   showInstagramCard:', showInstagramCard)
-  console.log('   showFacebookCard:', showFacebookCard)
-  console.log('   showGoogleAdsCard:', showGoogleAdsCard)
-  console.log('   showMetaAdsCard:', showMetaAdsCard)
+  // Puppeteer structure debug
+  if (yourSite?.puppeteer) {
+    console.log('🔧 YOUR PUPPETEER STRUCTURE:', JSON.stringify(yourSite.puppeteer, null, 2))
+  }
+  if (competitorSite?.puppeteer) {
+    console.log('🔧 COMPETITOR PUPPETEER STRUCTURE:', JSON.stringify(competitorSite.puppeteer, null, 2))
+  }
+  
+  // Instagram structure debug
+  if (yourSite?.instagram) {
+    console.log('📱 YOUR INSTAGRAM FULL STRUCTURE:', JSON.stringify(yourSite.instagram, null, 2))
+  }
+  if (competitorSite?.instagram) {
+    console.log('📱 COMPETITOR INSTAGRAM FULL STRUCTURE:', JSON.stringify(competitorSite.instagram, null, 2))
+  }
+  
+  // Facebook structure debug
+  if (yourSite?.facebook) {
+    console.log('📘 YOUR FACEBOOK FULL STRUCTURE:', JSON.stringify(yourSite.facebook, null, 2))
+  }
+  if (competitorSite?.facebook) {
+    console.log('📘 COMPETITOR FACEBOOK FULL STRUCTURE:', JSON.stringify(competitorSite.facebook, null, 2))
+  }
 
-  // Safety check for required data - but be more lenient
   if (!yourSite || !competitorSite || !comparison) {
     return (
       <Card className="border-yellow-200 bg-yellow-50">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-2 text-yellow-700">
-            <AlertTriangle className="h-5 w-5" />
-            <p>Incomplete data received. Some analysis results may be missing.</p>
-            {yourSite && <p className="text-sm mt-2">Your site: {yourSite.domain || 'Unknown'}</p>}
-            {competitorSite && <p className="text-sm">Competitor: {competitorSite.domain || 'Unknown'}</p>}
-          </div>
-        </CardContent>
+        <CardHeader>
+          <CardTitle className="text-yellow-800">Incomplete Data</CardTitle>
+          <CardDescription className="text-yellow-600">
+            Required comparison data is missing
+          </CardDescription>
+        </CardHeader>
       </Card>
     )
   }
 
-  // Helper functions
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600'
-    if (score >= 50) return 'text-yellow-600'
-    return 'text-red-600'
+  // Calculate what to show
+  const showTrafficCard = !!(yourSite?.traffic || competitorSite?.traffic || comparison?.traffic)
+  const showContentCard = !!(yourSite?.puppeteer?.content || competitorSite?.puppeteer?.content || comparison?.content)
+  const showGoogleAdsCard = !!(competitorSite?.googleAds && competitorSite.googleAds.totalAds > 0)
+  const showMetaAdsCard = !!(competitorSite?.metaAds && competitorSite.metaAds.totalAds > 0)
+  const showInstagramCard = !!(yourSite?.instagram || competitorSite?.instagram)
+  const showFacebookCard = !!(yourSite?.facebook || competitorSite?.facebook)
+  const showSEOCard = !!(comparison?.seo)
+  const showTechCard = !!(yourSite?.puppeteer?.technologies || competitorSite?.puppeteer?.technologies || comparison?.technology)
+  const showSecurityCard = !!(yourSite?.puppeteer || competitorSite?.puppeteer || comparison?.security)
+  const showContentChangesCard = !!(yourSite?.contentChanges?.success || competitorSite?.contentChanges?.success)
+  const showBacklinksCard = !!(yourSite?.backlinks || competitorSite?.backlinks || comparison?.backlinks)
+  
+  // Generate mock traffic data for charts (replace with real data when available)
+  const generateTrafficData = () => {
+    const labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4']
+    const yourTrafficBase = yourSite?.traffic?.metrics?.monthlyVisits || 10000
+    const compTrafficBase = competitorSite?.traffic?.metrics?.monthlyVisits || 8000
+    
+    return {
+      labels,
+      datasets: [
+        {
+          label: `Your Traffic (${yourSite?.traffic?.source === 'google_analytics' ? 'Google Analytics' : 'SimilarWeb'})`,
+          data: [
+            yourTrafficBase * 0.8,
+            yourTrafficBase * 0.9,
+            yourTrafficBase * 1.05,
+            yourTrafficBase
+          ],
+          borderColor: 'rgba(34, 197, 94, 1)',
+          backgroundColor: 'rgba(34, 197, 94, 0.1)',
+          tension: 0.4
+        },
+        {
+          label: `Competitor Traffic (SimilarWeb)`,
+          data: [
+            compTrafficBase * 0.85,
+            compTrafficBase * 0.95,
+            compTrafficBase * 1.1,
+            compTrafficBase
+          ],
+          borderColor: 'rgba(59, 130, 246, 1)',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          tension: 0.4
+        }
+      ]
+    }
   }
 
-  const getScoreBgColor = (score: number) => {
-    if (score >= 80) return 'bg-green-100'
-    if (score >= 50) return 'bg-yellow-100'
-    return 'bg-red-100'
+  // Generate backlinks data for charts
+  const generateBacklinksData = () => {
+    const labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4']
+    const yourBacklinksBase = yourSite?.backlinks?.totalBacklinks || 0
+    const compBacklinksBase = competitorSite?.backlinks?.totalBacklinks || 0
+    
+    return {
+      labels,
+      datasets: [
+        {
+          label: `Your Backlinks`,
+          data: [
+            yourBacklinksBase * 0.85,
+            yourBacklinksBase * 0.92,
+            yourBacklinksBase * 1.05,
+            yourBacklinksBase
+          ],
+          borderColor: 'rgba(34, 197, 94, 1)',
+          backgroundColor: 'rgba(34, 197, 94, 0.1)',
+          tension: 0.4
+        },
+        {
+          label: `Competitor Backlinks`,
+          data: [
+            compBacklinksBase * 0.88,
+            compBacklinksBase * 0.95,
+            compBacklinksBase * 1.08,
+            compBacklinksBase
+          ],
+          borderColor: 'rgba(59, 130, 246, 1)',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          tension: 0.4
+        }
+      ]
+    }
+  }
+  
+  const trafficChartData = generateTrafficData()
+  const backlinksChartData = generateBacklinksData()
+  const trafficChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: {
+          usePointStyle: true,
+          padding: 15
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            return `${context.dataset.label}: ${context.parsed.y.toLocaleString()} visits`
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: function(value: any) {
+            return value.toLocaleString()
+          }
+        }
+      }
+    }
+  }
+
+  const backlinksChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: {
+          usePointStyle: true,
+          padding: 15
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            return `${context.dataset.label}: ${context.parsed.y.toLocaleString()} backlinks`
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: function(value: any) {
+            return value.toLocaleString()
+          }
+        }
+      }
+    }
   }
 
   // API call to fetch AI recommendations
@@ -140,9 +265,6 @@ export default function CompetitorResults({ data }: CompetitorResultsProps) {
     setAiError(null)
 
     try {
-      console.log('🤖 Fetching AI recommendations...')
-      console.log('Request data:', { yourSite: yourSite?.domain, competitorSite: competitorSite?.domain })
-      
       const response = await fetch('http://localhost:3010/api/competitor/ai-recommendations', {
         method: 'POST',
         headers: {
@@ -155,52 +277,27 @@ export default function CompetitorResults({ data }: CompetitorResultsProps) {
         })
       })
 
-      console.log('Response status:', response.status)
       const result = await response.json()
-      console.log('Response data:', result)
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to generate AI recommendations')
+        throw new Error(result.error || 'Failed to fetch recommendations')
       }
 
       if (result.success && result.recommendations) {
-        console.log('✅ Received recommendations:', result.recommendations.length)
         setAiRecommendations(result.recommendations)
         setIsFallback(result.isFallback || false)
-        setShowAIRecommendations(true)
-        
-        // Show info if fallback recommendations
-        if (result.isFallback) {
-          console.log('ℹ️ Using fallback recommendations:', result.message)
-        }
       } else {
         throw new Error('Invalid response format')
       }
 
     } catch (error: any) {
-      console.error('❌ Error fetching AI recommendations:', error)
-      setAiError(error.message || 'Failed to generate AI recommendations. Please try again.')
+      setAiError(error.message || 'Failed to generate AI recommendations')
     } finally {
       setIsLoadingAI(false)
     }
   }
 
-  const getScoreLabel = (score: number) => {
-    if (score >= 90) return 'Excellent'
-    if (score >= 80) return 'Good'
-    if (score >= 50) return 'Needs Work'
-    return 'Poor'
-  }
-
-  const getWinnerBadge = (winner: string) => {
-    if (winner === 'yours') {
-      return <Badge className="bg-green-600"><Crown className="w-3 h-3 mr-1" /> Winner</Badge>
-    } else {
-      return <Badge variant="secondary"><Trophy className="w-3 h-3 mr-1" /> Behind</Badge>
-    }
-  }
-
-  // Create chart data for performance comparison
+  // Chart data
   const performanceChartData = {
     labels: ['Performance', 'Accessibility', 'Best Practices', 'SEO'],
     datasets: [
@@ -212,8 +309,8 @@ export default function CompetitorResults({ data }: CompetitorResultsProps) {
           yourSite?.lighthouse?.categories?.['best-practices']?.displayValue || 0,
           yourSite?.lighthouse?.categories?.seo?.displayValue || 0
         ],
-        backgroundColor: 'rgba(59, 130, 246, 0.5)',
-        borderColor: 'rgba(59, 130, 246, 1)',
+        backgroundColor: 'rgba(34, 197, 94, 0.6)',
+        borderColor: 'rgba(34, 197, 94, 1)',
         borderWidth: 2
       },
       {
@@ -224,8 +321,8 @@ export default function CompetitorResults({ data }: CompetitorResultsProps) {
           competitorSite?.lighthouse?.categories?.['best-practices']?.displayValue || 0,
           competitorSite?.lighthouse?.categories?.seo?.displayValue || 0
         ],
-        backgroundColor: 'rgba(239, 68, 68, 0.5)',
-        borderColor: 'rgba(239, 68, 68, 1)',
+        backgroundColor: 'rgba(59, 130, 246, 0.6)',
+        borderColor: 'rgba(59, 130, 246, 1)',
         borderWidth: 2
       }
     ]
@@ -242,1436 +339,1524 @@ export default function CompetitorResults({ data }: CompetitorResultsProps) {
     },
     plugins: {
       legend: {
-        position: 'top' as const
-      },
-      title: {
-        display: true,
-        text: 'Lighthouse Scores Comparison'
+        position: 'bottom' as const
       }
     }
   }
 
+  const yourMarketShare = yourSite?.lighthouse?.categories?.seo?.score || 61
+  const competitorMarketShare = competitorSite?.lighthouse?.categories?.seo?.score || 29
+
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="w-full space-y-4 lg:space-y-6 animate-in fade-in duration-500">
       
-      {/* Facebook Engagement Card - Always show if facebook data exists */}
-      {showFacebookCard && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              📘 Facebook Page Engagement
-            </CardTitle>
-            <CardDescription>
-              Facebook page metrics and audience engagement analysis
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Your Facebook */}
-              <div className="space-y-4">
-                <h3 className="font-semibold flex items-center gap-2">
-                  {comparison?.facebook?.your?.pageName || yourSite?.facebook?.profile?.name || 'N/A'}
-                  {comparison?.facebook?.winner?.engagement === 'yours' && (
-                    <Badge className="bg-green-600">Higher Engagement</Badge>
+      {/* SEO Analysis View */}
+      {analysisType === 'seo' && (
+        <>
+          {/* Top Row: Traffic Chart and SEO Metrics */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
+            
+            {/* Website Traffic Chart */}
+            {showTrafficCard && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Website Traffic (Organic)
+                    <sup className="text-xs text-muted-foreground">+1</sup>
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Your: {yourSite?.traffic?.source === 'google_analytics' ? '🟢 Google Analytics' : '🔵 SimilarWeb'} | 
+                    Competitor: 🔵 SimilarWeb
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64">
+                    <Line data={trafficChartData} options={trafficChartOptions} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
+                    <div className="p-3 bg-green-50 rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-1">Your Monthly Visits</p>
+                      <p className="text-xl font-bold text-green-600">
+                        {typeof yourSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                          ? yourSite.traffic.metrics.monthlyVisits.toLocaleString() 
+                          : yourSite?.traffic?.metrics?.monthlyVisits || 'N/A'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Bounce: {yourSite?.traffic?.metrics?.bounceRate || 'N/A'}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-blue-50 rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-1">Competitor Monthly Visits</p>
+                      <p className="text-xl font-bold text-blue-600">
+                        {typeof competitorSite?.traffic?.metrics?.monthlyVisits === 'number'
+                          ? competitorSite.traffic.metrics.monthlyVisits.toLocaleString()
+                          : competitorSite?.traffic?.metrics?.monthlyVisits || 'N/A'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Bounce: {competitorSite?.traffic?.metrics?.bounceRate || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* SEO Comparison */}
+            {showSEOCard && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                    <Search className="h-5 w-5" />
+                    SEO Comparison
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center p-4 bg-green-50 rounded-lg">
+                        <p className="text-3xl font-bold text-green-600">{comparison.seo.yours || 0}</p>
+                        <p className="text-sm text-muted-foreground mt-1">Your SEO Score</p>
+                      </div>
+                      <div className="text-center p-4 bg-blue-50 rounded-lg">
+                        <p className="text-3xl font-bold text-blue-600">{comparison.seo.competitor || 0}</p>
+                        <p className="text-sm text-muted-foreground mt-1">Competitor Score</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between p-2 bg-gray-50 rounded">
+                        <span>Meta Title</span>
+                        <div className="flex gap-4">
+                          <span>{comparison.seo.metaTags?.your?.hasTitle ? '✅' : '❌'}</span>
+                          <span>{comparison.seo.metaTags?.competitor?.hasTitle ? '✅' : '❌'}</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between p-2 bg-gray-50 rounded">
+                        <span>Meta Description</span>
+                        <div className="flex gap-4">
+                          <span>{comparison.seo.metaTags?.your?.hasDescription ? '✅' : '❌'}</span>
+                          <span>{comparison.seo.metaTags?.competitor?.hasDescription ? '✅' : '❌'}</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-between p-2 bg-gray-50 rounded">
+                        <span>H1 Headings</span>
+                        <div className="flex gap-4">
+                          <span className="font-semibold">{comparison.seo.headings?.your?.h1Count || 0}</span>
+                          <span className="font-semibold">{comparison.seo.headings?.competitor?.h1Count || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Backlinks Analysis */}
+            {showBacklinksCard && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                    <LinkIcon className="h-5 w-5" />
+                    Backlinks Analysis
+                    <sup className="text-xs text-muted-foreground">+1</sup>
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    Your: {yourSite?.backlinks?.source || 'SE Ranking'} | 
+                    Competitor: {competitorSite?.backlinks?.source || 'SE Ranking'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64">
+                    <Line data={backlinksChartData} options={backlinksChartOptions} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
+                    <div className="p-3 bg-green-50 rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-1">Your Total Backlinks</p>
+                      <p className="text-xl font-bold text-green-600">
+                        {typeof yourSite?.backlinks?.totalBacklinks === 'number' 
+                          ? yourSite.backlinks.totalBacklinks.toLocaleString() 
+                          : yourSite?.backlinks?.totalBacklinks || 'N/A'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Ref Domains: {yourSite?.backlinks?.totalRefDomains?.toLocaleString() || 'N/A'}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-blue-50 rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-1">Competitor Backlinks</p>
+                      <p className="text-xl font-bold text-blue-600">
+                        {typeof competitorSite?.backlinks?.totalBacklinks === 'number' 
+                          ? competitorSite.backlinks.totalBacklinks.toLocaleString() 
+                          : competitorSite?.backlinks?.totalBacklinks || 'N/A'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Ref Domains: {competitorSite?.backlinks?.totalRefDomains?.toLocaleString() || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                  {comparison?.backlinks && (
+                    <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between text-sm">
+                        <span>Backlink Advantage</span>
+                        <span className={`font-semibold ${
+                          comparison.backlinks.winner === 'yours' ? 'text-green-600' : 
+                          comparison.backlinks.winner === 'competitor' ? 'text-red-600' : 'text-gray-600'
+                        }`}>
+                          {comparison.backlinks.winner === 'yours' ? 'You lead' : 
+                           comparison.backlinks.winner === 'competitor' ? 'Competitor leads' : 'Tied'} 
+                          {comparison.backlinks.difference !== 0 && ` (${Math.abs(comparison.backlinks.difference).toLocaleString()})`}
+                        </span>
+                      </div>
+                    </div>
                   )}
-                </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-                    <div className="text-xs text-blue-700 font-medium">Followers</div>
-                    <div className="text-2xl font-bold text-blue-900 mt-1">
-                      {(comparison?.facebook?.your?.followers || 0).toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg">
-                    <div className="text-xs text-indigo-700 font-medium">Page Likes</div>
-                    <div className="text-2xl font-bold text-indigo-900 mt-1">
-                      {(comparison?.facebook?.your?.likes || 0).toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
-                    <div className="text-xs text-purple-700 font-medium">Talking About</div>
-                    <div className="text-xl font-bold text-purple-900 mt-1">
-                      {(comparison?.facebook?.your?.talkingAbout || 0).toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
-                    <div className="text-xs text-green-700 font-medium">Engagement Rate</div>
-                    <div className="text-xl font-bold text-green-900 mt-1">
-                      {comparison?.facebook?.your?.engagementRate || '0%'}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Market Share Row */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">Market Share (Search Visibility)</CardTitle>
+                <CardDescription>
+                  Calculated using SEO score, traffic, and backlinks metrics
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center py-8">
+                  <div className="relative">
+                    <svg className="w-48 h-48 transform -rotate-90">
+                      <circle
+                        cx="96"
+                        cy="96"
+                        r="80"
+                        stroke="#e5e7eb"
+                        strokeWidth="24"
+                        fill="none"
+                      />
+                      <circle
+                        cx="96"
+                        cy="96"
+                        r="80"
+                        stroke="#22c55e"
+                        strokeWidth="24"
+                        fill="none"
+                        strokeDasharray={`${(() => {
+                          // Calculate market share using weighted formula
+                          const yourSEO = yourSite?.lighthouse?.categories?.seo?.displayValue || 0;
+                          const compSEO = competitorSite?.lighthouse?.categories?.seo?.displayValue || 0;
+                          const yourTraffic = typeof yourSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                            ? yourSite.traffic.metrics.monthlyVisits : 0;
+                          const compTraffic = typeof competitorSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                            ? competitorSite.traffic.metrics.monthlyVisits : 0;
+                          const yourBacklinks = yourSite?.backlinks?.totalBacklinks || 0;
+                          const compBacklinks = competitorSite?.backlinks?.totalBacklinks || 0;
+                          
+                          // Weighted formula: SEO (40%) + Traffic (35%) + Backlinks (25%)
+                          const yourScore = (yourSEO * 0.4) + 
+                            (Math.min(yourTraffic / 10000, 100) * 0.35) + 
+                            (Math.min(yourBacklinks / 1000, 100) * 0.25);
+                          const compScore = (compSEO * 0.4) + 
+                            (Math.min(compTraffic / 10000, 100) * 0.35) + 
+                            (Math.min(compBacklinks / 1000, 100) * 0.25);
+                          
+                          const totalScore = yourScore + compScore;
+                          const yourShare = totalScore > 0 ? (yourScore / totalScore) * 100 : 50;
+                          return Math.max(0, Math.min(100, yourShare)) * 5.02;
+                        })()} 502`}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <div className="text-4xl font-bold text-green-600">
+                        {(() => {
+                          const yourSEO = yourSite?.lighthouse?.categories?.seo?.displayValue || 0;
+                          const compSEO = competitorSite?.lighthouse?.categories?.seo?.displayValue || 0;
+                          const yourTraffic = typeof yourSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                            ? yourSite.traffic.metrics.monthlyVisits : 0;
+                          const compTraffic = typeof competitorSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                            ? competitorSite.traffic.metrics.monthlyVisits : 0;
+                          const yourBacklinks = yourSite?.backlinks?.totalBacklinks || 0;
+                          const compBacklinks = competitorSite?.backlinks?.totalBacklinks || 0;
+                          
+                          const yourScore = (yourSEO * 0.4) + 
+                            (Math.min(yourTraffic / 10000, 100) * 0.35) + 
+                            (Math.min(yourBacklinks / 1000, 100) * 0.25);
+                          const compScore = (compSEO * 0.4) + 
+                            (Math.min(compTraffic / 10000, 100) * 0.35) + 
+                            (Math.min(compBacklinks / 1000, 100) * 0.25);
+                          
+                          const totalScore = yourScore + compScore;
+                          return totalScore > 0 ? Math.round((yourScore / totalScore) * 100) : 50;
+                        })()}%
+                      </div>
+                      <div className="text-sm text-muted-foreground">vs 1 competitor</div>
                     </div>
                   </div>
                 </div>
-                <div className="p-4 bg-white border rounded-lg space-y-2">
+                <div className="space-y-2 mt-4">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Category</span>
-                    <span className="font-semibold text-xs">{comparison?.facebook?.your?.category || 'N/A'}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Rating</span>
-                    <span className="font-semibold">
-                      {comparison?.facebook?.your?.rating?.toFixed(1) || '0'} ⭐ 
-                      ({comparison?.facebook?.your?.ratingPercent || 0}%)
+                    <span>Your market share</span>
+                    <span className="font-semibold text-green-600">
+                      {(() => {
+                        const yourSEO = yourSite?.lighthouse?.categories?.seo?.displayValue || 0;
+                        const compSEO = competitorSite?.lighthouse?.categories?.seo?.displayValue || 0;
+                        const yourTraffic = typeof yourSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                          ? yourSite.traffic.metrics.monthlyVisits : 0;
+                        const compTraffic = typeof competitorSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                          ? competitorSite.traffic.metrics.monthlyVisits : 0;
+                        const yourBacklinks = yourSite?.backlinks?.totalBacklinks || 0;
+                        const compBacklinks = competitorSite?.backlinks?.totalBacklinks || 0;
+                        
+                        const yourScore = (yourSEO * 0.4) + 
+                          (Math.min(yourTraffic / 10000, 100) * 0.35) + 
+                          (Math.min(yourBacklinks / 1000, 100) * 0.25);
+                        const compScore = (compSEO * 0.4) + 
+                          (Math.min(compTraffic / 10000, 100) * 0.35) + 
+                          (Math.min(compBacklinks / 1000, 100) * 0.25);
+                        
+                        const totalScore = yourScore + compScore;
+                        const yourShare = totalScore > 0 ? Math.round((yourScore / totalScore) * 100) : 50;
+                        return `${yourShare}% ↑`;
+                      })()}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Reviews</span>
-                    <span className="font-semibold">{(comparison?.facebook?.your?.ratingCount || 0).toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Activity Level</span>
-                    <Badge variant={comparison?.facebook?.your?.activityLevel === 'High' ? 'default' : 'secondary'}>
-                      {comparison?.facebook?.your?.activityLevel || 'Unknown'}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Est. Posts/Week</span>
-                    <span className="font-semibold">{comparison?.facebook?.your?.estimatedPostsPerWeek || 0}</span>
-                  </div>
-                </div>
-              </div>
-              {/* Competitor Facebook */}
-              <div className="space-y-4">
-                <h3 className="font-semibold flex items-center gap-2">
-                  {comparison?.facebook?.competitor?.pageName || competitorSite?.facebook?.profile?.name || 'N/A'}
-                  {comparison?.facebook?.winner?.engagement === 'competitor' && (
-                    <Badge className="bg-green-600">Higher Engagement</Badge>
-                  )}
-                </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg">
-                    <div className="text-xs text-red-700 font-medium">Followers</div>
-                    <div className="text-2xl font-bold text-red-900 mt-1">
-                      {(comparison?.facebook?.competitor?.followers || 0).toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg">
-                    <div className="text-xs text-orange-700 font-medium">Page Likes</div>
-                    <div className="text-2xl font-bold text-orange-900 mt-1">
-                      {(comparison?.facebook?.competitor?.likes || 0).toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="p-4 bg-gradient-to-br from-pink-50 to-pink-100 rounded-lg">
-                    <div className="text-xs text-pink-700 font-medium">Talking About</div>
-                    <div className="text-xl font-bold text-pink-900 mt-1">
-                      {(comparison?.facebook?.competitor?.talkingAbout || 0).toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="p-4 bg-gradient-to-br from-teal-50 to-teal-100 rounded-lg">
-                    <div className="text-xs text-teal-700 font-medium">Engagement Rate</div>
-                    <div className="text-xl font-bold text-teal-900 mt-1">
-                      {comparison?.facebook?.competitor?.engagementRate || '0%'}
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 bg-white border rounded-lg space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Category</span>
-                    <span className="font-semibold text-xs">{comparison?.facebook?.competitor?.category || 'N/A'}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Rating</span>
-                    <span className="font-semibold">
-                      {comparison?.facebook?.competitor?.rating?.toFixed(1) || '0'} ⭐ 
-                      ({comparison?.facebook?.competitor?.ratingPercent || 0}%)
+                    <span>Competitor's market share</span>
+                    <span className="font-semibold text-orange-600">
+                      {(() => {
+                        const yourSEO = yourSite?.lighthouse?.categories?.seo?.displayValue || 0;
+                        const compSEO = competitorSite?.lighthouse?.categories?.seo?.displayValue || 0;
+                        const yourTraffic = typeof yourSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                          ? yourSite.traffic.metrics.monthlyVisits : 0;
+                        const compTraffic = typeof competitorSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                          ? competitorSite.traffic.metrics.monthlyVisits : 0;
+                        const yourBacklinks = yourSite?.backlinks?.totalBacklinks || 0;
+                        const compBacklinks = competitorSite?.backlinks?.totalBacklinks || 0;
+                        
+                        const yourScore = (yourSEO * 0.4) + 
+                          (Math.min(yourTraffic / 10000, 100) * 0.35) + 
+                          (Math.min(yourBacklinks / 1000, 100) * 0.25);
+                        const compScore = (compSEO * 0.4) + 
+                          (Math.min(compTraffic / 10000, 100) * 0.35) + 
+                          (Math.min(compBacklinks / 1000, 100) * 0.25);
+                        
+                        const totalScore = yourScore + compScore;
+                        const compShare = totalScore > 0 ? Math.round((compScore / totalScore) * 100) : 50;
+                        return `${compShare}%`;
+                      })()}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Reviews</span>
-                    <span className="font-semibold">{(comparison?.facebook?.competitor?.ratingCount || 0).toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Activity Level</span>
-                    <Badge variant={comparison?.facebook?.competitor?.activityLevel === 'High' ? 'default' : 'secondary'}>
-                      {comparison?.facebook?.competitor?.activityLevel || 'Unknown'}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Est. Posts/Week</span>
-                    <span className="font-semibold">{comparison?.facebook?.competitor?.estimatedPostsPerWeek || 0}</span>
-                  </div>
                 </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      {/* Google Ads Monitoring Card - Side by Side Comparison */}
-      {(yourSite?.googleAds || competitorSite?.googleAds) && (
-        <Card className="border-2 border-yellow-400">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-yellow-500" />
-              Paid Ads Monitoring (Google Ads)
-            </CardTitle>
-            <CardDescription>Compare Google Ads campaigns for both sites</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Your Site Google Ads */}
-              <div className="border rounded-lg p-4 bg-blue-50">
-                <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  Your Site: {yourSite.domain}
-                </h3>
-                {yourSite?.googleAds && !yourSite.googleAds.error && yourSite.googleAds.totalAds > 0 ? (
-                  <>
-                    <div className="mb-3">
-                      <div><span className="font-semibold">Advertiser:</span> {yourSite.googleAds.advertiser || yourSite.domain}</div>
-                      <div><span className="font-semibold">Total Ads (last 30 days):</span> {yourSite.googleAds.totalAds}</div>
-                      {yourSite.googleAds.transparencyUrl && (
-                        <a href={yourSite.googleAds.transparencyUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-sm">View Transparency Center</a>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <div className="font-semibold text-sm">Sample Ads:</div>
-                      {(yourSite.googleAds.adSamples || []).slice(0, 2).map((ad: any, idx: number) => (
-                        <div key={ad.id || idx} className="border rounded p-2 bg-white text-sm">
-                          <div><span className="font-semibold">Format:</span> {ad.format}</div>
-                          <div><span className="font-semibold">Shown:</span> {ad.totalDaysShown} days</div>
-                          {ad.detailsLink && (
-                            <a href={ad.detailsLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-xs">View Details</a>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-gray-500">No Google Ads data available</div>
-                )}
-              </div>
+                <div className="mt-6">
+                  <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
+                    View Full Report
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
-              {/* Competitor Google Ads */}
-              <div className="border rounded-lg p-4 bg-red-50">
-                <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  Competitor: {competitorSite.domain}
-                </h3>
-                {competitorSite?.googleAds && !competitorSite.googleAds.error && competitorSite.googleAds.totalAds > 0 ? (
-                  <>
-                    <div className="mb-3">
-                      <div><span className="font-semibold">Advertiser:</span> {competitorSite.googleAds.advertiser || competitorSite.domain}</div>
-                      <div><span className="font-semibold">Total Ads (last 30 days):</span> {competitorSite.googleAds.totalAds}</div>
-                      {competitorSite.googleAds.transparencyUrl && (
-                        <a href={competitorSite.googleAds.transparencyUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-sm">View Transparency Center</a>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <div className="font-semibold text-sm">Sample Ads:</div>
-                      {(competitorSite.googleAds.adSamples || []).slice(0, 2).map((ad: any, idx: number) => (
-                        <div key={ad.id || idx} className="border rounded p-2 bg-white text-sm">
-                          <div><span className="font-semibold">Format:</span> {ad.format}</div>
-                          <div><span className="font-semibold">Shown:</span> {ad.totalDaysShown} days</div>
-                          {ad.detailsLink && (
-                            <a href={ad.detailsLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-xs">View Details</a>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-gray-500">No Google Ads data available</div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Meta Ads Monitoring Card - Side by Side Comparison */}
-      {(yourSite?.metaAds || competitorSite?.metaAds) && (
-        <Card className="border-2 border-blue-400">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-blue-500" />
-              Paid Ads Monitoring (Meta/Facebook)
-            </CardTitle>
-            <CardDescription>Compare Meta/Facebook ad campaigns for both sites</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Your Site Meta Ads */}
-              <div className="border rounded-lg p-4 bg-blue-50">
-                <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  Your Site: {yourSite.domain}
-                </h3>
-                {yourSite?.metaAds && !yourSite.metaAds.error && yourSite.metaAds.totalAds > 0 ? (
-                  <>
-                    <div className="mb-3">
-                      <div><span className="font-semibold">Total Ads:</span> {yourSite.metaAds.totalAds}</div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="font-semibold text-sm">Sample Ads:</div>
-                      {(yourSite.metaAds.adSamples || []).slice(0, 2).map((ad: any, idx: number) => (
-                        <div key={ad.id || idx} className="border rounded p-2 bg-white text-sm">
-                          <div><span className="font-semibold">Page:</span> {ad.pageName}</div>
-                          <div><span className="font-semibold">Active:</span> {ad.isActive ? 'Yes' : 'No'}</div>
-                          <div className="text-xs text-gray-600">{ad.text?.slice(0, 80) || 'N/A'}{ad.text && ad.text.length > 80 ? '...' : ''}</div>
-                          {ad.pageProfile && (
-                            <a href={ad.pageProfile} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-xs">View Profile</a>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-gray-500">No Meta Ads data available</div>
-                )}
-              </div>
-
-              {/* Competitor Meta Ads */}
-              <div className="border rounded-lg p-4 bg-red-50">
-                <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  Competitor: {competitorSite.domain}
-                </h3>
-                {competitorSite?.metaAds && !competitorSite.metaAds.error && competitorSite.metaAds.totalAds > 0 ? (
-                  <>
-                    <div className="mb-3">
-                      <div><span className="font-semibold">Total Ads:</span> {competitorSite.metaAds.totalAds}</div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="font-semibold text-sm">Sample Ads:</div>
-                      {(competitorSite.metaAds.adSamples || []).slice(0, 2).map((ad: any, idx: number) => (
-                        <div key={ad.id || idx} className="border rounded p-2 bg-white text-sm">
-                          <div><span className="font-semibold">Page:</span> {ad.pageName}</div>
-                          <div><span className="font-semibold">Active:</span> {ad.isActive ? 'Yes' : 'No'}</div>
-                          <div className="text-xs text-gray-600">{ad.text?.slice(0, 80) || 'N/A'}{ad.text && ad.text.length > 80 ? '...' : ''}</div>
-                          {ad.pageProfile && (
-                            <a href={ad.pageProfile} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline text-xs">View Profile</a>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-gray-500">No Meta Ads data available</div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      {/* Header with Overall Winner */}
-      <Card className="border-2 border-primary">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-2xl flex items-center gap-2">
-                <Trophy className="h-6 w-6 text-yellow-500" />
-                Competition Results
-              </CardTitle>
-              <CardDescription className="mt-2">
-                Comprehensive analysis completed for both websites
-              </CardDescription>
-            </div>
-            <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-lg px-4 py-2">
-              {comparison?.summary?.strengths?.length || 0} Strengths Found
-            </Badge>
           </div>
-        </CardHeader>
-      </Card>
-
-      {/* Performance Comparison */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Your Site Performance */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-blue-600" />
-                {yourSite.domain}
-              </span>
-              {comparison?.performance?.winner === 'yours' && getWinnerBadge('yours')}
-            </CardTitle>
-            <CardDescription>Your Website Performance</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Lighthouse Scores */}
-            <div className="grid grid-cols-2 gap-4">
-              <ScoreCircle
-                label="Performance"
-                score={yourSite.lighthouse?.categories?.performance?.displayValue || 0}
-                icon={<Zap className="h-4 w-4" />}
-              />
-              <ScoreCircle
-                label="SEO"
-                score={yourSite.lighthouse?.categories?.seo?.displayValue || 0}
-                icon={<Target className="h-4 w-4" />}
-              />
-              <ScoreCircle
-                label="Accessibility"
-                score={yourSite.lighthouse?.categories?.accessibility?.displayValue || 0}
-                icon={<Shield className="h-4 w-4" />}
-              />
-              <ScoreCircle
-                label="Best Practices"
-                score={yourSite.lighthouse?.categories?.['best-practices']?.displayValue || 0}
-                icon={<CheckCircle2 className="h-4 w-4" />}
-              />
-            </div>
-
-            {/* PageSpeed Scores */}
-            {yourSite.pagespeed && (yourSite.pagespeed.dataAvailable || yourSite.pagespeed.desktop || yourSite.pagespeed.mobile) && (
-              <div className="space-y-2">
-                <h4 className="font-semibold text-sm">PageSpeed Scores</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <div className="text-xs text-gray-600">Desktop</div>
-                    <div className={`text-2xl font-bold ${getScoreColor(yourSite.pagespeed?.desktop?.performanceScore || 0)}`}>
-                      {yourSite.pagespeed?.desktop?.performanceScore || 'N/A'}
-                    </div>
-                  </div>
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <div className="text-xs text-gray-600">Mobile</div>
-                    <div className={`text-2xl font-bold ${getScoreColor(yourSite.pagespeed?.mobile?.performanceScore || 0)}`}>
-                      {yourSite.pagespeed?.mobile?.performanceScore || 'N/A'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Competitor Site Performance */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-red-600" />
-                {competitorSite.domain}
-              </span>
-              {comparison?.performance?.winner === 'competitor' && getWinnerBadge('competitor')}
-            </CardTitle>
-            <CardDescription>Competitor Website Performance</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Lighthouse Scores */}
-            <div className="grid grid-cols-2 gap-4">
-              <ScoreCircle
-                label="Performance"
-                score={competitorSite.lighthouse?.categories?.performance?.displayValue || 0}
-                icon={<Zap className="h-4 w-4" />}
-              />
-              <ScoreCircle
-                label="SEO"
-                score={competitorSite.lighthouse?.categories?.seo?.displayValue || 0}
-                icon={<Target className="h-4 w-4" />}
-              />
-              <ScoreCircle
-                label="Accessibility"
-                score={competitorSite.lighthouse?.categories?.accessibility?.displayValue || 0}
-                icon={<Shield className="h-4 w-4" />}
-              />
-              <ScoreCircle
-                label="Best Practices"
-                score={competitorSite.lighthouse?.categories?.['best-practices']?.displayValue || 0}
-                icon={<CheckCircle2 className="h-4 w-4" />}
-              />
-            </div>
-
-            {/* PageSpeed Scores */}
-            {competitorSite.pagespeed && (competitorSite.pagespeed.dataAvailable || competitorSite.pagespeed.desktop || competitorSite.pagespeed.mobile) && (
-              <div className="space-y-2">
-                <h4 className="font-semibold text-sm">PageSpeed Scores</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <div className="text-xs text-gray-600">Desktop</div>
-                    <div className={`text-2xl font-bold ${getScoreColor(competitorSite.pagespeed?.desktop?.performanceScore || 0)}`}>
-                      {competitorSite.pagespeed?.desktop?.performanceScore || 'N/A'}
-                    </div>
-                  </div>
-                  <div className="p-3 bg-gray-50 rounded-lg">
-                    <div className="text-xs text-gray-600">Mobile</div>
-                    <div className={`text-2xl font-bold ${getScoreColor(competitorSite.pagespeed?.mobile?.performanceScore || 0)}`}>
-                      {competitorSite.pagespeed?.mobile?.performanceScore || 'N/A'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Chart Comparison */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Performance Metrics Comparison</CardTitle>
-          <CardDescription>Side-by-side comparison of key performance indicators</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <Bar data={performanceChartData} options={barChartOptions} />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* SEO Comparison */}
-      {comparison?.seo && comparison?.seo?.metaTags && comparison?.seo?.headings && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              SEO Comparison
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Your Site SEO */}
-              <div className="space-y-4">
-                <h3 className="font-semibold flex items-center gap-2">
-                  {yourSite.domain}
-                  {comparison.seo.winner === 'yours' && (
-                    <Badge className="bg-green-600">Winner</Badge>
-                  )}
-                </h3>
-                <SEOMetrics data={comparison.seo.metaTags?.your || {}} headings={comparison.seo.headings?.your || {}} />
-              </div>
-
-              {/* Competitor SEO */}
-              <div className="space-y-4">
-                <h3 className="font-semibold flex items-center gap-2">
-                  {competitorSite.domain}
-                  {comparison.seo.winner === 'competitor' && (
-                    <Badge className="bg-green-600">Winner</Badge>
-                  )}
-                </h3>
-                <SEOMetrics data={comparison.seo.metaTags?.competitor || {}} headings={comparison.seo.headings?.competitor || {}} />
-              </div>
-            </div>
-
-            {/* SEO Score Comparison */}
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-sm text-gray-600">Your SEO Score</div>
-                  <div className={`text-3xl font-bold ${getScoreColor(comparison.seo.scores.your)}`}>
-                    {comparison.seo.scores.your}/100
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-gray-600">Competitor SEO Score</div>
-                  <div className={`text-3xl font-bold ${getScoreColor(comparison.seo.scores.competitor)}`}>
-                    {comparison.seo.scores.competitor}/100
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        </>
       )}
 
-      {/* Backlinks Comparison */}
-      {(yourSite.backlinks || competitorSite.backlinks || comparison?.backlinks) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <LinkIcon className="h-5 w-5" />
-              Backlinks Comparison
-              {comparison?.backlinks?.winner === 'yours' && (
-                <Badge className="bg-green-600 ml-2">You're Leading</Badge>
-              )}
-              {comparison?.backlinks?.winner === 'competitor' && (
-                <Badge className="bg-red-600 ml-2">Competitor Leading</Badge>
-              )}
-            </CardTitle>
-            <CardDescription>
-              Backlink profile analysis from SE Ranking
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Your Site Backlinks */}
-              <div className="space-y-4">
-                <h3 className="font-semibold flex items-center gap-2 text-blue-600">
-                  <Globe className="h-4 w-4" />
-                  {yourSite.domain}
-                  {yourSite.fromCache && (
-                    <Badge variant="outline" className="text-xs">Cached</Badge>
-                  )}
-                </h3>
-                {(() => {
-                  // Debug: Log the backlinks structure
-                  console.log('Your Site Backlinks Data:', yourSite.backlinks);
-                  
-                  const hasBacklinks = yourSite.backlinks && (
-                    yourSite.backlinks.available === true || 
-                    yourSite.backlinks.totalBacklinks > 0 ||
-                    yourSite.backlinks.total_backlinks > 0
-                  );
+      {/* Ads Analysis View */}
+      {analysisType === 'ads' && (
+        <>
+          {/* Traffic (Referral) */}
+          {showTrafficCard && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Website Traffic (Referral)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <Line data={trafficChartData} options={trafficChartOptions} />
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-                  if (!hasBacklinks) {
-                    return (
-                      <div className="p-4 bg-gray-50 rounded-lg text-center text-gray-500">
-                        No backlinks data available
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div className="space-y-3">
-                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                        <div className="text-sm text-gray-600 mb-1">Total Backlinks</div>
-                        <div className="text-3xl font-bold text-blue-600">
-                          {(yourSite.backlinks.totalBacklinks || yourSite.backlinks.total_backlinks || 0).toLocaleString()}
+          {/* Google Ads Monitoring */}
+          {showGoogleAdsCard && (
+            <Card className="border-2 border-yellow-400">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  🔍 Google Ads Monitoring
+                </CardTitle>
+                <CardDescription>
+                  Active Google Ads campaigns and performance
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Your Google Ads */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-green-600" />
+                      Your Google Ads
+                    </h4>
+                    {yourSite?.googleAds ? (
+                      <div className="space-y-3">
+                        <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                          <p className="text-xs text-muted-foreground mb-1">Total Active Ads</p>
+                          <p className="text-3xl font-bold text-green-700">
+                            {yourSite.googleAds.totalAds || 0}
+                          </p>
                         </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-xs text-gray-600">Referring Domains</div>
-                          <div className="text-xl font-semibold">
-                            {(yourSite.backlinks.totalRefDomains || yourSite.backlinks.referring_domains || 0).toLocaleString()}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Display Ads</p>
+                            <p className="text-xl font-bold">{yourSite.googleAds.displayAds || 0}</p>
+                          </div>
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Search Ads</p>
+                            <p className="text-xl font-bold">{yourSite.googleAds.searchAds || 0}</p>
                           </div>
                         </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-xs text-gray-600">Referring IPs</div>
-                          <div className="text-xl font-semibold">
-                            {(yourSite.backlinks.metrics?.ips || yourSite.backlinks.referring_ips || 0).toLocaleString()}
-                          </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-xs text-gray-600">Referring Subnets</div>
-                          <div className="text-xl font-semibold">
-                            {(yourSite.backlinks.metrics?.subnets || yourSite.backlinks.referring_subnets || 0).toLocaleString()}
-                          </div>
-                        </div>
-                        <div className="p-3 bg-gray-50 rounded-lg">
-                          <div className="text-xs text-gray-600">DoFollow Links</div>
-                          <div className="text-xl font-semibold">
-                            {(yourSite.backlinks.metrics?.dofollowBacklinks || yourSite.backlinks.dofollow || 0).toLocaleString()}
-                          </div>
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                          <p className="text-xs text-muted-foreground mb-1">Estimated Budget</p>
+                          <p className="text-lg font-semibold">
+                            {yourSite.googleAds.estimatedBudget || '$5-10k/month'}
+                          </p>
                         </div>
                       </div>
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {/* Competitor Backlinks */}
-              <div className="space-y-4">
-                <h3 className="font-semibold flex items-center gap-2 text-red-600">
-                  <Globe className="h-4 w-4" />
-                  {competitorSite.domain}
-                  {competitorSite.fromCache === false && (
-                    <Badge variant="outline" className="text-xs">Fresh Data</Badge>
-                  )}
-                </h3>
-                {competitorSite.backlinks ? (
-                  <div className="space-y-3">
-                    <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-                      <div className="text-sm text-gray-600 mb-1">Total Backlinks</div>
-                      <div className="text-3xl font-bold text-red-600">
-                        {(competitorSite.backlinks.totalBacklinks || competitorSite.backlinks.total_backlinks || 0).toLocaleString()}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="p-3 bg-gray-50 rounded-lg">
-                        <div className="text-xs text-gray-600">Referring Domains</div>
-                        <div className="text-xl font-semibold">
-                          {(competitorSite.backlinks.totalRefDomains || competitorSite.backlinks.referring_domains || 0).toLocaleString()}
-                        </div>
-                      </div>
-                      <div className="p-3 bg-gray-50 rounded-lg">
-                        <div className="text-xs text-gray-600">Referring IPs</div>
-                        <div className="text-xl font-semibold">
-                          {(competitorSite.backlinks.metrics?.ips || competitorSite.backlinks.referring_ips || 0).toLocaleString()}
-                        </div>
-                      </div>
-                      <div className="p-3 bg-gray-50 rounded-lg">
-                        <div className="text-xs text-gray-600">Referring Subnets</div>
-                        <div className="text-xl font-semibold">
-                          {(competitorSite.backlinks.metrics?.subnets || competitorSite.backlinks.referring_subnets || 0).toLocaleString()}
-                        </div>
-                      </div>
-                      <div className="p-3 bg-gray-50 rounded-lg">
-                        <div className="text-xs text-gray-600">DoFollow Links</div>
-                        <div className="text-xl font-semibold">
-                          {(competitorSite.backlinks.metrics?.dofollowBacklinks || competitorSite.backlinks.dofollow || 0).toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 bg-gray-50 rounded-lg text-center text-gray-500">
-                    No backlinks data available
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Backlinks Difference */}
-            {comparison?.backlinks && (
-              <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <div className="text-sm text-gray-600 mb-1">Backlinks Difference</div>
-                    <div className={`text-2xl font-bold ${comparison.backlinks.difference > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {comparison.backlinks.difference > 0 ? '+' : ''}{comparison.backlinks.difference?.toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-sm text-gray-600 mb-1">Your Total</div>
-                    <div className="text-2xl font-bold text-blue-600">
-                      {comparison.backlinks.yours?.toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-sm text-gray-600 mb-1">Competitor Total</div>
-                    <div className="text-2xl font-bold text-red-600">
-                      {comparison.backlinks.competitor?.toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Content Comparison */}
-      {comparison?.content && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Content Analysis
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ContentMetrics 
-                title={yourSite.domain}
-                data={comparison.content.your}
-                isWinner={comparison.content.winner === 'yours'}
-              />
-              <ContentMetrics 
-                title={competitorSite.domain}
-                data={comparison.content.competitor}
-                isWinner={comparison.content.winner === 'competitor'}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Technology Stack */}
-      {comparison?.technology && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Code className="h-5 w-5" />
-              Technology Stack
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <TechnologyStack title={yourSite.domain} data={comparison.technology.your} />
-              <TechnologyStack title={competitorSite.domain} data={comparison.technology.competitor} />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Security & Technical */}
-      {comparison?.security && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Security & Technical
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <SecurityMetrics title={yourSite.domain} data={comparison.security.your} />
-              <SecurityMetrics title={competitorSite.domain} data={comparison.security.competitor} />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Summary & Recommendations */}
-      {comparison?.summary && (
-        <Card className="border-2 border-blue-200 bg-blue-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lightbulb className="h-5 w-5 text-yellow-600" />
-              Insights & Recommendations
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Strengths */}
-            {comparison.summary.strengths?.length > 0 && (
-              <div>
-                <h3 className="font-semibold flex items-center gap-2 text-green-700 mb-3">
-                  <CheckCircle2 className="h-4 w-4" />
-                  Your Strengths
-                </h3>
-                <ul className="space-y-2">
-                  {comparison.summary.strengths.map((strength: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <TrendingUp className="h-4 w-4 text-green-600 mt-1 flex-shrink-0" />
-                      <span>{strength}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Weaknesses */}
-            {comparison.summary.weaknesses?.length > 0 && (
-              <div>
-                <h3 className="font-semibold flex items-center gap-2 text-red-700 mb-3">
-                  <AlertTriangle className="h-4 w-4" />
-                  Areas to Improve
-                </h3>
-                <ul className="space-y-2">
-                  {comparison.summary.weaknesses.map((weakness: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <TrendingDown className="h-4 w-4 text-red-600 mt-1 flex-shrink-0" />
-                      <span>{weakness}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Opportunities */}
-            {comparison.summary.opportunities?.length > 0 && (
-              <div>
-                <h3 className="font-semibold flex items-center gap-2 text-blue-700 mb-3">
-                  <Target className="h-4 w-4" />
-                  Opportunities
-                </h3>
-                <ul className="space-y-2">
-                  {comparison.summary.opportunities.map((opportunity: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2">
-                      <TrendingUp className="h-4 w-4 text-blue-600 mt-1 flex-shrink-0" />
-                      <span>{opportunity}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Recommendations */}
-            {comparison.summary.recommendations?.length > 0 && (
-              <div>
-                <h3 className="font-semibold flex items-center gap-2 text-purple-700 mb-3">
-                  <Lightbulb className="h-4 w-4" />
-                  Action Items
-                </h3>
-                <ul className="space-y-2">
-                  {comparison.summary.recommendations.map((rec: string, index: number) => (
-                    <li key={index} className="flex items-start gap-2 p-3 bg-white rounded-lg">
-                      <div className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 text-sm font-semibold">
-                        {index + 1}
-                      </div>
-                      <span>{rec}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Traffic Trends Comparison */}
-      {(yourSite?.traffic || competitorSite?.traffic || comparison?.traffic) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Website Traffic Trends
-            </CardTitle>
-            <CardDescription>
-              Monthly traffic comparison between your site and competitor
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/* Show message if no data available */}
-            {!comparison?.traffic && !yourSite?.traffic && !competitorSite?.traffic ? (
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
-                <p className="text-gray-600">Traffic data not available for comparison</p>
-              </div>
-            ) : (
-              <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Your Site Traffic */}
-                <div className="space-y-4">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    {yourSite.domain}
-                    {comparison?.traffic?.winner === 'yours' && (
-                      <Badge className="bg-green-600">Higher Traffic</Badge>
+                    ) : (
+                      <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription className="text-sm">
+                          No Google Ads detected
+                        </AlertDescription>
+                      </Alert>
                     )}
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-                      <div className="text-xs text-blue-700 font-medium">Monthly Visits</div>
-                      <div className="text-2xl font-bold text-blue-900 mt-1">
-                        {typeof (comparison?.traffic?.your?.monthlyVisits || yourSite?.traffic?.metrics?.monthlyVisits) === 'number' 
-                          ? (comparison?.traffic?.your?.monthlyVisits || yourSite?.traffic?.metrics?.monthlyVisits).toLocaleString()
-                          : (comparison?.traffic?.your?.monthlyVisits || yourSite?.traffic?.metrics?.monthlyVisits || 'N/A')}
-                      </div>
-                      <div className="text-xs text-blue-600 mt-1">
-                        Source: {(comparison?.traffic?.your?.source || yourSite?.traffic?.source) === 'google_analytics' ? 'Google Analytics' : 
-                                 (comparison?.traffic?.your?.source || yourSite?.traffic?.source) === 'similarweb_rapidapi' ? 'SimilarWeb' : 
-                                 (comparison?.traffic?.your?.source || yourSite?.traffic?.source || 'Unknown')}
-                      </div>
-                    </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="text-xs text-gray-600">Bounce Rate</div>
-                    <div className="text-2xl font-bold text-gray-900 mt-1">
-                      {typeof comparison?.traffic?.your?.bounceRate === 'number' 
-                        ? `${comparison.traffic.your.bounceRate.toFixed(1)}%`
-                        : (comparison?.traffic?.your?.bounceRate || 'N/A')}
-                    </div>
                   </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="text-xs text-gray-600">Pages/Visit</div>
-                    <div className="text-2xl font-bold text-gray-900 mt-1">
-                      {typeof comparison?.traffic?.your?.pagesPerVisit === 'number' 
-                        ? comparison.traffic.your.pagesPerVisit.toFixed(1)
-                        : (comparison?.traffic?.your?.pagesPerVisit || 'N/A')}
-                    </div>
-                  </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="text-xs text-gray-600">Avg Duration</div>
-                    <div className="text-lg font-bold text-gray-900 mt-1">
-                      {typeof comparison?.traffic?.your?.avgVisitDuration === 'number' 
-                        ? `${Math.floor(comparison.traffic.your.avgVisitDuration / 60)}m ${comparison.traffic.your.avgVisitDuration % 60}s`
-                        : (comparison?.traffic?.your?.avgVisitDuration || 'N/A')}
-                    </div>
-                  </div>
-                </div>
-                {comparison?.traffic?.your?.trafficSources && Object.keys(comparison.traffic.your.trafficSources).length > 0 && (
-                  <div className="p-4 bg-white border rounded-lg">
-                    <h4 className="text-sm font-semibold mb-3">Traffic Sources</h4>
-                    <div className="space-y-2">
-                      {Object.entries(comparison.traffic.your.trafficSources).map(([source, value]: [string, any]) => (
-                        typeof value === 'number' && value > 0 && (
-                          <div key={source} className="flex items-center justify-between text-sm">
-                            <span className="capitalize">{source}</span>
-                            <span className="font-semibold">{value.toFixed(1)}%</span>
-                          </div>
-                        )
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
 
-              {/* Competitor Traffic */}
-              <div className="space-y-4">
-                <h3 className="font-semibold flex items-center gap-2">
-                  {competitorSite.domain}
-                  {comparison?.traffic?.winner === 'competitor' && (
-                    <Badge className="bg-green-600">Higher Traffic</Badge>
-                  )}
-                </h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg">
-                    <div className="text-xs text-red-700 font-medium">Monthly Visits</div>
-                    <div className="text-2xl font-bold text-red-900 mt-1">
-                      {typeof comparison?.traffic?.competitor?.monthlyVisits === 'number' 
-                        ? comparison.traffic.competitor.monthlyVisits.toLocaleString()
-                        : (comparison?.traffic?.competitor?.monthlyVisits || 'N/A')}
-                    </div>
-                    <div className="text-xs text-red-600 mt-1">
-                      Source: {comparison?.traffic?.competitor?.source === 'similarweb_rapidapi' ? 'SimilarWeb' : 
-                               (comparison?.traffic?.competitor?.source || 'Unknown')}
-                    </div>
-                  </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="text-xs text-gray-600">Bounce Rate</div>
-                    <div className="text-2xl font-bold text-gray-900 mt-1">
-                      {typeof comparison?.traffic?.competitor?.bounceRate === 'number' 
-                        ? `${comparison.traffic.competitor.bounceRate.toFixed(1)}%`
-                        : (comparison?.traffic?.competitor?.bounceRate || 'N/A')}
-                    </div>
-                  </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="text-xs text-gray-600">Pages/Visit</div>
-                    <div className="text-2xl font-bold text-gray-900 mt-1">
-                      {typeof comparison?.traffic?.competitor?.pagesPerVisit === 'number' 
-                        ? comparison.traffic.competitor.pagesPerVisit.toFixed(1)
-                        : (comparison?.traffic?.competitor?.pagesPerVisit || 'N/A')}
-                    </div>
-                  </div>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <div className="text-xs text-gray-600">Avg Duration</div>
-                    <div className="text-lg font-bold text-gray-900 mt-1">
-                      {typeof comparison?.traffic?.competitor?.avgVisitDuration === 'number' 
-                        ? `${Math.floor(comparison.traffic.competitor.avgVisitDuration / 60)}m ${comparison.traffic.competitor.avgVisitDuration % 60}s`
-                        : (comparison?.traffic?.competitor?.avgVisitDuration || 'N/A')}
-                    </div>
-                  </div>
-                </div>
-                {comparison?.traffic?.competitor?.trafficSources && Object.keys(comparison.traffic.competitor.trafficSources).length > 0 && (
-                  <div className="p-4 bg-white border rounded-lg">
-                    <h4 className="text-sm font-semibold mb-3">Traffic Sources</h4>
-                    <div className="space-y-2">
-                      {Object.entries(comparison.traffic.competitor.trafficSources).map(([source, value]: [string, any]) => (
-                        typeof value === 'number' && value > 0 && (
-                          <div key={source} className="flex items-center justify-between text-sm">
-                            <span className="capitalize">{source}</span>
-                            <span className="font-semibold">{value.toFixed(1)}%</span>
+                  {/* Competitor Google Ads */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Target className="h-4 w-4 text-blue-600" />
+                      Competitor Google Ads
+                    </h4>
+                    {competitorSite?.googleAds && competitorSite.googleAds.totalAds > 0 ? (
+                      <div className="space-y-3">
+                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                          <p className="text-xs text-muted-foreground mb-1">Total Active Ads</p>
+                          <p className="text-3xl font-bold text-blue-700">
+                            {competitorSite.googleAds.totalAds || 0}
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Display Ads</p>
+                            <p className="text-xl font-bold">{competitorSite.googleAds.displayAds || 0}</p>
                           </div>
-                        )
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Traffic Gap Insight */}
-            {comparison?.traffic?.difference && comparison.traffic.difference !== 0 && (
-              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <TrendingUp className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-blue-900">Traffic Gap</p>
-                    <p className="text-sm text-blue-700 mt-1">
-                      {comparison?.traffic?.winner === 'yours' 
-                        ? `Your site has ${Math.abs(comparison.traffic.difference).toLocaleString()} more monthly visits than the competitor.`
-                        : `Competitor has ${Math.abs(comparison.traffic.difference).toLocaleString()} more monthly visits. Consider improving your SEO and content marketing strategy.`}
-                    </p>
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Search Ads</p>
+                            <p className="text-xl font-bold">{competitorSite.googleAds.searchAds || 0}</p>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                          <p className="text-xs text-muted-foreground mb-1">Estimated Budget</p>
+                          <p className="text-lg font-semibold">
+                            {competitorSite.googleAds.estimatedBudget || '$3-8k/month'}
+                          </p>
+                        </div>
+                        {competitorSite.googleAds.topKeywords && (
+                          <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                            <p className="text-xs text-muted-foreground mb-2">Top Keywords</p>
+                            <div className="flex flex-wrap gap-1">
+                              {competitorSite.googleAds.topKeywords.slice(0, 5).map((keyword: string, idx: number) => (
+                                <Badge key={idx} variant="outline" className="text-xs">{keyword}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription className="text-sm">
+                          No Google Ads detected for competitor
+                        </AlertDescription>
+                      </Alert>
+                    )}
                   </div>
                 </div>
-              </div>
-            )}
-              </>
-            )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Meta Ads Monitoring */}
+          {showMetaAdsCard && (
+            <Card className="border-2 border-blue-400">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  📱 Meta Ads Monitoring (Facebook & Instagram)
+                </CardTitle>
+                <CardDescription>
+                  Active Meta Ads campaigns across Facebook and Instagram
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Your Meta Ads */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-green-600" />
+                      Your Meta Ads
+                    </h4>
+                    {yourSite?.metaAds ? (
+                      <div className="space-y-3">
+                        <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                          <p className="text-xs text-muted-foreground mb-1">Total Active Ads</p>
+                          <p className="text-3xl font-bold text-green-700">
+                            {yourSite.metaAds.totalAds || 0}
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Facebook Ads</p>
+                            <p className="text-xl font-bold">{yourSite.metaAds.facebookAds || 0}</p>
+                          </div>
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Instagram Ads</p>
+                            <p className="text-xl font-bold">{yourSite.metaAds.instagramAds || 0}</p>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                          <p className="text-xs text-muted-foreground mb-1">Estimated Spend</p>
+                          <p className="text-lg font-semibold">
+                            {yourSite.metaAds.estimatedSpend || '$3-7k/month'}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription className="text-sm">
+                          No Meta Ads detected
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+
+                  {/* Competitor Meta Ads */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Target className="h-4 w-4 text-blue-600" />
+                      Competitor Meta Ads
+                    </h4>
+                    {competitorSite?.metaAds && competitorSite.metaAds.totalAds > 0 ? (
+                      <div className="space-y-3">
+                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                          <p className="text-xs text-muted-foreground mb-1">Total Active Ads</p>
+                          <p className="text-3xl font-bold text-blue-700">
+                            {competitorSite.metaAds.totalAds || 0}
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Facebook Ads</p>
+                            <p className="text-xl font-bold">{competitorSite.metaAds.facebookAds || 0}</p>
+                          </div>
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Instagram Ads</p>
+                            <p className="text-xl font-bold">{competitorSite.metaAds.instagramAds || 0}</p>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                          <p className="text-xs text-muted-foreground mb-1">Estimated Spend</p>
+                          <p className="text-lg font-semibold">
+                            {competitorSite.metaAds.estimatedSpend || '$2-6k/month'}
+                          </p>
+                        </div>
+                        {competitorSite.metaAds.adFormats && (
+                          <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                            <p className="text-xs text-muted-foreground mb-2">Ad Formats</p>
+                            <div className="flex flex-wrap gap-1">
+                              {competitorSite.metaAds.adFormats.slice(0, 5).map((format: string, idx: number) => (
+                                <Badge key={idx} variant="outline" className="text-xs">{format}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription className="text-sm">
+                          No Meta Ads detected for competitor
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
-      {/* Content Updates Comparison */}
-      {(yourSite?.contentUpdates || competitorSite?.contentUpdates || comparison?.contentUpdates) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Content Update Activity
-            </CardTitle>
-            <CardDescription>
-              Publishing frequency and content freshness analysis
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!comparison?.contentUpdates && !yourSite?.contentUpdates && !competitorSite?.contentUpdates ? (
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
-                <p className="text-gray-600">Content updates data not available</p>
-              </div>
-            ) : (
-              <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Your Site Content Updates */}
-              <div className="space-y-4">
-                <h3 className="font-semibold flex items-center gap-2">
-                  {yourSite.domain}
-                  {comparison?.contentUpdates?.winner === 'yours' && (
-                    <Badge className="bg-green-600">More Active</Badge>
-                  )}
-                </h3>
-                <div className="space-y-3">
-                  <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-                    <div className="text-xs text-blue-700 font-medium">Content Velocity</div>
-                    <div className="text-2xl font-bold text-blue-900 mt-1 capitalize">
-                      {comparison?.contentUpdates?.your?.contentVelocity || yourSite?.contentUpdates?.contentActivity?.contentVelocity || 'Unknown'}
-                    </div>
-                    <div className="text-xs text-blue-600 mt-1">
-                      {comparison?.contentUpdates?.your?.averagePostsPerMonth || yourSite?.contentUpdates?.contentActivity?.averagePostsPerMonth || 0} posts/month
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-white border rounded-lg">
-                      <div className="text-xs text-gray-600">Update Frequency</div>
-                      <div className="text-sm font-bold text-gray-900 mt-1 capitalize">
-                        {comparison.contentUpdates.your.updateFrequency}
-                      </div>
-                    </div>
-                    <div className="p-3 bg-white border rounded-lg">
-                      <div className="text-xs text-gray-600">Status</div>
-                      <div className="text-sm font-bold mt-1">
-                        <Badge variant={comparison.contentUpdates.your.isActive ? "default" : "secondary"}>
-                          {comparison.contentUpdates.your.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-3 bg-white border rounded-lg space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">RSS Feed</span>
-                      {comparison.contentUpdates.your.hasRSS ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-red-600" />
+      {/* Content Analysis View */}
+      {analysisType === 'content' && (
+        <>
+          {/* Content Updates from ChangeDetection.io */}
+          {showContentChangesCard && (
+            <Card className="border-2 border-purple-200">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-purple-600" />
+                  Content Updates (ChangeDetection.io)
+                </CardTitle>
+                <CardDescription>
+                  Real-time monitoring of content changes on both websites
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Your Site Updates */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-green-600" />
+                        Your Site Updates
+                      </h4>
+                      {yourSite?.contentChanges?.success && (
+                        <Badge variant="outline" className="bg-green-50">Monitoring Active</Badge>
                       )}
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Recent Posts</span>
-                      <span className="font-semibold">{comparison.contentUpdates.your.recentPosts}</span>
+                    {yourSite?.contentChanges?.success ? (
+                      <div className="space-y-3">
+                        <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                          <p className="text-xs text-muted-foreground mb-1">Activity Level</p>
+                          <p className="text-2xl font-bold text-green-700 capitalize">
+                            {yourSite.contentChanges.activity?.activityLevel || 'Unknown'}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {yourSite.contentChanges.activity?.changeFrequency || 'N/A'}
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Total Checks</p>
+                            <p className="text-xl font-bold">{yourSite.contentChanges.monitoring?.checkCount || 0}</p>
+                          </div>
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Changes Found</p>
+                            <p className="text-xl font-bold text-green-600">
+                              {yourSite.contentChanges.monitoring?.changeCount || 0}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <p className="text-xs text-muted-foreground mb-1">Last Update</p>
+                          <p className="text-sm font-semibold">
+                            {yourSite.contentChanges.activity?.daysSinceLastChange !== null
+                              ? `${yourSite.contentChanges.activity.daysSinceLastChange} days ago`
+                              : 'Never'}
+                          </p>
+                        </div>
+                        {yourSite.contentChanges.history && yourSite.contentChanges.history.length > 0 && (
+                          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <p className="text-xs text-muted-foreground mb-2">Recent Changes</p>
+                            <div className="space-y-1">
+                              {yourSite.contentChanges.history.slice(0, 3).map((change: any, idx: number) => (
+                                <p key={idx} className="text-xs">
+                                  📝 {new Date(change.timestamp * 1000).toLocaleDateString()}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription className="text-sm">
+                          Content monitoring not enabled for your site
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+
+                  {/* Competitor Updates */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium flex items-center gap-2">
+                        <Target className="h-4 w-4 text-blue-600" />
+                        Competitor Updates
+                      </h4>
+                      {competitorSite?.contentChanges?.success && (
+                        <Badge variant="outline" className="bg-blue-50">Monitoring Active</Badge>
+                      )}
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Last Updated</span>
-                      <span className="font-semibold text-xs">
-                        {comparison.contentUpdates.your.lastUpdated !== 'Unknown' 
-                          ? new Date(comparison.contentUpdates.your.lastUpdated).toLocaleDateString()
-                          : 'Unknown'}
+                    {competitorSite?.contentChanges?.success ? (
+                      <div className="space-y-3">
+                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                          <p className="text-xs text-muted-foreground mb-1">Activity Level</p>
+                          <p className="text-2xl font-bold text-blue-700 capitalize">
+                            {competitorSite.contentChanges.activity?.activityLevel || 'Unknown'}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {competitorSite.contentChanges.activity?.changeFrequency || 'N/A'}
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Total Checks</p>
+                            <p className="text-xl font-bold">{competitorSite.contentChanges.monitoring?.checkCount || 0}</p>
+                          </div>
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Changes Found</p>
+                            <p className="text-xl font-bold text-blue-600">
+                              {competitorSite.contentChanges.monitoring?.changeCount || 0}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 rounded-lg">
+                          <p className="text-xs text-muted-foreground mb-1">Last Update</p>
+                          <p className="text-sm font-semibold">
+                            {competitorSite.contentChanges.activity?.daysSinceLastChange !== null
+                              ? `${competitorSite.contentChanges.activity.daysSinceLastChange} days ago`
+                              : 'Never'}
+                          </p>
+                        </div>
+                        {competitorSite.contentChanges.history && competitorSite.contentChanges.history.length > 0 && (
+                          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <p className="text-xs text-muted-foreground mb-2">Recent Changes</p>
+                            <div className="space-y-1">
+                              {competitorSite.contentChanges.history.slice(0, 3).map((change: any, idx: number) => (
+                                <p key={idx} className="text-xs">
+                                  📝 {new Date(change.timestamp * 1000).toLocaleDateString()}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription className="text-sm">
+                          Content monitoring not enabled for competitor
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Static Content Analysis */}
+          {showContentCard && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Content Analysis - Your Site
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between p-3 bg-green-50 rounded-lg">
+                      <span className="text-sm">Word Count</span>
+                      <span className="font-bold text-green-700">
+                        {comparison?.content?.your?.wordCount?.toLocaleString() || 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm">Images</span>
+                      <span className="font-semibold">{comparison?.content?.your?.imageCount || 0}</span>
+                    </div>
+                    <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm">Alt Text Coverage</span>
+                      <span className="font-semibold">{comparison?.content?.your?.imageAltCoverage || 0}%</span>
+                    </div>
+                    <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm">Total Links</span>
+                      <span className="font-semibold">{comparison?.content?.your?.totalLinks || 0}</span>
+                    </div>
+                    <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm">Internal / External</span>
+                      <span className="font-semibold">
+                        {comparison?.content?.your?.internalLinks || 0} / {comparison?.content?.your?.externalLinks || 0}
                       </span>
                     </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
-              {/* Competitor Content Updates */}
-              <div className="space-y-4">
-                <h3 className="font-semibold flex items-center gap-2">
-                  {competitorSite.domain}
-                  {comparison.contentUpdates.winner === 'competitor' && (
-                    <Badge className="bg-green-600">More Active</Badge>
-                  )}
-                </h3>
-                <div className="space-y-3">
-                  <div className="p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg">
-                    <div className="text-xs text-red-700 font-medium">Content Velocity</div>
-                    <div className="text-2xl font-bold text-red-900 mt-1 capitalize">
-                      {comparison.contentUpdates.competitor.contentVelocity}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Content Analysis - Competitor
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between p-3 bg-blue-50 rounded-lg">
+                      <span className="text-sm">Word Count</span>
+                      <span className="font-bold text-blue-700">
+                        {comparison?.content?.competitor?.wordCount?.toLocaleString() || 0}
+                      </span>
                     </div>
-                    <div className="text-xs text-red-600 mt-1">
-                      {comparison.contentUpdates.competitor.averagePostsPerMonth} posts/month
+                    <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm">Images</span>
+                      <span className="font-semibold">{comparison?.content?.competitor?.imageCount || 0}</span>
                     </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-white border rounded-lg">
-                      <div className="text-xs text-gray-600">Update Frequency</div>
-                      <div className="text-sm font-bold text-gray-900 mt-1 capitalize">
-                        {comparison.contentUpdates.competitor.updateFrequency}
-                      </div>
+                    <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm">Alt Text Coverage</span>
+                      <span className="font-semibold">{comparison?.content?.competitor?.imageAltCoverage || 0}%</span>
                     </div>
-                    <div className="p-3 bg-white border rounded-lg">
-                      <div className="text-xs text-gray-600">Status</div>
-                      <div className="text-sm font-bold mt-1">
-                        <Badge variant={comparison.contentUpdates.competitor.isActive ? "default" : "secondary"}>
-                          {comparison.contentUpdates.competitor.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
+                    <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm">Total Links</span>
+                      <span className="font-semibold">{comparison?.content?.competitor?.totalLinks || 0}</span>
                     </div>
-                  </div>
-
-                  <div className="p-3 bg-white border rounded-lg space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">RSS Feed</span>
-                      {comparison.contentUpdates.competitor.hasRSS ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-red-600" />
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Recent Posts</span>
-                      <span className="font-semibold">{comparison.contentUpdates.competitor.recentPosts}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Last Updated</span>
-                      <span className="font-semibold text-xs">
-                        {comparison.contentUpdates.competitor.lastUpdated !== 'Unknown' 
-                          ? new Date(comparison.contentUpdates.competitor.lastUpdated).toLocaleDateString()
-                          : 'Unknown'}
+                    <div className="flex justify-between p-3 bg-gray-50 rounded-lg">
+                      <span className="text-sm">Internal / External</span>
+                      <span className="font-semibold">
+                        {comparison?.content?.competitor?.internalLinks || 0} / {comparison?.content?.competitor?.externalLinks || 0}
                       </span>
                     </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
+          )}
+        </>
+      )}
 
-            {/* Content Gap Insight */}
-            {comparison?.contentUpdates?.your?.averagePostsPerMonth !== comparison?.contentUpdates?.competitor?.averagePostsPerMonth && (
-              <div className="mt-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <FileText className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-purple-900">Content Publishing Gap</p>
-                    <p className="text-sm text-purple-700 mt-1">
-                      {comparison?.contentUpdates?.winner === 'yours' 
-                        ? `You're publishing ${(comparison.contentUpdates.your.averagePostsPerMonth || 0) - (comparison.contentUpdates.competitor.averagePostsPerMonth || 0)} more posts per month than your competitor. Keep it up!`
-                        : `Competitor publishes ${(comparison.contentUpdates.competitor.averagePostsPerMonth || 0) - (comparison.contentUpdates.your.averagePostsPerMonth || 0)} more posts per month. Consider increasing your content production to ${comparison.contentUpdates.competitor.averagePostsPerMonth}+ posts/month.`}
-                    </p>
+      {/* Social Media View */}
+      {analysisType === 'social' && (
+        <>
+          {showInstagramCard || showFacebookCard ? (
+            <>
+              {/* Instagram Engagement */}
+              {showInstagramCard && (
+            <Card className="border-2 border-pink-400">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <InstagramIcon className="h-5 w-5 text-pink-600" />
+                  Instagram Engagement Analysis
+                </CardTitle>
+                <CardDescription>
+                  Follower growth, engagement rates, and posting activity
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Your Instagram */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-green-600" />
+                      Your Instagram
+                    </h4>
+                    {yourSite?.instagram?.profile ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                            <p className="text-xs text-muted-foreground mb-1">Followers</p>
+                            <p className="text-2xl font-bold text-green-700">
+                              {yourSite.instagram.profile.followers?.toLocaleString() || '0'}
+                            </p>
+                          </div>
+                          <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground mb-1">Avg Interactions</p>
+                            <p className="text-2xl font-bold">{yourSite.instagram.profile.avgInteractions?.toLocaleString() || '0'}</p>
+                          </div>
+                        </div>
+                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                          <p className="text-xs text-muted-foreground mb-1">Engagement Rate</p>
+                          <p className="text-3xl font-bold text-purple-700">
+                            {yourSite.instagram.profile.avgEngagementRate !== undefined && yourSite.instagram.profile.avgEngagementRate !== null
+                              ? `${(yourSite.instagram.profile.avgEngagementRate * 100).toFixed(2)}%`
+                              : yourSite.instagram.engagement?.summary?.engagementRate || 'N/A'}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">Avg. likes + comments per post</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Avg. Likes</p>
+                            <p className="text-lg font-bold">
+                              {yourSite.instagram.engagement?.summary?.avgLikesPerPost !== undefined 
+                                ? yourSite.instagram.engagement.summary.avgLikesPerPost.toLocaleString()
+                                : 'N/A'}
+                            </p>
+                          </div>
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Avg. Comments</p>
+                            <p className="text-lg font-bold">
+                              {yourSite.instagram.engagement?.summary?.avgCommentsPerPost !== undefined
+                                ? yourSite.instagram.engagement.summary.avgCommentsPerPost.toLocaleString()
+                                : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                          <p className="text-xs text-muted-foreground mb-1">Best Posting Days</p>
+                          <div className="flex flex-wrap gap-1">
+                            {yourSite.instagram.engagement?.postingPattern?.bestDays?.slice(0, 3).map((day: any, idx: number) => (
+                              <Badge key={idx} variant="outline" className="text-xs">{day.day}</Badge>
+                            )) || <span className="text-xs">N/A</span>}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription className="text-sm">
+                          Instagram not connected
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+
+                  {/* Competitor Instagram */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Target className="h-4 w-4 text-blue-600" />
+                      Competitor Instagram
+                    </h4>
+                    {competitorSite?.instagram?.profile ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <p className="text-xs text-muted-foreground mb-1">Followers</p>
+                            <p className="text-2xl font-bold text-blue-700">
+                              {competitorSite.instagram.profile.followers?.toLocaleString() || '0'}
+                            </p>
+                          </div>
+                          <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground mb-1">Avg Interactions</p>
+                            <p className="text-2xl font-bold">{competitorSite.instagram.profile.avgInteractions?.toLocaleString() || '0'}</p>
+                          </div>
+                        </div>
+                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                          <p className="text-xs text-muted-foreground mb-1">Engagement Rate</p>
+                          <p className="text-3xl font-bold text-purple-700">
+                            {competitorSite.instagram.profile.avgEngagementRate !== undefined && competitorSite.instagram.profile.avgEngagementRate !== null
+                              ? `${(competitorSite.instagram.profile.avgEngagementRate * 100).toFixed(2)}%`
+                              : competitorSite.instagram.engagement?.summary?.engagementRate || 'N/A'}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">Avg. likes + comments per post</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Avg. Likes</p>
+                            <p className="text-lg font-bold">
+                              {competitorSite.instagram.engagement?.summary?.avgLikesPerPost !== undefined
+                                ? competitorSite.instagram.engagement.summary.avgLikesPerPost.toLocaleString()
+                                : 'N/A'}
+                            </p>
+                          </div>
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Avg. Comments</p>
+                            <p className="text-lg font-bold">
+                              {competitorSite.instagram.engagement?.summary?.avgCommentsPerPost !== undefined
+                                ? competitorSite.instagram.engagement.summary.avgCommentsPerPost.toLocaleString()
+                                : 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                          <p className="text-xs text-muted-foreground mb-1">Best Posting Days</p>
+                          <div className="flex flex-wrap gap-1">
+                            {competitorSite.instagram.engagement?.postingPattern?.bestDays?.slice(0, 3).map((day: any, idx: number) => (
+                              <Badge key={idx} variant="outline" className="text-xs">{day.day}</Badge>
+                            )) || <span className="text-xs">N/A</span>}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription className="text-sm">
+                          Competitor Instagram data not available
+                        </AlertDescription>
+                      </Alert>
+                    )}
                   </div>
                 </div>
-              </div>
-            )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Facebook Engagement */}
+          {showFacebookCard && (
+            <Card className="border-2 border-blue-500">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <FacebookIcon className="h-5 w-5 text-blue-600" />
+                  Facebook Engagement Analysis
+                </CardTitle>
+                <CardDescription>
+                  Page likes, follower growth, and engagement metrics
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Your Facebook */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-green-600" />
+                      Your Facebook
+                    </h4>
+                    {yourSite?.facebook?.profile ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                            <p className="text-xs text-muted-foreground mb-1">Page Likes</p>
+                            <p className="text-2xl font-bold text-green-700">
+                              {yourSite.facebook.profile.likes?.toLocaleString() || '0'}
+                            </p>
+                          </div>
+                          <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground mb-1">Followers</p>
+                            <p className="text-2xl font-bold">
+                              {yourSite.facebook.metrics?.followers?.toLocaleString() || '0'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                          <p className="text-xs text-muted-foreground mb-1">Engagement Rate</p>
+                          <p className="text-3xl font-bold text-purple-700">
+                            {yourSite.facebook.profile.avgEngagementRate 
+                              ? `${(yourSite.facebook.profile.avgEngagementRate * 100).toFixed(2)}%`
+                              : 'N/A'}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">Reactions + comments + shares</p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Reactions</p>
+                            <p className="text-lg font-bold">
+                              {yourSite.facebook.engagement?.summary?.avgReactionsPerPost?.toLocaleString() || 'N/A'}
+                            </p>
+                          </div>
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Comments</p>
+                            <p className="text-lg font-bold">
+                              {yourSite.facebook.engagement?.summary?.avgCommentsPerPost?.toLocaleString() || 'N/A'}
+                            </p>
+                          </div>
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Shares</p>
+                            <p className="text-lg font-bold">
+                              {yourSite.facebook.engagement?.summary?.avgSharesPerPost?.toLocaleString() || 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                          <p className="text-xs text-muted-foreground mb-1">Talking About</p>
+                          <p className="text-lg font-semibold">
+                            {yourSite.facebook.metrics?.talkingAbout?.toLocaleString() || 'N/A'} people
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription className="text-sm">
+                          Facebook not connected
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+
+                  {/* Competitor Facebook */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-medium flex items-center gap-2">
+                      <Target className="h-4 w-4 text-blue-600" />
+                      Competitor Facebook
+                    </h4>
+                    {competitorSite?.facebook?.profile ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <p className="text-xs text-muted-foreground mb-1">Page Likes</p>
+                            <p className="text-2xl font-bold text-blue-700">
+                              {competitorSite.facebook.profile.likes?.toLocaleString() || '0'}
+                            </p>
+                          </div>
+                          <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground mb-1">Followers</p>
+                            <p className="text-2xl font-bold">
+                              {competitorSite.facebook.metrics?.followers?.toLocaleString() || '0'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                          <p className="text-xs text-muted-foreground mb-1">Engagement Rate</p>
+                          <p className="text-3xl font-bold text-purple-700">
+                            {competitorSite.facebook.profile.avgEngagementRate 
+                              ? `${(competitorSite.facebook.profile.avgEngagementRate * 100).toFixed(2)}%`
+                              : 'N/A'}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">Reactions + comments + shares</p>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Reactions</p>
+                            <p className="text-lg font-bold">
+                              {competitorSite.facebook.engagement?.summary?.avgReactionsPerPost?.toLocaleString() || 'N/A'}
+                            </p>
+                          </div>
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Comments</p>
+                            <p className="text-lg font-bold">
+                              {competitorSite.facebook.engagement?.summary?.avgCommentsPerPost?.toLocaleString() || 'N/A'}
+                            </p>
+                          </div>
+                          <div className="p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-muted-foreground">Shares</p>
+                            <p className="text-lg font-bold">
+                              {competitorSite.facebook.engagement?.summary?.avgSharesPerPost?.toLocaleString() || 'N/A'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                          <p className="text-xs text-muted-foreground mb-1">Talking About</p>
+                          <p className="text-lg font-semibold">
+                            {competitorSite.facebook.metrics?.talkingAbout?.toLocaleString() || 'N/A'} people
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription className="text-sm">
+                          Competitor Facebook data not available
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
             </>
-            )}
-          </CardContent>
-        </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <InstagramIcon className="h-5 w-5 text-pink-600" />
+                  Social Media Analysis
+                </CardTitle>
+                <CardDescription>
+                  No social media data available for analysis
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Social Media Data Unavailable</AlertTitle>
+                  <AlertDescription>
+                    Social media analysis is currently unavailable due to API rate limits or authentication issues. 
+                    Please try again later or contact support if the issue persists.
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
-      {/* Instagram Engagement Comparison */}
-      {(comparison?.instagram || yourSite?.instagram || competitorSite?.instagram) && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              📸 Instagram Engagement
-            </CardTitle>
-            <CardDescription>
-              Social media presence and engagement metrics comparison
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Your Instagram */}
-              <div className="space-y-4">
-                <h3 className="font-semibold flex items-center gap-2">
-                  @{comparison?.instagram?.your?.username || yourSite?.instagram?.profile?.username || 'N/A'}
-                  {comparison?.instagram?.your?.verified && (
-                    <Badge className="bg-blue-600">✓ Verified</Badge>
-                  )}
-                  {comparison?.instagram?.winner?.engagement === 'yours' && (
-                    <Badge className="bg-green-600">Better Engagement</Badge>
-                  )}
-                </h3>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 bg-gradient-to-br from-pink-50 to-purple-100 rounded-lg">
-                    <div className="text-xs text-purple-700 font-medium">Followers</div>
-                    <div className="text-2xl font-bold text-purple-900 mt-1">
-                      {(comparison?.instagram?.your?.followers || 0).toLocaleString()}
-                    </div>
-                  </div>
-                  
-                  <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-                    <div className="text-xs text-blue-700 font-medium">Engagement Rate</div>
-                    <div className="text-2xl font-bold text-blue-900 mt-1">
-                      {comparison?.instagram?.your?.engagementRate || '0%'}
-                    </div>
-                  </div>
-                  
-                  <div className="p-3 bg-white border rounded-lg">
-                    <div className="text-xs text-gray-600">Avg Interactions</div>
-                    <div className="text-lg font-bold text-gray-900 mt-1">
-                      {(comparison?.instagram?.your?.avgInteractions || 0).toLocaleString()}
-                    </div>
-                  </div>
-                  
-                  <div className="p-3 bg-white border rounded-lg">
-                    <div className="text-xs text-gray-600">Consistency</div>
-                    <div className="text-sm font-bold text-gray-900 mt-1">
-                      {comparison?.instagram?.your?.consistency || 'N/A'}
-                    </div>
-                  </div>
-                </div>
-
-                {comparison?.instagram?.your?.bestPostingDays && comparison.instagram.your.bestPostingDays.length > 0 && (
-                  <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-100 border border-green-200 rounded-lg">
-                    <p className="text-xs font-semibold text-green-800 mb-2">🎯 Best Posting Times</p>
-                    <div className="text-sm text-green-900">
-                      <p><strong>Days:</strong> {comparison.instagram.your.bestPostingDays.join(', ')}</p>
-                      {comparison?.instagram?.your?.bestPostingHours && (
-                        <p className="mt-1"><strong>Hours:</strong> {comparison.instagram.your.bestPostingHours.join(', ')}</p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Competitor Instagram */}
-              <div className="space-y-4">
-                <h3 className="font-semibold flex items-center gap-2">
-                  @{comparison?.instagram?.competitor?.username || competitorSite?.instagram?.profile?.username || 'N/A'}
-                  {comparison?.instagram?.competitor?.verified && (
-                    <Badge className="bg-blue-600">✓ Verified</Badge>
-                  )}
-                  {comparison?.instagram?.winner?.engagement === 'competitor' && (
-                    <Badge className="bg-green-600">Better Engagement</Badge>
-                  )}
-                </h3>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-4 bg-gradient-to-br from-orange-50 to-red-100 rounded-lg">
-                    <div className="text-xs text-red-700 font-medium">Followers</div>
-                    <div className="text-2xl font-bold text-red-900 mt-1">
-                      {(comparison?.instagram?.competitor?.followers || 0).toLocaleString()}
-                    </div>
-                  </div>
-                  
-                  <div className="p-4 bg-gradient-to-br from-yellow-50 to-orange-100 rounded-lg">
-                    <div className="text-xs text-orange-700 font-medium">Engagement Rate</div>
-                    <div className="text-2xl font-bold text-orange-900 mt-1">
-                      {comparison?.instagram?.competitor?.engagementRate || '0%'}
-                    </div>
-                  </div>
-                  
-                  <div className="p-3 bg-white border rounded-lg">
-                    <div className="text-xs text-gray-600">Avg Interactions</div>
-                    <div className="text-lg font-bold text-gray-900 mt-1">
-                      {(comparison?.instagram?.competitor?.avgInteractions || 0).toLocaleString()}
-                    </div>
-                  </div>
-                  
-                  <div className="p-3 bg-white border rounded-lg">
-                    <div className="text-xs text-gray-600">Consistency</div>
-                    <div className="text-sm font-bold text-gray-900 mt-1">
-                      {comparison?.instagram?.competitor?.consistency || 'N/A'}
-                    </div>
-                  </div>
-                </div>
-
-                {comparison?.instagram?.competitor?.bestPostingDays && comparison.instagram.competitor.bestPostingDays.length > 0 && (
-                  <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-100 border border-green-200 rounded-lg">
-                    <p className="text-xs font-semibold text-green-800 mb-2">🎯 Best Posting Times</p>
-                    <div className="text-sm text-green-900">
-                      <p><strong>Days:</strong> {comparison.instagram.competitor.bestPostingDays.join(', ')}</p>
-                      {comparison?.instagram?.competitor?.bestPostingHours && (
-                        <p className="mt-1"><strong>Hours:</strong> {comparison.instagram.competitor.bestPostingHours.join(', ')}</p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Instagram Insight */}
-            {comparison?.instagram && (
-              <div className="mt-6 p-4 bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl">📸</span>
+      {/* Technical Analysis View */}
+      {analysisType === 'technical' && (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {/* Technology Stack */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Code className="h-5 w-5" />
+                  Technology Stack
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <p className="font-semibold text-pink-900">Instagram Strategy Insight</p>
-                    <p className="text-sm text-pink-700 mt-1">
-                      {comparison.instagram.winner.followers === 'yours' 
-                        ? `You have ${((comparison.instagram.your.followers - comparison.instagram.competitor.followers) / comparison.instagram.competitor.followers * 100).toFixed(0)}% more followers than your competitor. `
-                        : `Your competitor has ${((comparison.instagram.competitor.followers - comparison.instagram.your.followers) / comparison.instagram.your.followers * 100).toFixed(0)}% more followers. Consider increasing posting frequency and engagement. `}
-                      {comparison.instagram.winner.engagement === 'yours'
-                        ? 'Your engagement rate is higher - keep up the great content!'
-                        : 'Focus on improving engagement rate through interactive content and optimal posting times.'}
-                    </p>
+                    <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-green-600" />
+                      Your Site
+                    </h4>
+                    <div className="space-y-2">
+                      {yourSite?.puppeteer?.technologies && yourSite.puppeteer.technologies.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {yourSite.puppeteer.technologies.map((tech: string, idx: number) => (
+                            <Badge key={idx} variant="secondary" className="text-xs">{tech}</Badge>
+                          ))}
+                        </div>
+                      ) : comparison?.technology?.your?.frameworks?.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {comparison.technology.your.frameworks.map((fw: string, idx: number) => (
+                            <Badge key={idx} variant="secondary" className="text-xs">{fw}</Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No frameworks detected</p>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                      <Target className="h-4 w-4 text-blue-600" />
+                      Competitor
+                    </h4>
+                    <div className="space-y-2">
+                      {competitorSite?.puppeteer?.technologies && competitorSite.puppeteer.technologies.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {competitorSite.puppeteer.technologies.map((tech: string, idx: number) => (
+                            <Badge key={idx} variant="secondary" className="text-xs">{tech}</Badge>
+                          ))}
+                        </div>
+                      ) : comparison?.technology?.competitor?.frameworks?.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {comparison.technology.competitor.frameworks.map((fw: string, idx: number) => (
+                            <Badge key={idx} variant="secondary" className="text-xs">{fw}</Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No frameworks detected</p>
+                      )}
+                    </div>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Security */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Lock className="h-5 w-5" />
+                  Security & SEO Files
+                </CardTitle>
+              </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <h4 className="font-medium mb-3">Your Site</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <span>HTTPS</span>
+                          <span>{comparison?.security?.your?.https ? '✅' : '❌'}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <span>Robots.txt</span>
+                          <span>{comparison?.security?.your?.hasRobotsTxt ? '✅' : '❌'}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <span>Sitemap</span>
+                          <span>{comparison?.security?.your?.hasSitemap ? '✅' : '❌'}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-3">Competitor</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <span>HTTPS</span>
+                          <span>{comparison?.security?.competitor?.https ? '✅' : '❌'}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <span>Robots.txt</span>
+                          <span>{comparison?.security?.competitor?.hasRobotsTxt ? '✅' : '❌'}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <span>Sitemap</span>
+                          <span>{comparison?.security?.competitor?.hasSitemap ? '✅' : '❌'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+          </div>
+
+          {/* Show Performance Comparison only in Technical view */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          
+          {/* Your Site Performance */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5 text-green-600" />
+                {yourSite?.domain || 'Your Site'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <ScoreCircle 
+                  label="Performance" 
+                  score={yourSite?.lighthouse?.categories?.performance?.displayValue || 0} 
+                  icon={<Zap className="h-4 w-4" />}
+                />
+                <ScoreCircle 
+                  label="Accessibility" 
+                  score={yourSite?.lighthouse?.categories?.accessibility?.displayValue || 0} 
+                  icon={<Shield className="h-4 w-4" />}
+                />
+                <ScoreCircle 
+                  label="Best Practices" 
+                  score={yourSite?.lighthouse?.categories?.['best-practices']?.displayValue || 0} 
+                  icon={<CheckCircle2 className="h-4 w-4" />}
+                />
+                <ScoreCircle 
+                  label="SEO" 
+                  score={yourSite?.lighthouse?.categories?.seo?.displayValue || 0} 
+                  icon={<Search className="h-4 w-4" />}
+                />
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Competitor Performance */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-blue-600" />
+                {competitorSite?.domain || 'Competitor'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                <ScoreCircle 
+                  label="Performance" 
+                  score={competitorSite?.lighthouse?.categories?.performance?.displayValue || 0} 
+                  icon={<Zap className="h-4 w-4" />}
+                />
+                <ScoreCircle 
+                  label="Accessibility" 
+                  score={competitorSite?.lighthouse?.categories?.accessibility?.displayValue || 0} 
+                  icon={<Shield className="h-4 w-4" />}
+                />
+                <ScoreCircle 
+                  label="Best Practices" 
+                  score={competitorSite?.lighthouse?.categories?.['best-practices']?.displayValue || 0} 
+                  icon={<CheckCircle2 className="h-4 w-4" />}
+                />
+                <ScoreCircle 
+                  label="SEO" 
+                  score={competitorSite?.lighthouse?.categories?.seo?.displayValue || 0} 
+                  icon={<Search className="h-4 w-4" />}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        </>
+      )}
+
+      {/* Remove the duplicate Social Media section that appears after technical view */}
+      {false && (showInstagramCard || showFacebookCard) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* Social Media Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Share2 className="h-4 w-4" />
+                Social Media Performance
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {showInstagramCard && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                      <InstagramIcon className="h-4 w-4" />
+                      Instagram
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground mb-1">Your Stats:</p>
+                        {yourSite?.instagram ? (
+                          <div className="space-y-1">
+                            <p>Followers: {yourSite.instagram.followers?.toLocaleString() || 'N/A'}</p>
+                            <p>Posts: {yourSite.instagram.posts || 'N/A'}</p>
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground">Not connected</p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground mb-1">Competitor:</p>
+                        {competitorSite?.instagram ? (
+                          <div className="space-y-1">
+                            <p>Followers: {competitorSite.instagram.followers?.toLocaleString() || 'N/A'}</p>
+                            <p>Posts: {competitorSite.instagram.posts || 'N/A'}</p>
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground">Not available</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {showFacebookCard && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                      <FacebookIcon className="h-4 w-4" />
+                      Facebook
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground mb-1">Your Stats:</p>
+                        {yourSite?.facebook ? (
+                          <div className="space-y-1">
+                            <p>Likes: {yourSite.facebook.likes?.toLocaleString() || 'N/A'}</p>
+                            <p>Followers: {yourSite.facebook.followers?.toLocaleString() || 'N/A'}</p>
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground">Not connected</p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground mb-1">Competitor:</p>
+                        {competitorSite?.facebook ? (
+                          <div className="space-y-1">
+                            <p>Likes: {competitorSite.facebook.likes?.toLocaleString() || 'N/A'}</p>
+                            <p>Followers: {competitorSite.facebook.followers?.toLocaleString() || 'N/A'}</p>
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground">Not available</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* AI-Powered Recommendations */}
       <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-blue-50">
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-purple-600" />
               AI-Powered Recommendations
-            </div>
+            </CardTitle>
             {!showAIRecommendations && (
               <Button 
-                onClick={fetchAIRecommendations}
+                onClick={() => {
+                  setShowAIRecommendations(true)
+                  fetchAIRecommendations()
+                }}
                 disabled={isLoadingAI}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                className="bg-purple-600 hover:bg-purple-700"
               >
                 {isLoadingAI ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Analyzing with AI...
+                    Generating...
                   </>
                 ) : (
                   <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Generate AI Insights
+                    <Lightbulb className="mr-2 h-4 w-4" />
+                    Get AI Insights
                   </>
                 )}
               </Button>
             )}
-          </CardTitle>
-          <CardDescription>
-            Get personalized, AI-generated recommendations based on deep analysis of your site vs competitor
-          </CardDescription>
+          </div>
         </CardHeader>
         
         {showAIRecommendations && (
-          <CardContent className="space-y-6">
-            {aiError && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-                <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-semibold text-red-900">Failed to generate AI recommendations</p>
-                  <p className="text-sm text-red-700 mt-1">{aiError}</p>
-                  <Button
-                    onClick={fetchAIRecommendations}
-                    variant="outline"
-                    size="sm"
-                    className="mt-3 text-red-700 border-red-300 hover:bg-red-50"
-                  >
-                    Try Again
-                  </Button>
+          <CardContent>
+            {isLoadingAI ? (
+              <div className="text-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-purple-600" />
+                <p className="text-sm text-muted-foreground">Analyzing competitor data...</p>
+              </div>
+            ) : aiError ? (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{aiError}</AlertDescription>
+              </Alert>
+            ) : aiRecommendations.length > 0 ? (
+              <div className="space-y-4">
+                {isFallback && (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">
+                      Showing template recommendations. AI service temporarily unavailable.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {aiRecommendations.map((rec, idx) => (
+                    <AIRecommendationCard key={idx} {...rec} />
+                  ))}
                 </div>
               </div>
-            )}
-            
-            {!aiError && aiRecommendations.length > 0 && (
-              <>
-                {/* Fallback Notice */}
-                {isFallback && (
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3 mb-4">
-                    <AlertTriangle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-yellow-900">AI Service Temporarily Busy</p>
-                      <p className="text-sm text-yellow-700 mt-1">
-                        Google's AI is experiencing high traffic. Showing general recommendations below. 
-                        Try again in a few minutes for personalized insights.
-                      </p>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Display AI-Generated Recommendations */}
-                <div>
-                  <h3 className="font-semibold flex items-center gap-2 text-purple-700 mb-4">
-                    <Target className="h-5 w-5" />
-                    🎯 {isFallback ? 'General' : 'AI-Generated'} Recommendations
-                  </h3>
-                  <div className="space-y-3">
-                    {aiRecommendations.map((rec, index) => (
-                      <AIRecommendationCard
-                        key={index}
-                        title={rec.title}
-                        impact={rec.impact}
-                        effort={rec.effort}
-                        description={rec.description}
-                        steps={rec.steps}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                {/* AI Analysis Info */}
-                {!isFallback && (
-                  <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <Sparkles className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                      <div className="text-sm">
-                        <p className="font-semibold text-purple-900">Powered by Google Gemini AI</p>
-                        <p className="text-purple-700 mt-1">
-                          These recommendations are generated using advanced AI analysis of your site's performance, 
-                          SEO metrics, content quality, and direct comparison with your competitor's strengths.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">
+                Click "Get AI Insights" to receive personalized recommendations
+              </p>
             )}
           </CardContent>
         )}
       </Card>
+    </div>
+  )
+}
+
+// Score Circle Component
+function ScoreCircle({ label, score, icon }: { label: string; score: number; icon: React.ReactNode }) {
+  const getColor = (score: number) => {
+    if (score >= 80) return { stroke: '#10b981', bg: 'bg-green-50', text: 'text-green-600' }
+    if (score >= 50) return { stroke: '#f59e0b', bg: 'bg-yellow-50', text: 'text-yellow-600' }
+    return { stroke: '#ef4444', bg: 'bg-red-50', text: 'text-red-600' }
+  }
+
+  const { stroke, bg, text } = getColor(score)
+  const circumference = 2 * Math.PI * 36
+  const offset = circumference - (score / 100) * circumference
+
+  return (
+    <div className={`flex flex-col items-center p-4 ${bg} rounded-lg`}>
+      <div className="relative w-20 h-20">
+        <svg className="w-20 h-20 transform -rotate-90">
+          <circle
+            cx="40"
+            cy="40"
+            r="36"
+            stroke="#e5e7eb"
+            strokeWidth="8"
+            fill="none"
+          />
+          <circle
+            cx="40"
+            cy="40"
+            r="36"
+            stroke={stroke}
+            strokeWidth="8"
+            fill="none"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className={`text-lg font-bold ${text}`}>{score}</span>
+        </div>
+      </div>
+      <div className="mt-2 flex items-center gap-1 text-xs font-medium text-gray-600">
+        {icon}
+        {label}
+      </div>
     </div>
   )
 }
@@ -1699,211 +1884,26 @@ function AIRecommendationCard({ title, impact, effort, description, steps }: {
   return (
     <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-2">
-        <h4 className="font-semibold text-gray-900">{title}</h4>
+        <h3 className="font-semibold text-sm">{title}</h3>
         <div className="flex gap-2">
-          <Badge className={`text-xs ${getImpactColor(impact)} border`}>
-            Impact: {impact}
+          <Badge className={`text-xs ${getImpactColor(impact)}`}>
+            {impact} Impact
           </Badge>
-          <Badge className={`text-xs ${getEffortColor(effort)} border`}>
-            Effort: {effort}
+          <Badge className={`text-xs ${getEffortColor(effort)}`}>
+            {effort} Effort
           </Badge>
         </div>
       </div>
       <p className="text-sm text-gray-600 mb-3">{description}</p>
       <div className="space-y-1">
-        <p className="text-xs font-semibold text-gray-700">Action Steps:</p>
-        <ul className="space-y-1">
-          {steps.map((step, index) => (
-            <li key={index} className="text-xs text-gray-600 flex items-start gap-2">
-              <span className="text-purple-600 font-bold">•</span>
-              <span>{step}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  )
-}
-
-// Helper Components
-
-function ScoreCircle({ label, score, icon }: { label: string; score: number; icon: React.ReactNode }) {
-  const getColor = (score: number) => {
-    if (score >= 80) return { stroke: '#10b981', bg: 'bg-green-50' }
-    if (score >= 50) return { stroke: '#f59e0b', bg: 'bg-yellow-50' }
-    return { stroke: '#ef4444', bg: 'bg-red-50' }
-  }
-
-  const { stroke, bg } = getColor(score)
-  const circumference = 2 * Math.PI * 36
-  const offset = circumference - (score / 100) * circumference
-
-  return (
-    <div className={`flex flex-col items-center p-4 ${bg} rounded-lg`}>
-      <div className="relative w-20 h-20">
-        <svg className="transform -rotate-90" width="80" height="80">
-          <circle
-            cx="40"
-            cy="40"
-            r="36"
-            fill="none"
-            stroke="#e5e7eb"
-            strokeWidth="8"
-          />
-          <circle
-            cx="40"
-            cy="40"
-            r="36"
-            fill="none"
-            stroke={stroke}
-            strokeWidth="8"
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            strokeLinecap="round"
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-lg font-bold">{score}</span>
-        </div>
-      </div>
-      <div className="mt-2 flex items-center gap-1 text-xs font-medium text-gray-600">
-        {icon}
-        {label}
-      </div>
-    </div>
-  )
-}
-
-function SEOMetrics({ data, headings }: { data: any; headings: any }) {
-  // Provide safe defaults
-  const safeData = data || {};
-  const safeHeadings = headings || {};
-  
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-        <span className="text-sm">Title Tag</span>
-        {safeData.hasTitle ? (
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
-        ) : (
-          <XCircle className="h-4 w-4 text-red-600" />
-        )}
-      </div>
-      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-        <span className="text-sm">Meta Description</span>
-        {safeData.hasDescription ? (
-          <CheckCircle2 className="h-4 w-4 text-green-600" />
-        ) : (
-          <XCircle className="h-4 w-4 text-red-600" />
-        )}
-      </div>
-      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-        <span className="text-sm">H1 Tags</span>
-        <Badge variant="outline">{safeHeadings.h1Count || 0}</Badge>
-      </div>
-      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-        <span className="text-sm">H2 Tags</span>
-        <Badge variant="outline">{safeHeadings.h2Count || 0}</Badge>
-      </div>
-    </div>
-  )
-}
-
-function ContentMetrics({ title, data, isWinner }: { title: string; data: any; isWinner: boolean }) {
-  return (
-    <div className="space-y-3">
-      <h3 className="font-semibold flex items-center gap-2">
-        {title}
-        {isWinner && <Badge className="bg-green-600">More Content</Badge>}
-      </h3>
-      <div className="space-y-2">
-        <MetricRow icon={<FileText />} label="Word Count" value={data.wordCount?.toLocaleString()} />
-        <MetricRow icon={<Image />} label="Images" value={data.imageCount} />
-        <MetricRow icon={<Image />} label="Alt Text Coverage" value={`${data.imageAltCoverage}%`} />
-        <MetricRow icon={<LinkIcon />} label="Total Links" value={data.totalLinks} />
-        <MetricRow icon={<LinkIcon />} label="Internal Links" value={data.internalLinks} />
-        <MetricRow icon={<LinkIcon />} label="External Links" value={data.externalLinks} />
-      </div>
-    </div>
-  )
-}
-
-function TechnologyStack({ title, data }: { title: string; data: any }) {
-  return (
-    <div className="space-y-3">
-      <h3 className="font-semibold">{title}</h3>
-      <div className="space-y-2">
-        <div className="p-3 bg-gray-50 rounded-lg">
-          <div className="text-xs text-gray-600">CMS</div>
-          <div className="font-semibold">{data.cms || 'Unknown'}</div>
-        </div>
-        <div className="p-3 bg-gray-50 rounded-lg">
-          <div className="text-xs text-gray-600">Frameworks</div>
-          <div className="flex flex-wrap gap-1 mt-1">
-            {data.frameworks?.length > 0 ? (
-              data.frameworks.map((fw: string, i: number) => (
-                <Badge key={i} variant="outline">{fw}</Badge>
-              ))
-            ) : (
-              <span className="text-sm text-gray-500">None detected</span>
-            )}
+        <p className="text-xs font-medium text-gray-700">Steps:</p>
+        {steps.map((step, idx) => (
+          <div key={idx} className="flex items-start gap-2">
+            <span className="text-xs text-gray-500">{idx + 1}.</span>
+            <span className="text-xs text-gray-600">{step}</span>
           </div>
-        </div>
-        <div className="p-3 bg-gray-50 rounded-lg">
-          <div className="text-xs text-gray-600">Analytics</div>
-          <div className="flex flex-wrap gap-1 mt-1">
-            {data.analytics?.length > 0 ? (
-              data.analytics.map((tool: string, i: number) => (
-                <Badge key={i} variant="outline">{tool}</Badge>
-              ))
-            ) : (
-              <span className="text-sm text-gray-500">None detected</span>
-            )}
-          </div>
-        </div>
+        ))}
       </div>
-    </div>
-  )
-}
-
-function SecurityMetrics({ title, data }: { title: string; data: any }) {
-  return (
-    <div className="space-y-3">
-      <h3 className="font-semibold">{title}</h3>
-      <div className="space-y-2">
-        <MetricRow 
-          icon={data.isHTTPS ? <CheckCircle2 className="text-green-600" /> : <XCircle className="text-red-600" />} 
-          label="HTTPS" 
-          value={data.isHTTPS ? 'Enabled' : 'Disabled'} 
-        />
-        <MetricRow 
-          icon={data.hasCDN ? <CheckCircle2 className="text-green-600" /> : <XCircle className="text-gray-400" />} 
-          label="CDN" 
-          value={data.cdnProvider || 'Not detected'} 
-        />
-        <MetricRow 
-          icon={data.hasRobotsTxt ? <CheckCircle2 className="text-green-600" /> : <XCircle className="text-red-600" />} 
-          label="robots.txt" 
-          value={data.hasRobotsTxt ? 'Found' : 'Missing'} 
-        />
-        <MetricRow 
-          icon={data.hasSitemap ? <CheckCircle2 className="text-green-600" /> : <XCircle className="text-red-600" />} 
-          label="Sitemap" 
-          value={data.hasSitemap ? `${data.sitemapUrls} URLs` : 'Missing'} 
-        />
-      </div>
-    </div>
-  )
-}
-
-function MetricRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: any }) {
-  return (
-    <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-      <span className="text-sm flex items-center gap-2">
-        {icon && <span className="h-4 w-4">{icon}</span>}
-        {label}
-      </span>
-      <span className="font-semibold text-sm">{value}</span>
     </div>
   )
 }

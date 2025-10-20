@@ -1,15 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, ReactNode } from 'react'
 import DashboardSidebar from './DashboardSidebar'
 import DashboardHeaderClient from './DashboardHeaderClient'
 import DashboardContent from './DashboardContent'
 
 interface DashboardLayoutProps {
   user: any
+  children?: ReactNode
 }
 
-export default function DashboardLayout({ user }: DashboardLayoutProps) {
+export default function DashboardLayout({ user, children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
@@ -49,10 +50,15 @@ export default function DashboardLayout({ user }: DashboardLayoutProps) {
             alert('Please go to SEO & Website Performance page to analyze and download reports.')
           }}
         />
-        <DashboardContent 
-          userEmail={user?.email}
-          userName={user?.user_metadata?.full_name || user?.user_metadata?.name}
-        />
+        {/* Render passed children (page-specific content) or the default DashboardContent */}
+        {children ? (
+          children
+        ) : (
+          <DashboardContent 
+            userEmail={user?.email}
+            userName={user?.user_metadata?.full_name || user?.user_metadata?.name}
+          />
+        )}
       </div>
     </div>
   )

@@ -1,6 +1,59 @@
 import express from 'express';
 import axios from 'axios';
 const router = express.Router();
+import dotenv from 'dotenv';
+dotenv.config();
+// Facebook OAuth endpoints
+const FB_APP_ID = process.env.FACEBOOK_APP_ID;
+const FB_APP_SECRET = process.env.FACEBOOK_APP_SECRET;
+const FB_REDIRECT_URI = 'http://localhost:3002/api/auth/facebook/callback';
+const FB_SCOPES = [
+  'public_profile',
+  'email',
+  'pages_show_list',
+  'pages_read_engagement',
+  'pages_read_user_content',
+  'read_insights'
+].join(',');
+
+// Step 1: Redirect to Facebook OAuth
+router.get('/auth/facebook', (req, res) => {
+  const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${FB_APP_ID}&redirect_uri=${encodeURIComponent(FB_REDIRECT_URI)}&scope=${FB_SCOPES}&response_type=code&state=xyz`;
+  res.redirect(authUrl);
+});
+
+// Step 2: Handle Facebook OAuth callback
+router.get('/auth/facebook/callback', async (req, res) => {
+  const { code } = req.query;
+  if (!code) {
+    return res.status(400).json({ success: false, message: 'No code provided' });
+  }
+  try {
+    // Exchange code for access token
+    const tokenResp = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
+      params: {
+        client_id: FB_APP_ID,
+        client_secret: FB_APP_SECRET,
+        redirect_uri: FB_REDIRECT_URI,
+        code
+      }
+    });
+    const accessToken = tokenResp.data.access_token;
+    // Optionally, fetch user profile
+    const profileResp = await axios.get('https://graph.facebook.com/me', {
+      params: {
+        access_token: accessToken,
+        fields: 'id,name,email,picture'
+      }
+    });
+    // You may want to store accessToken in DB/session for the user
+    // For now, just send it back (not secure for production)
+    res.json({ success: true, accessToken, profile: profileResp.data });
+  } catch (err) {
+    console.error('Facebook OAuth error:', err?.response?.data || err.message);
+    res.status(500).json({ success: false, message: 'Failed to authenticate with Facebook' });
+  }
+});
 
 // Helpers
 function normalizeTimeframe(timeframe) {

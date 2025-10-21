@@ -105,7 +105,12 @@ class GeminiService {
         h2Count: yourSite.puppeteer?.seo?.headings?.h2Count || 0,
         hasMetaDescription: yourSite.puppeteer?.seo?.metaDescription ? true : false,
         totalBacklinks: yourSite.backlinks?.totalBacklinks || 0,
-        refDomains: yourSite.backlinks?.totalRefDomains || 0
+        refDomains: yourSite.backlinks?.totalRefDomains || 0,
+        monthlyVisits: yourSite.traffic?.metrics?.monthlyVisits || 0,
+        bounceRate: yourSite.traffic?.metrics?.bounceRate || 'N/A',
+        frameworks: yourSite.puppeteer?.technology?.frameworks?.join(', ') || 'None detected',
+        cms: yourSite.puppeteer?.technology?.cms || 'None detected',
+        isHTTPS: yourSite.puppeteer?.security?.isHTTPS || false
       },
       competitor: {
         domain: competitorSite.domain,
@@ -120,14 +125,21 @@ class GeminiService {
         h1Count: competitorSite.puppeteer?.seo?.headings?.h1Count || 0,
         h2Count: competitorSite.puppeteer?.seo?.headings?.h2Count || 0,
         totalBacklinks: competitorSite.backlinks?.totalBacklinks || 0,
-        refDomains: competitorSite.backlinks?.totalRefDomains || 0
+        refDomains: competitorSite.backlinks?.totalRefDomains || 0,
+        monthlyVisits: competitorSite.traffic?.metrics?.monthlyVisits || 0,
+        bounceRate: competitorSite.traffic?.metrics?.bounceRate || 'N/A',
+        frameworks: competitorSite.puppeteer?.technology?.frameworks?.join(', ') || 'None detected',
+        cms: competitorSite.puppeteer?.technology?.cms || 'None detected',
+        isHTTPS: competitorSite.puppeteer?.security?.isHTTPS || false
       },
       gaps: {
         performanceGap: (yourSite.lighthouse?.categories?.performance?.displayValue || 0) - (competitorSite.lighthouse?.categories?.performance?.displayValue || 0),
         seoGap: (yourSite.lighthouse?.categories?.seo?.displayValue || 0) - (competitorSite.lighthouse?.categories?.seo?.displayValue || 0),
         backlinksGap: (yourSite.backlinks?.totalBacklinks || 0) - (competitorSite.backlinks?.totalBacklinks || 0),
-        contentGap: (yourSite.puppeteer?.content?.wordCount || 0) - (competitorSite.puppeteer?.content?.wordCount || 0)
-      }
+        contentGap: (yourSite.puppeteer?.content?.wordCount || 0) - (competitorSite.puppeteer?.content?.wordCount || 0),
+        trafficGap: (yourSite.traffic?.metrics?.monthlyVisits || 0) - (competitorSite.traffic?.metrics?.monthlyVisits || 0)
+      },
+      comparisonMetrics: comparison || {}
     };
   }
 
@@ -149,6 +161,11 @@ class GeminiService {
 - Links: ${data.yourSite.totalLinks} total (${data.yourSite.internalLinks} internal, ${data.yourSite.externalLinks} external)
 - Backlinks: ${data.yourSite.totalBacklinks} from ${data.yourSite.refDomains} domains
 - Meta Description: ${data.yourSite.hasMetaDescription ? 'Present' : 'Missing'}
+- Monthly Visits: ${data.yourSite.monthlyVisits.toLocaleString()}
+- Bounce Rate: ${data.yourSite.bounceRate}
+- Technology Stack: ${data.yourSite.frameworks}
+- CMS: ${data.yourSite.cms}
+- HTTPS: ${data.yourSite.isHTTPS ? 'Yes' : 'No'}
 
 **Competitor's Website: ${data.competitor.domain}**
 - Performance Score: ${data.competitor.performance}/100
@@ -160,12 +177,18 @@ class GeminiService {
 - Content: ${data.competitor.wordCount} words, ${data.competitor.h1Count} H1s, ${data.competitor.h2Count} H2s
 - Images: ${data.competitor.imageCount} total
 - Backlinks: ${data.competitor.totalBacklinks} from ${data.competitor.refDomains} domains
+- Monthly Visits: ${data.competitor.monthlyVisits.toLocaleString()}
+- Bounce Rate: ${data.competitor.bounceRate}
+- Technology Stack: ${data.competitor.frameworks}
+- CMS: ${data.competitor.cms}
+- HTTPS: ${data.competitor.isHTTPS ? 'Yes' : 'No'}
 
-**Performance Gaps:**
+**Performance Gaps (Positive means you're ahead, Negative means competitor is ahead):**
 - Performance: ${data.gaps.performanceGap > 0 ? '+' : ''}${data.gaps.performanceGap} points
 - SEO: ${data.gaps.seoGap > 0 ? '+' : ''}${data.gaps.seoGap} points
 - Backlinks: ${data.gaps.backlinksGap > 0 ? '+' : ''}${data.gaps.backlinksGap} backlinks
 - Content: ${data.gaps.contentGap > 0 ? '+' : ''}${data.gaps.contentGap} words
+- Traffic: ${data.gaps.trafficGap > 0 ? '+' : ''}${data.gaps.trafficGap.toLocaleString()} monthly visits
 
 Provide exactly 3 recommendations in the following JSON format:
 [

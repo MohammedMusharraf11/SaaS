@@ -20,14 +20,22 @@ GOOGLE_CLIENT_SECRET: SET
 GOOGLE_REDIRECT_URI: http://localhost:3010/api/auth/google/callback
 FRONTEND_URL: http://localhost:3002
 ✅ OAuth2 client initialized successfully
+🔍 Facebook OAuth Route Environment Check:
+FACEBOOK_APP_ID: 1146428707...
+FACEBOOK_APP_SECRET: SET
+FRONTEND_URL: http://localhost:3002
+✅ Facebook OAuth client initialized successfully
+   Redirect URI: http://localhost:3010/api/auth/facebook/callback
 🚀 SEO Health Score API running on port 3010
 📍 Health endpoint: http://localhost:3010/api/status
 🔐 Google Auth: http://localhost:3010/api/auth/google
+📘 Facebook Auth: http://localhost:3010/api/auth/facebook
 ⚡ Lighthouse: http://localhost:3010/api/lighthouse
 📈 Analytics: http://localhost:3010/api/analytics
 🔍 Search Console: http://localhost:3010/api/search-console
 📊 Traffic: http://localhost:3010/api/traffic
 🏆 Competitor: http://localhost:3010/api/competitor
+📱 Facebook Metrics: http://localhost:3010/api/facebook
 
 🔍 RAW REQUEST BODY: {
   "email": "kousersony43@gmail.com",
@@ -54,7 +62,7 @@ FRONTEND_URL: http://localhost:3002
 🔍 Looking up user by email: kousersony43@gmail.com
 ✅ Found user ID: 65b722e2-595b-40ab-8cae-30ac1282de0d
 🔍 Checking competitor cache: agenticforge.tech vs pes.edu
-✅ Competitor cache hit! Age: 8 hours
+✅ Competitor cache hit! Age: 55 hours
 ✅ Returning cached competitor analysis
 🔍 Cached competitor puppeteer.seo.headings: {
   h1: [ 'Pesuvians for Life' ],
@@ -127,8 +135,8 @@ FRONTEND_URL: http://localhost:3002
 ✅ Using expired Lighthouse cache (fallback mode)
    🔍 Lighthouse cache structure: ["url","chartData","timestamp","seoAnalysis","coreWebVitals","opportunities","categoryScores","resourceMetrics","scoreComparison","lighthouseVersion","performanceTimeline","accessibilityBreakdown","bestPracticesBreakdown"]
    🔍 Has categoryScores? true
-   🔍 CategoryScores: {"seo":100,"performance":41,"accessibility":85,"bestPractices":96}
-   ✅ Found cached Lighthouse data (Performance: 41)
+   🔍 CategoryScores: {"seo":100,"performance":38,"accessibility":85,"bestPractices":96}
+   ✅ Found cached Lighthouse data (Performance: 38)
 🔍 Looking up user by email: kousersony43@gmail.com
 ✅ Found user ID: 65b722e2-595b-40ab-8cae-30ac1282de0d
 ✅ Using expired Search Console cache (fallback mode)
@@ -139,7 +147,7 @@ FRONTEND_URL: http://localhost:3002
 🔍 Looking up user by email: kousersony43@gmail.com
 ✅ Found user ID: 65b722e2-595b-40ab-8cae-30ac1282de0d
 🔍 Checking SE Ranking cache for domain: agenticforge.tech
-✅ SE Ranking cache hit! Age: 2963 minutes (expired but used anyway)
+✅ SE Ranking cache hit! Age: 1710 minutes (expired but used anyway)
    🔍 SE Ranking cache result: Found
    🔍 SE Ranking cache keys: [
   'note',            'source',
@@ -156,74 +164,65 @@ FRONTEND_URL: http://localhost:3002
    ✅ Found cached SE Ranking backlinks
    📊 Fetching traffic data for user site...
 📊 Fetching user GA data for: kousersony43@gmail.com
-🔍 Fetching OAuth tokens for: kousersony43@gmail.com
-✅ OAuth tokens retrieved for: kousersony43@gmail.com
+🔍 Fetching OAuth tokens for: kousersony43@gmail.com (google)
+✅ OAuth tokens retrieved for: kousersony43@gmail.com (google)
 ✅ OAuth client ready for: kousersony43@gmail.com
 ✅ OAuth client ready
 📊 Fetching GA properties for: kousersony43@gmail.com
-🔍 Fetching OAuth tokens for: kousersony43@gmail.com
-✅ OAuth tokens retrieved for: kousersony43@gmail.com
+🔍 Fetching OAuth tokens for: kousersony43@gmail.com (google)
+✅ OAuth tokens retrieved for: kousersony43@gmail.com (google)
 ✅ OAuth client ready for: kousersony43@gmail.com
 ✅ OAuth client ready, fetching properties...
 ✅ Found 1 GA4 properties
 📌 Using first available property: 507800388
 ✅ User Analytics data received
-   ✅ Got traffic data from Google Analytics (235 sessions)
+   ✅ Got traffic data from Google Analytics (279 sessions)
    📝 Fetching content changes monitoring for user site...
    🔧 ChangeDetection service loaded successfully
 📊 Analyzing content changes for: agenticforge.tech
 🔍 Searching for watch with URL: agenticforge.tech
 📋 Fetching all watches...
-✅ Found 4 watches
-✅ Found existing watch for https://agenticforge.tech: 97834991-d15f-4506-a9fb-ec64fd0d1c38
-🔍 Fetching details for watch: 97834991-d15f-4506-a9fb-ec64fd0d1c38
-📜 Fetching history for watch: 97834991-d15f-4506-a9fb-ec64fd0d1c38
+❌ Error listing watches: Invalid access - API key invalid.
+📝 No existing watch found for https://agenticforge.tech, creating new one...
+📝 Adding ChangeDetection watch for: https://agenticforge.tech
+❌ Error adding watch for https://agenticforge.tech: Invalid access - API key invalid.
    📊 ChangeDetection response: {
-  "success": true,
-  "domain": "agenticforge.tech",
-  "uuid": "97834991-d15f-4506-a9fb-ec64fd0d1c38",
-  "url": "https://agenticforge.tech",
-  "monitoring": {
-    "lastChecked": "2025-10-19T14:21:57.000Z",
-    "lastChanged": null,
-    "checkCount": 1,
-    "changeCount": 0,
-    "status": null,
-    "paused": false
-  },
-  "triggers": [
-    "price",
-    "pricing",
-    "new",
-    "feature",
-    "launch",
-    "update",
-    "release"
-  ],
-  "history": {},
-  "activity": {
-    "isActive": false,
-    "daysSinceLastCheck": 0,
-    "daysSinceLastChange": null,
-    "totalChecks": 1,
-    "totalChanges": 0,
-    "changeFrequency": "no changes detected",
-    "activityLevel": "inactive"
-  },
-  "comparison": "dormant"
+  "success": false,
+  "error": "Invalid access - API key invalid.",
+  "domain": "agenticforge.tech"
 }
-   ✅ Got ChangeDetection monitoring data (1 checks, 0 changes)
-   📌 Activity Level: inactive
+   ⚠️ ChangeDetection failed: Invalid access - API key invalid., falling back to RSS/Sitemap...
+📝 Analyzing content updates for: agenticforge.tech
+  Trying RSS feed: https://agenticforge.tech/feed
+  ❌ Failed to parse RSS feed: Request failed with status code 404
+  Trying RSS feed: https://agenticforge.tech/rss
+  ❌ Failed to parse RSS feed: Request failed with status code 404
+  Trying RSS feed: https://agenticforge.tech/feed.xml
+  ❌ Failed to parse RSS feed: Request failed with status code 404
+  Trying RSS feed: https://agenticforge.tech/rss.xml
+  ❌ Failed to parse RSS feed: Request failed with status code 404
+  Trying RSS feed: https://agenticforge.tech/atom.xml
+  ❌ Failed to parse RSS feed: Request failed with status code 404
+  Trying RSS feed: https://agenticforge.tech/blog/feed
+  ❌ Failed to parse RSS feed: Request failed with status code 404
+  Trying RSS feed: https://agenticforge.tech/blog/rss
+  ❌ Failed to parse RSS feed: Request failed with status code 404
+  Trying RSS feed: https://agenticforge.tech/feeds/posts/default
+  ❌ Failed to parse RSS feed: Request failed with status code 404
+  Trying sitemap: https://agenticforge.tech/sitemap.xml
+  ✅ Found sitemap with 8 URLs, 0 recently modified
+✅ Content updates analysis complete for agenticforge.tech
+   ✅ Got content updates data (fallback)
    📸 Fetching Instagram engagement for: rvcollegeofengineering
 
 📱 Starting Instagram engagement analysis for: rvcollegeofengineering
 📸 Fetching Instagram CID for: rvcollegeofengineering
 ✅ Found Instagram account: RV College Of Engineering (@rvcollegeofengineering)
    CID: INST:17841431146363531
-   Followers: 12,963
+   Followers: 12,995
 📊 Fetching Instagram activity for CID: INST:17841431146363531
 ✅ Instagram activity data received (168 data points)
-   ✅ Got Instagram engagement data (12,963 followers)
+   ✅ Got Instagram engagement data (12,995 followers)
    📘 Fetching Facebook engagement for: RVCEngineering
 
 📱 Analyzing Facebook page: RVCEngineering
@@ -231,9 +230,9 @@ FRONTEND_URL: http://localhost:3002
 
 
 🔍 Fetching Facebook page info for: RVCEngineering
-❌ Error fetching Facebook page info: Request failed with status code 429
-❌ Analysis failed: Request failed with status code 429
-   ⚠️ Failed to fetch Facebook data: Request failed with status code 429
+❌ Error fetching Facebook page info: No data found for page: RVCEngineering
+❌ Analysis failed: No data found for page: RVCEngineering
+   ⚠️ Failed to fetch Facebook data: No data found for page: RVCEngineering
    📊 Cached data summary:
       - Lighthouse: ✅
       - PageSpeed: ❌
@@ -241,8 +240,8 @@ FRONTEND_URL: http://localhost:3002
       - Puppeteer: ❌
       - Backlinks: ✅
       - Traffic: ✅
-      - Content Changes (ChangeDetection): ✅
-      - Content Updates (RSS/Sitemap): ❌
+      - Content Changes (ChangeDetection): ❌
+      - Content Updates (RSS/Sitemap): ✅
       - Instagram: ✅
       - Facebook: ❌
    🔍 Puppeteer data missing, fetching separately...
@@ -255,7 +254,7 @@ FRONTEND_URL: http://localhost:3002
 📱 Fetching PageSpeed data for: https://agenticforge.tech
 📱 Fetching mobile and desktop PageSpeed data...
 ✅ PageSpeed data retrieved for agenticforge.tech
-   Desktop: 79% | Mobile: 49%
+   Desktop: 61% | Mobile: 53%
    ✅ PageSpeed analysis completed for user site
 🔍 Your site puppeteer.seo.headings: {
   h1: [
@@ -303,7 +302,7 @@ FRONTEND_URL: http://localhost:3002
   "url": "https://agenticforge.tech",
   "desktop": {
     "strategy": "desktop",
-    "performanceScore": 79,
+    "performanceScore": 61,
     "category": "AVERAGE",
     "fieldData": {
       "lcp": null,
@@ -312,19 +311,19 @@ FRONTEND_URL: http://localhost:3002
       "overall_category": "UNKNOWN"
     },
     "labData": {
-      "lcp": 2585.9220977491887,
-      "fid": 230,
-      "cls": 0.03505671127874576,
-      "fcp": 1199.3742583283617,
-      "tti": 2621.6734174573494,
-      "tbt": 99,
-      "speedIndex": 1999.3678105924955
+      "lcp": 2810.210384691999,
+      "fid": 375,
+      "cls": 0.031477472556036654,
+      "fcp": 1061.5343361813434,
+      "tti": 2992.874848876173,
+      "tbt": 432.0517035771261,
+      "speedIndex": 1888.6950836180145
     }
   },
   "mobile": {
     "strategy": "mobile",
-    "performanceScore": 49,
-    "category": "SLOW",
+    "performanceScore": 53,
+    "category": "AVERAGE",
     "fieldData": {
       "lcp": null,
       "fid": null,
@@ -332,13 +331,13 @@ FRONTEND_URL: http://localhost:3002
       "overall_category": "UNKNOWN"
     },
     "labData": {
-      "lcp": 13861.029260129417,
-      "fid": 356,
-      "cls": 0.007831984304654574,
-      "fcp": 10436.478853520046,
-      "tti": 15123.580278011586,
-      "tbt": 302,
-      "speedIndex": 10436.478853520046
+      "lcp": 13607.161332886435,
+      "fid": 353,
+      "cls": 0.0016963583700780594,
+      "fcp": 4762.063772122948,
+      "tti": 13935.11412033682,
+      "tbt": 353,
+      "speedIndex": 5503.3724816997965
     }
   }
 }
@@ -351,64 +350,30 @@ FRONTEND_URL: http://localhost:3002
 📊 Analyzing content changes for: pes.edu
 🔍 Searching for watch with URL: pes.edu
 📋 Fetching all watches...
-✅ Found 4 watches
-✅ Found existing watch for https://pes.edu: 14699a76-8281-4b0a-849c-61918bf39d21
-🔍 Fetching details for watch: 14699a76-8281-4b0a-849c-61918bf39d21
-📜 Fetching history for watch: 14699a76-8281-4b0a-849c-61918bf39d21
+❌ Error listing watches: Invalid access - API key invalid.
+📝 No existing watch found for https://pes.edu, creating new one...
+📝 Adding ChangeDetection watch for: https://pes.edu
+❌ Error adding watch for https://pes.edu: Invalid access - API key invalid.
    📊 Competitor ChangeDetection response: {
-  "success": true,
-  "domain": "pes.edu",
-  "uuid": "14699a76-8281-4b0a-849c-61918bf39d21",
-  "url": "https://pes.edu",
-  "monitoring": {
-    "lastChecked": "2025-10-19T14:22:39.000Z",
-    "lastChanged": null,
-    "checkCount": 1,
-    "changeCount": 1,
-    "status": 200,
-    "paused": false
-  },
-  "triggers": [
-    "price",
-    "pricing",
-    "new",
-    "feature",
-    "launch",
-    "update",
-    "release"
-  ],
-  "history": {
-    "1760883759": "/datastore/14699a76-8281-4b0a-849c-61918bf39d21/a31126ad77a9c067dbdb795a256de06f.txt.br"
-  },
-  "activity": {
-    "isActive": false,
-    "daysSinceLastCheck": 0,
-    "daysSinceLastChange": null,
-    "totalChecks": 1,
-    "totalChanges": 1,
-    "changeFrequency": "very high",
-    "activityLevel": "inactive"
-  },
-  "comparison": "dormant"
+  "success": false,
+  "error": "Invalid access - API key invalid.",
+  "domain": "pes.edu"
 }
-   ✅ Got competitor ChangeDetection data (1 checks, 1 changes)
-   📌 Competitor Activity Level: inactive
+   ⚠️ Competitor ChangeDetection failed: Invalid access - API key invalid.
    🟣 Fetching Meta Ads monitoring for cached competitor (username only): pesuniversity
 [MetaAds] getMetaAdsMonitoring called with username: pesuniversity
 [MetaAds] Username received for Page ID lookup: pesuniversity
 [MetaAds] Querying RapidAPI for Page ID with URL: https://www.facebook.com/pesuniversity
-[MetaAds] Error fetching Facebook page ID: {
-  message: 'You have exceeded the MONTHLY quota for Requests on your current plan, BASIC. Upgrade your plan at https://rapidapi.com/ousema.frikha/api/facebook-pages-scraper2'
-}
+[MetaAds] RapidAPI response for Page ID: undefined
+[MetaAds] No Page ID found for username: pesuniversity
 [MetaAds] Could not resolve Facebook page ID for username: pesuniversity
    ⚠️ Failed to fetch competitor Meta Ads data: Could not resolve Facebook page ID for username.
    🟣 Fetching Meta Ads monitoring for your cached site: RVCEngineering
 [MetaAds] getMetaAdsMonitoring called with username: RVCEngineering
 [MetaAds] Username received for Page ID lookup: RVCEngineering
 [MetaAds] Querying RapidAPI for Page ID with URL: https://www.facebook.com/RVCEngineering
-[MetaAds] Error fetching Facebook page ID: {
-  message: 'You have exceeded the MONTHLY quota for Requests on your current plan, BASIC. Upgrade your plan at https://rapidapi.com/ousema.frikha/api/facebook-pages-scraper2'
-}
+[MetaAds] RapidAPI response for Page ID: undefined
+[MetaAds] No Page ID found for username: RVCEngineering
 [MetaAds] Could not resolve Facebook page ID for username: RVCEngineering
    ⚠️ Failed to fetch your site Meta Ads data: Could not resolve Facebook page ID for username.
    📸 Fetching Instagram engagement for cached competitor: pesuniversity
@@ -417,10 +382,10 @@ FRONTEND_URL: http://localhost:3002
 📸 Fetching Instagram CID for: pesuniversity
 ✅ Found Instagram account: PES University (@pesuniversity)
    CID: INST:17841401132460128
-   Followers: 29,555
+   Followers: 29,688
 📊 Fetching Instagram activity for CID: INST:17841401132460128
 ✅ Instagram activity data received (168 data points)
-   ✅ Got competitor Instagram data (29,555 followers)
+   ✅ Got competitor Instagram data (29,688 followers)
    📘 Fetching Facebook engagement for cached competitor: pesuniversity
 
 📱 Analyzing Facebook page: pesuniversity
@@ -428,9 +393,9 @@ FRONTEND_URL: http://localhost:3002
 
 
 🔍 Fetching Facebook page info for: pesuniversity
-❌ Error fetching Facebook page info: Request failed with status code 429
-❌ Analysis failed: Request failed with status code 429
-   ⚠️ Failed to fetch competitor Facebook data: Request failed with status code 429
+❌ Error fetching Facebook page info: No data found for page: pesuniversity
+❌ Analysis failed: No data found for page: pesuniversity
+   ⚠️ Failed to fetch competitor Facebook data: No data found for page: pesuniversity
 🔍 SEO Comparison - yourSeoData.headings: {
   h1: [
     'Scale Your Business with AI Automation',
@@ -541,721 +506,7 @@ FRONTEND_URL: http://localhost:3002
 🔍 Final yourHeadings: { h1Count: 2, h2Count: 5, h3Count: 22 }
 🔍 Final compHeadings: { h1Count: 1, h2Count: 10, h3Count: 45 }
 🔍 Final yourSite.pagespeed in response: EXISTS
-🔍 Final yourSite.contentChanges in response: EXISTS
-🔍 Final competitorSite.contentChanges in response: EXISTS
-🔍 Generated comparison.seo: {
-  "yours": 100,
-  "competitor": 79,
-  "difference": 21,
-  "winner": "yours",
-  "scores": {
-    "your": 100,
-    "competitor": 79
-  },
-  "metaTags": {
-    "your": {
-      "hasTitle": true,
-      "hasDescription": true,
-      "title": "AgenticForge - AI Automation & Custom AI Agents for Business",
-      "description": "Transform your business with AgenticForge's intelligent AI automation. We build sophisticated AI agents, chatbots, voicebots, and workflow automations using cutting-edge AI technologies. 500+ AI tools mastered, 85% task automation rate."
-    },
-    "competitor": {
-      "hasTitle": true,
-      "hasDescription": false,
-      "title": "PES University",
-      "description": null
-    }
-  },
-  "headings": {
-    "your": {
-      "h1Count": 2,
-      "h2Count": 5,
-      "h3Count": 22
-    },
-    "competitor": {
-      "h1Count": 1,
-      "h2Count": 10,
-      "h3Count": 45
-    }
-  },
-  "structuredData": {
-    "your": [
-      {
-        "type": "Organization",
-        "raw": {
-          "@context": "https://schema.org",
-          "@type": "Organization",
-          "name": "AgenticForge",
-          "url": "https://agenticforge.tech",
-          "logo": "https://agenticforge.tech/heroLogo.png",
-          "description": "Professional AI automation agency building sophisticated AI agents and workflow automations using cutting-edge technologies.",
-          "sameAs": [
-            "https://www.linkedin.com/company/agentic-forge",
-            "https://twitter.com/agenticforge",
-            "https://facebook.com/agenticforge",
-            "https://www.instagram.com/agenticforge"
-          ]
-        }
-      },
-      {
-        "type": "Organization",
-        "raw": {
-          "@context": "https://schema.org",
-          "@type": "Organization",
-          "name": "AgenticForge",
-          "url": "https://agenticforge.tech",
-          "logo": "https://agenticforge.tech/heroLogo.png",
-          "sameAs": [
-            "https://www.linkedin.com/company/agentic-forge",
-            "https://twitter.com/agenticforge",
-            "https://facebook.com/agenticforge",
-            "https://www.instagram.com/agenticforge"
-          ],
-          "description": "Transform your business with AgenticForge's intelligent AI automation. We build sophisticated AI agents, chatbots, voicebots, and workflow automations using cutting-edge AI technologies.",
-          "address": {
-            "@type": "PostalAddress",
-            "addressCountry": "US"
-          },
-          "contactPoint": {
-            "@type": "ContactPoint",
-            "contactType": "customer support",
-            "email": "agenticforge.tech@gmail.com",
-            "availableLanguage": [
-              "English"
-            ]
-          }
-        }
-      },
-      {
-        "type": "ItemList",
-        "raw": {
-          "@context": "https://schema.org",
-          "@type": "ItemList",
-          "itemListElement": [
-            {
-              "@type": "Case",
-              "position": 1,
-              "name": "Intelligent Voice Appointment System",
-              "description": "Manual appointment scheduling was consuming 15+ hours weekly, with high no-show rates and poor customer experience due to delayed responses",
-              "result": [
-                "15 hours of weekly admin work eliminated",
-                "78% reduction in no-show appointments",
-                "24/7 automated appointment booking capability",
-                "Seamless integration with existing calendar systems"
-              ],
-              "industry": "Healthcare & Professional Services",
-              "provider": {
-                "@type": "Organization",
-                "name": "Agentic Forge",
-                "url": "https://agenticforge.tech"
-              }
-            },
-            {
-              "@type": "Case",
-              "position": 2,
-              "name": "BandhanAI Marketing Campaign Engine",
-              "description": "Generic mass emails resulted in low engagement rates, manual campaign management was time-intensive, and no real-time performance tracking",
-              "result": [
-                "340% increase in email engagement rates",
-                "Automated personalized campaigns based on purchase history",
-                "Real-time campaign performance tracking via Slack",
-                "Dynamic customer segmentation and targeting"
-              ],
-              "industry": "E-commerce & Retail",
-              "provider": {
-                "@type": "Organization",
-                "name": "Agentic Forge",
-                "url": "https://agenticforge.tech"
-              }
-            }
-          ]
-        }
-      }
-    ],
-    "competitor": {
-      "score": 0,
-      "hasJsonLd": false,
-      "jsonLdCount": 0,
-      "hasMicrodata": false,
-      "microdataCount": 0
-    }
-  }
-}
-🔍 Ads data included - Google: true Meta: true
-[32m[nodemon] restarting due to changes...[39m
-[32m[nodemon] starting `node server.js`[39m
-🔧 Services loaded: {
-  lighthouse: true,
-  pagespeed: true,
-  analytics: true,
-  scoring: true,
-  searchConsole: true,
-  technicalSEO: true
-}
-🔍 Supabase Config Check:
-   SUPABASE_URL: https://krgaukhigntjdfacppbq.s...
-   SUPABASE_SERVICE_KEY: SET
-🔍 OAuth Route Environment Check:
-GOOGLE_CLIENT_ID: 5384374065...
-GOOGLE_CLIENT_SECRET: SET
-GOOGLE_REDIRECT_URI: http://localhost:3010/api/auth/google/callback
-FRONTEND_URL: http://localhost:3002
-✅ OAuth2 client initialized successfully
-🚀 SEO Health Score API running on port 3010
-📍 Health endpoint: http://localhost:3010/api/status
-🔐 Google Auth: http://localhost:3010/api/auth/google
-⚡ Lighthouse: http://localhost:3010/api/lighthouse
-📈 Analytics: http://localhost:3010/api/analytics
-🔍 Search Console: http://localhost:3010/api/search-console
-📊 Traffic: http://localhost:3010/api/traffic
-🏆 Competitor: http://localhost:3010/api/competitor
-[32m[nodemon] restarting due to changes...[39m
-[32m[nodemon] starting `node server.js`[39m
-🔧 Services loaded: {
-  lighthouse: true,
-  pagespeed: true,
-  analytics: true,
-  scoring: true,
-  searchConsole: true,
-  technicalSEO: true
-}
-🔍 Supabase Config Check:
-   SUPABASE_URL: https://krgaukhigntjdfacppbq.s...
-   SUPABASE_SERVICE_KEY: SET
-🔍 OAuth Route Environment Check:
-GOOGLE_CLIENT_ID: 5384374065...
-GOOGLE_CLIENT_SECRET: SET
-GOOGLE_REDIRECT_URI: http://localhost:3010/api/auth/google/callback
-FRONTEND_URL: http://localhost:3002
-✅ OAuth2 client initialized successfully
-🚀 SEO Health Score API running on port 3010
-📍 Health endpoint: http://localhost:3010/api/status
-🔐 Google Auth: http://localhost:3010/api/auth/google
-⚡ Lighthouse: http://localhost:3010/api/lighthouse
-📈 Analytics: http://localhost:3010/api/analytics
-🔍 Search Console: http://localhost:3010/api/search-console
-📊 Traffic: http://localhost:3010/api/traffic
-🏆 Competitor: http://localhost:3010/api/competitor
-🔍 Fetching OAuth tokens for: kousersony43@gmail.com
-✅ OAuth tokens retrieved for: kousersony43@gmail.com
-✅ OAuth client ready for: kousersony43@gmail.com
-🔍 Fetching OAuth tokens for: kousersony43@gmail.com
-✅ OAuth tokens retrieved for: kousersony43@gmail.com
-✅ OAuth client ready for: kousersony43@gmail.com
-
-🔍 RAW REQUEST BODY: {
-  "email": "kousersony43@gmail.com",
-  "yourSite": "agenticforge.tech",
-  "competitorSite": "pes.edu",
-  "yourInstagram": "rvcollegeofengineering",
-  "competitorInstagram": "pesuniversity",
-  "yourFacebook": "RVCEngineering",
-  "competitorFacebook": "pesuniversity",
-  "forceRefresh": false
-}
-
-📊 Competitor Analysis Request:
-   Your Site: agenticforge.tech
-   Competitor: pes.edu
-   Email: kousersony43@gmail.com
-   Force Refresh: false
-   Your Instagram: rvcollegeofengineering
-   Competitor Instagram: pesuniversity
-   Your Facebook: RVCEngineering
-   Competitor Facebook: pesuniversity
-   Has Instagram? true
-   Has Facebook? true
-🔍 Looking up user by email: kousersony43@gmail.com
-✅ Found user ID: 65b722e2-595b-40ab-8cae-30ac1282de0d
-🔍 Checking competitor cache: agenticforge.tech vs pes.edu
-✅ Competitor cache hit! Age: 8 hours
-✅ Returning cached competitor analysis
-🔍 Cached competitor puppeteer.seo.headings: {
-  h1: [ 'Pesuvians for Life' ],
-  h2: [
-    'Academics',
-    'Meet our Faculty',
-    'Academics',
-    'Meet our Faculty',
-    'Placements',
-    'Placements',
-    'Pesuvians for Life',
-    'Research',
-    'Research',
-    'Campus Life'
-  ],
-  h3: [
-    'Admissions 2026 Now Open',
-    'Ph.D. and M.Tech by Research',
-    'Scholarships',
-    'Research Driven Learning',
-    'Placements',
-    'International Internships',
-    'ADMISSIONS 2026 NOW OPEN',
-    'Our Campuses',
-    'PES University',
-    'PES University',
-    'PES University',
-    'PES IMSR',
-    'The Amaatra Academy',
-    'PES Public School',
-    'SSM Public School',
-    'Our Campuses',
-    'SSM Public School',
-    'PES University',
-    'PES University',
-    'PES University',
-    'PES IMSR',
-    'The Amaatra Academy',
-    'PES Public School',
-    'SSM Public School',
-    'PES University',
-    'Undergraduate Education',
-    'Postgraduate Education',
-    'Lifelong Learning',
-    'Dr. Shailashree Haridas',
-    'Dr. V Krishna',
-    'Dr. Shylaja S S',
-    'Undergraduate Education',
-    'Postgraduate Education',
-    'Lifelong Learning',
-    'Dr. Shailashree Haridas',
-    'Dr. V Krishna',
-    'Dr. Shylaja S S',
-    'You may also be interested in',
-    'Giving to PES',
-    'Staying in Touch',
-    'Discovering our Newsletters',
-    'Information For',
-    'Information About',
-    'Important Info',
-    'PESU Bot'
-  ],
-  h1Count: 1,
-  h2Count: 10,
-  h3Count: 45
-}
-   📦 Fetching cached data for user site: agenticforge.tech
-🔍 Looking up user by email: kousersony43@gmail.com
-✅ Found user ID: 65b722e2-595b-40ab-8cae-30ac1282de0d
-✅ Using expired Lighthouse cache (fallback mode)
-   🔍 Lighthouse cache structure: ["url","chartData","timestamp","seoAnalysis","coreWebVitals","opportunities","categoryScores","resourceMetrics","scoreComparison","lighthouseVersion","performanceTimeline","accessibilityBreakdown","bestPracticesBreakdown"]
-   🔍 Has categoryScores? true
-   🔍 CategoryScores: {"seo":100,"performance":41,"accessibility":85,"bestPractices":96}
-   ✅ Found cached Lighthouse data (Performance: 41)
-🔍 Looking up user by email: kousersony43@gmail.com
-✅ Found user ID: 65b722e2-595b-40ab-8cae-30ac1282de0d
-✅ Using expired Search Console cache (fallback mode)
-✅ Using cached Search Console data
-   ℹ️ No PageSpeed data in Search Console cache
-   ℹ️ No Technical SEO data in Search Console cache
-   ℹ️ No Puppeteer data in Search Console cache
-🔍 Looking up user by email: kousersony43@gmail.com
-✅ Found user ID: 65b722e2-595b-40ab-8cae-30ac1282de0d
-🔍 Checking SE Ranking cache for domain: agenticforge.tech
-✅ SE Ranking cache hit! Age: 2968 minutes (expired but used anyway)
-   🔍 SE Ranking cache result: Found
-   🔍 SE Ranking cache keys: [
-  'note',            'source',
-  'metrics',         'topTlds',
-  'available',       'topAnchors',
-  'topCountries',    'domainMetrics',
-  'totalBacklinks',  'topLinkingPages',
-  'topLinkingSites', 'totalRefDomains',
-  'cached',          'cacheAge',
-  'lastUpdated'
-]
-   🔍 Has backlinks_data? false
-   🔍 Has totalBacklinks? true
-   ✅ Found cached SE Ranking backlinks
-   📊 Fetching traffic data for user site...
-📊 Fetching user GA data for: kousersony43@gmail.com
-🔍 Fetching OAuth tokens for: kousersony43@gmail.com
-✅ OAuth tokens retrieved for: kousersony43@gmail.com
-✅ OAuth client ready for: kousersony43@gmail.com
-✅ OAuth client ready
-📊 Fetching GA properties for: kousersony43@gmail.com
-🔍 Fetching OAuth tokens for: kousersony43@gmail.com
-✅ OAuth tokens retrieved for: kousersony43@gmail.com
-✅ OAuth client ready for: kousersony43@gmail.com
-✅ OAuth client ready, fetching properties...
-✅ Found 1 GA4 properties
-📌 Using first available property: 507800388
-✅ User Analytics data received
-   ✅ Got traffic data from Google Analytics (235 sessions)
-   📝 Fetching content changes monitoring for user site...
-   🔧 ChangeDetection service loaded successfully
-📊 Analyzing content changes for: agenticforge.tech
-🔍 Searching for watch with URL: agenticforge.tech
-📋 Fetching all watches...
-✅ Found 4 watches
-✅ Found existing watch for https://agenticforge.tech: 97834991-d15f-4506-a9fb-ec64fd0d1c38
-🔍 Fetching details for watch: 97834991-d15f-4506-a9fb-ec64fd0d1c38
-📜 Fetching history for watch: 97834991-d15f-4506-a9fb-ec64fd0d1c38
-   📊 ChangeDetection response: {
-  "success": true,
-  "domain": "agenticforge.tech",
-  "uuid": "97834991-d15f-4506-a9fb-ec64fd0d1c38",
-  "url": "https://agenticforge.tech",
-  "monitoring": {
-    "lastChecked": "2025-10-19T14:21:57.000Z",
-    "lastChanged": null,
-    "checkCount": 1,
-    "changeCount": 0,
-    "status": null,
-    "paused": false
-  },
-  "triggers": [
-    "price",
-    "pricing",
-    "new",
-    "feature",
-    "launch",
-    "update",
-    "release"
-  ],
-  "history": {},
-  "activity": {
-    "isActive": false,
-    "daysSinceLastCheck": 0,
-    "daysSinceLastChange": null,
-    "totalChecks": 1,
-    "totalChanges": 0,
-    "changeFrequency": "no changes detected",
-    "activityLevel": "inactive"
-  },
-  "comparison": "dormant"
-}
-   ✅ Got ChangeDetection monitoring data (1 checks, 0 changes)
-   📌 Activity Level: inactive
-   📸 Fetching Instagram engagement for: rvcollegeofengineering
-
-📱 Starting Instagram engagement analysis for: rvcollegeofengineering
-📸 Fetching Instagram CID for: rvcollegeofengineering
-✅ Found Instagram account: RV College Of Engineering (@rvcollegeofengineering)
-   CID: INST:17841431146363531
-   Followers: 12,963
-📊 Fetching Instagram activity for CID: INST:17841431146363531
-✅ Instagram activity data received (168 data points)
-   ✅ Got Instagram engagement data (12,963 followers)
-   📘 Fetching Facebook engagement for: RVCEngineering
-
-📱 Analyzing Facebook page: RVCEngineering
-═══════════════════════════════════════════════════
-
-
-🔍 Fetching Facebook page info for: RVCEngineering
-❌ Error fetching Facebook page info: Request failed with status code 429
-❌ Analysis failed: Request failed with status code 429
-   ⚠️ Failed to fetch Facebook data: Request failed with status code 429
-   📊 Cached data summary:
-      - Lighthouse: ✅
-      - PageSpeed: ❌
-      - Technical SEO: ❌
-      - Puppeteer: ❌
-      - Backlinks: ✅
-      - Traffic: ✅
-      - Content Changes (ChangeDetection): ✅
-      - Content Updates (RSS/Sitemap): ❌
-      - Instagram: ✅
-      - Facebook: ❌
-   🔍 Puppeteer data missing, fetching separately...
-🔍 Starting Puppeteer analysis for: https://agenticforge.tech
-📄 Loading page: https://agenticforge.tech
-✅ Puppeteer analysis completed for: agenticforge.tech
-🔴 Browser closed for agenticforge.tech
-   ✅ Puppeteer analysis completed for user site
-   🔍 PageSpeed data missing, fetching separately...
-📱 Fetching PageSpeed data for: https://agenticforge.tech
-📱 Fetching mobile and desktop PageSpeed data...
-✅ PageSpeed data retrieved for agenticforge.tech
-   Desktop: 57% | Mobile: 52%
-   ✅ PageSpeed analysis completed for user site
-🔍 Your site puppeteer.seo.headings: {
-  h1: [
-    'Scale Your Business with AI Automation',
-    'Transforming Businesses\n with\nAI Automation'
-  ],
-  h2: [
-    'Revolutionary AI\nBusiness Solutions',
-    'See Our AI Agents in Action',
-    'Why Choose AgenticForge',
-    'Pioneering the Future of\nIntelligent Automation',
-    'Ready to Transform\n Your Business?'
-  ],
-  h3: [
-    'Intelligent Process Automation',
-    'Advanced Customer Support AI',
-    'Hyper-Personalized Marketing',
-    'Enterprise Voice AI Agents',
-    'Ready to Transform Your Business?',
-    'Intelligent AI Architecture',
-    'Smooth System Integration',
-    'Data Privacy & Security',
-    'Tailored AI Solutions',
-    'Intelligent Voice Appointment System',
-    'Live Demo Available',
-    'BandhanAI Marketing Campaign Engine',
-    'Interactive Platform',
-    'About AgenticForge',
-    'Smart AI Systems',
-    'Fast Implementation',
-    'Dedicated Support',
-    'Democratizing Intelligence',
-    'Get Your Free AI Audit',
-    'AI ROI Calculator',
-    'Services',
-    'Company'
-  ],
-  h1Count: 2,
-  h2Count: 5,
-  h3Count: 22
-}
-🔍 Your site pagespeed data: EXISTS
-🔍 Your site pagespeed structure: {
-  "dataAvailable": true,
-  "url": "https://agenticforge.tech",
-  "desktop": {
-    "strategy": "desktop",
-    "performanceScore": 57,
-    "category": "AVERAGE",
-    "fieldData": {
-      "lcp": null,
-      "fid": null,
-      "cls": null,
-      "overall_category": "UNKNOWN"
-    },
-    "labData": {
-      "lcp": 2901.6026514816194,
-      "fid": 459,
-      "cls": 0.0319797683345766,
-      "fcp": 943.5612797358731,
-      "tti": 3070.848595087106,
-      "tbt": 506.50060585045514,
-      "speedIndex": 2127.2938097610186
-    }
-  },
-  "mobile": {
-    "strategy": "mobile",
-    "performanceScore": 52,
-    "category": "AVERAGE",
-    "fieldData": {
-      "lcp": null,
-      "fid": null,
-      "cls": null,
-      "overall_category": "UNKNOWN"
-    },
-    "labData": {
-      "lcp": 14339.531194172569,
-      "fid": 436,
-      "cls": 0.008517859421172716,
-      "fcp": 10690.500781977093,
-      "tti": 14639.933348369748,
-      "tbt": 213,
-      "speedIndex": 10690.500781977093
-    }
-  }
-}
-   🟢 Fetching Google Ads monitoring for cached competitor: pes.edu
-   ✅ Got competitor Google Ads data (Total Ads: 300)
-   🟢 Fetching Google Ads monitoring for your cached site: agenticforge.tech
-   ✅ Got your site Google Ads data (Total Ads: 0)
-   📝 Fetching content changes monitoring for cached competitor: pes.edu
-   🔧 ChangeDetection service loaded for competitor
-📊 Analyzing content changes for: pes.edu
-🔍 Searching for watch with URL: pes.edu
-📋 Fetching all watches...
-✅ Found 4 watches
-✅ Found existing watch for https://pes.edu: 14699a76-8281-4b0a-849c-61918bf39d21
-🔍 Fetching details for watch: 14699a76-8281-4b0a-849c-61918bf39d21
-📜 Fetching history for watch: 14699a76-8281-4b0a-849c-61918bf39d21
-   📊 Competitor ChangeDetection response: {
-  "success": true,
-  "domain": "pes.edu",
-  "uuid": "14699a76-8281-4b0a-849c-61918bf39d21",
-  "url": "https://pes.edu",
-  "monitoring": {
-    "lastChecked": "2025-10-19T14:22:39.000Z",
-    "lastChanged": null,
-    "checkCount": 1,
-    "changeCount": 1,
-    "status": 200,
-    "paused": false
-  },
-  "triggers": [
-    "price",
-    "pricing",
-    "new",
-    "feature",
-    "launch",
-    "update",
-    "release"
-  ],
-  "history": {
-    "1760883759": "/datastore/14699a76-8281-4b0a-849c-61918bf39d21/a31126ad77a9c067dbdb795a256de06f.txt.br"
-  },
-  "activity": {
-    "isActive": false,
-    "daysSinceLastCheck": 0,
-    "daysSinceLastChange": null,
-    "totalChecks": 1,
-    "totalChanges": 1,
-    "changeFrequency": "very high",
-    "activityLevel": "inactive"
-  },
-  "comparison": "dormant"
-}
-   ✅ Got competitor ChangeDetection data (1 checks, 1 changes)
-   📌 Competitor Activity Level: inactive
-   🟣 Fetching Meta Ads monitoring for cached competitor (username only): pesuniversity
-[MetaAds] getMetaAdsMonitoring called with username: pesuniversity
-[MetaAds] Username received for Page ID lookup: pesuniversity
-[MetaAds] Querying RapidAPI for Page ID with URL: https://www.facebook.com/pesuniversity
-[MetaAds] Error fetching Facebook page ID: {
-  message: 'You have exceeded the MONTHLY quota for Requests on your current plan, BASIC. Upgrade your plan at https://rapidapi.com/ousema.frikha/api/facebook-pages-scraper2'
-}
-[MetaAds] Could not resolve Facebook page ID for username: pesuniversity
-   ⚠️ Failed to fetch competitor Meta Ads data: Could not resolve Facebook page ID for username.
-   🟣 Fetching Meta Ads monitoring for your cached site: RVCEngineering
-[MetaAds] getMetaAdsMonitoring called with username: RVCEngineering
-[MetaAds] Username received for Page ID lookup: RVCEngineering
-[MetaAds] Querying RapidAPI for Page ID with URL: https://www.facebook.com/RVCEngineering
-[MetaAds] Error fetching Facebook page ID: {
-  message: 'You have exceeded the MONTHLY quota for Requests on your current plan, BASIC. Upgrade your plan at https://rapidapi.com/ousema.frikha/api/facebook-pages-scraper2'
-}
-[MetaAds] Could not resolve Facebook page ID for username: RVCEngineering
-   ⚠️ Failed to fetch your site Meta Ads data: Could not resolve Facebook page ID for username.
-   📸 Fetching Instagram engagement for cached competitor: pesuniversity
-
-📱 Starting Instagram engagement analysis for: pesuniversity
-📸 Fetching Instagram CID for: pesuniversity
-✅ Found Instagram account: PES University (@pesuniversity)
-   CID: INST:17841401132460128
-   Followers: 29,556
-📊 Fetching Instagram activity for CID: INST:17841401132460128
-✅ Instagram activity data received (168 data points)
-   ✅ Got competitor Instagram data (29,556 followers)
-   📘 Fetching Facebook engagement for cached competitor: pesuniversity
-
-📱 Analyzing Facebook page: pesuniversity
-═══════════════════════════════════════════════════
-
-
-🔍 Fetching Facebook page info for: pesuniversity
-❌ Error fetching Facebook page info: Request failed with status code 429
-❌ Analysis failed: Request failed with status code 429
-   ⚠️ Failed to fetch competitor Facebook data: Request failed with status code 429
-🔍 SEO Comparison - yourSeoData.headings: {
-  h1: [
-    'Scale Your Business with AI Automation',
-    'Transforming Businesses\n with\nAI Automation'
-  ],
-  h2: [
-    'Revolutionary AI\nBusiness Solutions',
-    'See Our AI Agents in Action',
-    'Why Choose AgenticForge',
-    'Pioneering the Future of\nIntelligent Automation',
-    'Ready to Transform\n Your Business?'
-  ],
-  h3: [
-    'Intelligent Process Automation',
-    'Advanced Customer Support AI',
-    'Hyper-Personalized Marketing',
-    'Enterprise Voice AI Agents',
-    'Ready to Transform Your Business?',
-    'Intelligent AI Architecture',
-    'Smooth System Integration',
-    'Data Privacy & Security',
-    'Tailored AI Solutions',
-    'Intelligent Voice Appointment System',
-    'Live Demo Available',
-    'BandhanAI Marketing Campaign Engine',
-    'Interactive Platform',
-    'About AgenticForge',
-    'Smart AI Systems',
-    'Fast Implementation',
-    'Dedicated Support',
-    'Democratizing Intelligence',
-    'Get Your Free AI Audit',
-    'AI ROI Calculator',
-    'Services',
-    'Company'
-  ],
-  h1Count: 2,
-  h2Count: 5,
-  h3Count: 22
-}
-🔍 SEO Comparison - compSeoData.headings: {
-  h1: [ 'Pesuvians for Life' ],
-  h2: [
-    'Academics',
-    'Meet our Faculty',
-    'Academics',
-    'Meet our Faculty',
-    'Placements',
-    'Placements',
-    'Pesuvians for Life',
-    'Research',
-    'Research',
-    'Campus Life'
-  ],
-  h3: [
-    'Admissions 2026 Now Open',
-    'Ph.D. and M.Tech by Research',
-    'Scholarships',
-    'Research Driven Learning',
-    'Placements',
-    'International Internships',
-    'ADMISSIONS 2026 NOW OPEN',
-    'Our Campuses',
-    'PES University',
-    'PES University',
-    'PES University',
-    'PES IMSR',
-    'The Amaatra Academy',
-    'PES Public School',
-    'SSM Public School',
-    'Our Campuses',
-    'SSM Public School',
-    'PES University',
-    'PES University',
-    'PES University',
-    'PES IMSR',
-    'The Amaatra Academy',
-    'PES Public School',
-    'SSM Public School',
-    'PES University',
-    'Undergraduate Education',
-    'Postgraduate Education',
-    'Lifelong Learning',
-    'Dr. Shailashree Haridas',
-    'Dr. V Krishna',
-    'Dr. Shylaja S S',
-    'Undergraduate Education',
-    'Postgraduate Education',
-    'Lifelong Learning',
-    'Dr. Shailashree Haridas',
-    'Dr. V Krishna',
-    'Dr. Shylaja S S',
-    'You may also be interested in',
-    'Giving to PES',
-    'Staying in Touch',
-    'Discovering our Newsletters',
-    'Information For',
-    'Information About',
-    'Important Info',
-    'PESU Bot'
-  ],
-  h1Count: 1,
-  h2Count: 10,
-  h3Count: 45
-}
-🔍 formatHeadings result: { h1Count: 2, h2Count: 5, h3Count: 22 }
-🔍 formatHeadings result: { h1Count: 1, h2Count: 10, h3Count: 45 }
-🔍 Final yourHeadings: { h1Count: 2, h2Count: 5, h3Count: 22 }
-🔍 Final compHeadings: { h1Count: 1, h2Count: 10, h3Count: 45 }
-🔍 Final yourSite.pagespeed in response: EXISTS
-🔍 Final yourSite.contentChanges in response: EXISTS
+🔍 Final yourSite.contentChanges in response: MISSING
 🔍 Final yourSite.instagram in response: EXISTS
 🔍 Final competitorSite.instagram in response: EXISTS
 📱 YOUR INSTAGRAM IN RESPONSE: {
@@ -1263,11 +514,11 @@ FRONTEND_URL: http://localhost:3002
   "profile": {
     "username": "rvcollegeofengineering",
     "name": "RV College Of Engineering",
-    "followers": 12963,
+    "followers": 12995,
     "verified": false,
-    "avgEngagementRate": 0.043610259485195986,
-    "avgInteractions": 556,
-    "qualityScore": 0.5870447671944895,
+    "avgEngagementRate": 0.03816263766534076,
+    "avgInteractions": 488,
+    "qualityScore": 0.5725482596384699,
     "categories": [
       "education-education"
     ],
@@ -1402,1016 +653,1016 @@ FRONTEND_URL: http://localhost:3002
   "rawActivity": [
     {
       "time": "1_0",
-      "interactions": 5.239425718013475,
-      "likes": 5.239425718013475,
+      "interactions": 5.210722760793822,
+      "likes": 5.210722760793822,
       "comments": 0
     },
     {
       "time": "1_1",
-      "interactions": 4.816382730069207,
-      "likes": 4.816382730069207,
+      "interactions": 4.789997314015047,
+      "likes": 4.789997314015047,
       "comments": 0
     },
     {
       "time": "1_2",
-      "interactions": 4.847718362307941,
-      "likes": 4.847718362307941,
+      "interactions": 5.154653067706805,
+      "likes": 5.154653067706805,
       "comments": 0
     },
     {
       "time": "1_3",
-      "interactions": 3.0214381760631284,
-      "likes": 3.0214381760631284,
+      "interactions": 3.004885940116506,
+      "likes": 3.004885940116506,
       "comments": 0
     },
     {
       "time": "1_4",
-      "interactions": 1.7734888189474984,
-      "likes": 1.7734888189474984,
+      "interactions": 1.7637731790206321,
+      "likes": 1.7637731790206321,
       "comments": 0
     },
     {
       "time": "1_5",
-      "interactions": 3.40960299832013,
-      "likes": 3.40960299832013,
+      "interactions": 3.5579338277208814,
+      "likes": 3.5579338277208814,
       "comments": 0
     },
     {
       "time": "1_6",
-      "interactions": 5.888539074138758,
-      "likes": 5.888539074138758,
+      "interactions": 6.02331049715211,
+      "likes": 6.02331049715211,
       "comments": 0
     },
     {
       "time": "1_7",
-      "interactions": 10.53076810581079,
-      "likes": 10.53076810581079,
+      "interactions": 10.473077778149122,
+      "likes": 10.473077778149122,
       "comments": 0
     },
     {
       "time": "1_8",
-      "interactions": 12.077121916943453,
-      "likes": 12.077121916943453,
+      "interactions": 12.010960254888248,
+      "likes": 12.010960254888248,
       "comments": 0
     },
     {
       "time": "1_9",
-      "interactions": 14.250134485597226,
-      "likes": 14.250134485597226,
+      "interactions": 14.339391246302295,
+      "likes": 14.339391246302295,
       "comments": 0
     },
     {
       "time": "1_10",
-      "interactions": 15.334259208004749,
-      "likes": 15.334259208004749,
+      "interactions": 15.417597707105685,
+      "likes": 15.417597707105685,
       "comments": 0
     },
     {
       "time": "1_11",
-      "interactions": 24.875817891075272,
-      "likes": 24.875817891075272,
+      "interactions": 24.739541593793952,
+      "likes": 24.739541593793952,
       "comments": 0
     },
     {
       "time": "1_12",
-      "interactions": 24.888487099850384,
-      "likes": 24.888487099850384,
+      "interactions": 24.752141397298896,
+      "likes": 24.752141397298896,
       "comments": 0
     },
     {
       "time": "1_13",
-      "interactions": 25.620984735750778,
-      "likes": 25.620984735750778,
+      "interactions": 25.648204755263773,
+      "likes": 25.648204755263773,
       "comments": 0
     },
     {
       "time": "1_14",
-      "interactions": 25.651989437793063,
-      "likes": 25.651989437793063,
+      "interactions": 25.511461067880205,
+      "likes": 25.511461067880205,
       "comments": 0
     },
     {
       "time": "1_15",
-      "interactions": 20.753648746230517,
-      "likes": 20.753648746230517,
+      "interactions": 20.639954779720657,
+      "likes": 20.639954779720657,
       "comments": 0
     },
     {
       "time": "1_16",
-      "interactions": 19.530914477612413,
-      "likes": 19.530914477612413,
+      "interactions": 19.759625538733385,
+      "likes": 19.759625538733385,
       "comments": 0
     },
     {
       "time": "1_17",
-      "interactions": 19.766531734173263,
-      "likes": 19.766531734173263,
+      "interactions": 19.826137217266957,
+      "likes": 19.826137217266957,
       "comments": 0
     },
     {
       "time": "1_18",
-      "interactions": 20.765695980439485,
-      "likes": 20.765695980439485,
+      "interactions": 20.651936016000324,
+      "likes": 20.651936016000324,
       "comments": 0
     },
     {
       "time": "1_19",
-      "interactions": 16.85098936119442,
-      "likes": 16.85098936119442,
+      "interactions": 16.75867519304422,
+      "likes": 16.75867519304422,
       "comments": 0
     },
     {
       "time": "1_20",
-      "interactions": 16.32122114738166,
-      "likes": 16.32122114738166,
+      "interactions": 16.568119996541522,
+      "likes": 16.568119996541522,
       "comments": 0
     },
     {
       "time": "1_21",
-      "interactions": 15.883092823207729,
-      "likes": 15.883092823207729,
+      "interactions": 15.796081047804005,
+      "likes": 15.796081047804005,
       "comments": 0
     },
     {
       "time": "1_22",
-      "interactions": 15.57647526571205,
-      "likes": 15.57647526571205,
+      "interactions": 15.491143222231107,
+      "likes": 15.491143222231107,
       "comments": 0
     },
     {
       "time": "1_23",
-      "interactions": 7.438087757552541,
-      "likes": 7.438087757552541,
+      "interactions": 7.56575899442082,
+      "likes": 7.56575899442082,
       "comments": 0
     },
     {
       "time": "2_0",
-      "interactions": 6.371160997184031,
-      "likes": 6.371160997184031,
+      "interactions": 6.504698000318846,
+      "likes": 6.504698000318846,
       "comments": 0
     },
     {
       "time": "2_1",
-      "interactions": 5.645509078860048,
-      "likes": 5.645509078860048,
+      "interactions": 5.614581489789252,
+      "likes": 5.614581489789252,
       "comments": 0
     },
     {
       "time": "2_2",
-      "interactions": 5.5537516618304075,
-      "likes": 5.5537516618304075,
+      "interactions": 5.523326744112797,
+      "likes": 5.523326744112797,
       "comments": 0
     },
     {
       "time": "2_3",
-      "interactions": 2.2565074831406515,
-      "likes": 2.2565074831406515,
+      "interactions": 2.581552832544587,
+      "likes": 2.581552832544587,
       "comments": 0
     },
     {
       "time": "2_4",
-      "interactions": 1.2976362215002455,
-      "likes": 1.2976362215002455,
+      "interactions": 1.2905274277207406,
+      "likes": 1.2905274277207406,
       "comments": 0
     },
     {
       "time": "2_5",
-      "interactions": 4.779467508706641,
-      "likes": 4.779467508706641,
+      "interactions": 4.753284323980217,
+      "likes": 4.753284323980217,
       "comments": 0
     },
     {
       "time": "2_6",
-      "interactions": 7.546699664484597,
-      "likes": 7.546699664484597,
+      "interactions": 7.674324039604789,
+      "likes": 7.674324039604789,
       "comments": 0
     },
     {
       "time": "2_7",
-      "interactions": 7.987761025463128,
-      "likes": 7.987761025463128,
+      "interactions": 8.112990009832977,
+      "likes": 8.112990009832977,
       "comments": 0
     },
     {
       "time": "2_8",
-      "interactions": 7.987857073072438,
-      "likes": 7.987857073072438,
+      "interactions": 7.944097483341673,
+      "likes": 7.944097483341673,
       "comments": 0
     },
     {
       "time": "2_9",
-      "interactions": 10.088121175709485,
-      "likes": 10.088121175709485,
+      "interactions": 10.032855784783617,
+      "likes": 10.032855784783617,
       "comments": 0
     },
     {
       "time": "2_10",
-      "interactions": 12.359876761571176,
-      "likes": 12.359876761571176,
+      "interactions": 12.461043455101983,
+      "likes": 12.461043455101983,
       "comments": 0
     },
     {
       "time": "2_11",
-      "interactions": 10.534199991708958,
-      "likes": 10.534199991708958,
+      "interactions": 10.47649086327037,
+      "likes": 10.47649086327037,
       "comments": 0
     },
     {
       "time": "2_12",
-      "interactions": 9.879895679921875,
-      "likes": 9.879895679921875,
+      "interactions": 9.825771003230601,
+      "likes": 9.825771003230601,
       "comments": 0
     },
     {
       "time": "2_13",
-      "interactions": 9.165520383380954,
-      "likes": 9.165520383380954,
+      "interactions": 9.115309243149392,
+      "likes": 9.115309243149392,
       "comments": 0
     },
     {
       "time": "2_14",
-      "interactions": 11.379679614066294,
-      "likes": 11.379679614066294,
+      "interactions": 11.317338725061434,
+      "likes": 11.317338725061434,
       "comments": 0
     },
     {
       "time": "2_15",
-      "interactions": 8.23823351304126,
-      "likes": 8.23823351304126,
+      "interactions": 8.193102295076406,
+      "likes": 8.193102295076406,
       "comments": 0
     },
     {
       "time": "2_16",
-      "interactions": 7.910807444916446,
-      "likes": 7.910807444916446,
+      "interactions": 7.8674699533887615,
+      "likes": 7.8674699533887615,
       "comments": 0
     },
     {
       "time": "2_17",
-      "interactions": 7.806018505052271,
-      "likes": 7.806018505052271,
+      "interactions": 7.763255075000002,
+      "likes": 7.763255075000002,
       "comments": 0
     },
     {
       "time": "2_18",
-      "interactions": 9.02319018259067,
-      "likes": 9.02319018259067,
+      "interactions": 8.973758764772251,
+      "likes": 8.973758764772251,
       "comments": 0
     },
     {
       "time": "2_19",
-      "interactions": 6.632689306462666,
-      "likes": 6.632689306462666,
+      "interactions": 6.596353683503051,
+      "likes": 6.596353683503051,
       "comments": 0
     },
     {
       "time": "2_20",
-      "interactions": 6.534465143989215,
-      "likes": 6.534465143989215,
+      "interactions": 6.49866761892146,
+      "likes": 6.49866761892146,
       "comments": 0
     },
     {
       "time": "2_21",
-      "interactions": 6.613770414767464,
-      "likes": 6.613770414767464,
+      "interactions": 6.577538434490884,
+      "likes": 6.577538434490884,
       "comments": 0
     },
     {
       "time": "2_22",
-      "interactions": 6.567230841692031,
-      "likes": 6.567230841692031,
+      "interactions": 6.531253817482566,
+      "likes": 6.531253817482566,
       "comments": 0
     },
     {
       "time": "2_23",
-      "interactions": 3.870269574793855,
-      "likes": 3.870269574793855,
+      "interactions": 3.8490672163651634,
+      "likes": 3.8490672163651634,
       "comments": 0
     },
     {
       "time": "3_0",
-      "interactions": 3.893209103170455,
-      "likes": 3.893209103170455,
+      "interactions": 3.8718810759495965,
+      "likes": 3.8718810759495965,
       "comments": 0
     },
     {
       "time": "3_1",
-      "interactions": 3.380238620581834,
-      "likes": 3.380238620581834,
+      "interactions": 3.361720781081752,
+      "likes": 3.361720781081752,
       "comments": 0
     },
     {
       "time": "3_2",
-      "interactions": 3.220917387571763,
-      "likes": 3.220917387571763,
+      "interactions": 3.2032723518447255,
+      "likes": 3.2032723518447255,
       "comments": 0
     },
     {
       "time": "3_3",
-      "interactions": 2.2166479501818492,
-      "likes": 2.2166479501818492,
+      "interactions": 2.2045045675461616,
+      "likes": 2.2045045675461616,
       "comments": 0
     },
     {
       "time": "3_4",
-      "interactions": 1.7459334245645035,
-      "likes": 1.7459334245645035,
+      "interactions": 1.7363687403623131,
+      "likes": 1.7363687403623131,
       "comments": 0
     },
     {
       "time": "3_5",
-      "interactions": 7.431677347944872,
-      "likes": 7.431677347944872,
+      "interactions": 7.390964657572157,
+      "likes": 7.390964657572157,
       "comments": 0
     },
     {
       "time": "3_6",
-      "interactions": 8.901875874748676,
-      "likes": 8.901875874748676,
+      "interactions": 8.853109048733929,
+      "likes": 8.853109048733929,
       "comments": 0
     },
     {
       "time": "3_7",
-      "interactions": 8.746353658330325,
-      "likes": 8.746353658330325,
+      "interactions": 8.698438824072843,
+      "likes": 8.698438824072843,
       "comments": 0
     },
     {
       "time": "3_8",
-      "interactions": 8.70247738265222,
-      "likes": 8.70247738265222,
+      "interactions": 8.654802914215635,
+      "likes": 8.654802914215635,
       "comments": 0
     },
     {
       "time": "3_9",
-      "interactions": 12.06096811214191,
-      "likes": 12.06096811214191,
+      "interactions": 11.994894944893792,
+      "likes": 11.994894944893792,
       "comments": 0
     },
     {
       "time": "3_10",
-      "interactions": 14.560397463310169,
-      "likes": 14.560397463310169,
+      "interactions": 14.480631762261357,
+      "likes": 14.480631762261357,
       "comments": 0
     },
     {
       "time": "3_11",
-      "interactions": 12.782123518428627,
-      "likes": 12.782123518428627,
+      "interactions": 12.712099671489757,
+      "likes": 12.712099671489757,
       "comments": 0
     },
     {
       "time": "3_12",
-      "interactions": 12.783708216124342,
-      "likes": 12.783708216124342,
+      "interactions": 12.713675687793152,
+      "likes": 12.713675687793152,
       "comments": 0
     },
     {
       "time": "3_13",
-      "interactions": 12.046241491209503,
-      "likes": 12.046241491209503,
+      "interactions": 11.980249000278478,
+      "likes": 11.980249000278478,
       "comments": 0
     },
     {
       "time": "3_14",
-      "interactions": 12.60822104390464,
-      "likes": 12.60822104390464,
+      "interactions": 12.539149880629074,
+      "likes": 12.539149880629074,
       "comments": 0
     },
     {
       "time": "3_15",
-      "interactions": 10.656790555743173,
-      "likes": 10.656790555743173,
+      "interactions": 10.598409843832583,
+      "likes": 10.598409843832583,
       "comments": 0
     },
     {
       "time": "3_16",
-      "interactions": 10.132060441874987,
-      "likes": 10.132060441874987,
+      "interactions": 10.076554340049706,
+      "likes": 10.076554340049706,
       "comments": 0
     },
     {
       "time": "3_17",
-      "interactions": 9.41396868614977,
-      "likes": 9.41396868614977,
+      "interactions": 9.362396480528705,
+      "likes": 9.362396480528705,
       "comments": 0
     },
     {
       "time": "3_18",
-      "interactions": 10.238189717336262,
-      "likes": 10.238189717336262,
+      "interactions": 10.182102211323333,
+      "likes": 10.182102211323333,
       "comments": 0
     },
     {
       "time": "3_19",
-      "interactions": 8.862764267716765,
-      "likes": 8.862764267716765,
+      "interactions": 8.814211705410266,
+      "likes": 8.814211705410266,
       "comments": 0
     },
     {
       "time": "3_20",
-      "interactions": 8.241265000020023,
-      "likes": 8.241265000020023,
+      "interactions": 8.19611717476923,
+      "likes": 8.19611717476923,
       "comments": 0
     },
     {
       "time": "3_21",
-      "interactions": 6.804951361475926,
-      "likes": 6.804951361475926,
+      "interactions": 6.7676720415041345,
+      "likes": 6.7676720415041345,
       "comments": 0
     },
     {
       "time": "3_22",
-      "interactions": 7.946114464242457,
-      "likes": 7.946114464242457,
+      "interactions": 7.902583551542337,
+      "likes": 7.902583551542337,
       "comments": 0
     },
     {
       "time": "3_23",
-      "interactions": 5.303521672066063,
-      "likes": 5.303521672066063,
+      "interactions": 5.27446758028966,
+      "likes": 5.27446758028966,
       "comments": 0
     },
     {
       "time": "4_0",
-      "interactions": 5.228378760775366,
-      "likes": 5.228378760775366,
+      "interactions": 5.199736321703708,
+      "likes": 5.199736321703708,
       "comments": 0
     },
     {
       "time": "4_1",
-      "interactions": 2.3065871081654357,
-      "likes": 2.3065871081654357,
+      "interactions": 2.293951015079613,
+      "likes": 2.293951015079613,
       "comments": 0
     },
     {
       "time": "4_2",
-      "interactions": 2.082751176612888,
-      "likes": 2.082751176612888,
+      "interactions": 2.071341315849719,
+      "likes": 2.071341315849719,
       "comments": 0
     },
     {
       "time": "4_3",
-      "interactions": 1.4854682885434767,
-      "likes": 1.4854682885434767,
+      "interactions": 1.477330501115625,
+      "likes": 1.477330501115625,
       "comments": 0
     },
     {
       "time": "4_4",
-      "interactions": 1.2710392226599168,
-      "likes": 1.2710392226599168,
+      "interactions": 1.2640761342613016,
+      "likes": 1.2640761342613016,
       "comments": 0
     },
     {
       "time": "4_5",
-      "interactions": 5.089201130226762,
-      "likes": 5.089201130226762,
+      "interactions": 5.061321142956233,
+      "likes": 5.061321142956233,
       "comments": 0
     },
     {
       "time": "4_6",
-      "interactions": 6.1773785602506655,
-      "likes": 6.1773785602506655,
+      "interactions": 6.14353724975458,
+      "likes": 6.14353724975458,
       "comments": 0
     },
     {
       "time": "4_7",
-      "interactions": 5.102097096952738,
-      "likes": 5.102097096952738,
+      "interactions": 5.074146462172125,
+      "likes": 5.074146462172125,
       "comments": 0
     },
     {
       "time": "4_8",
-      "interactions": 5.280137135285014,
-      "likes": 5.280137135285014,
+      "interactions": 5.251211150174294,
+      "likes": 5.251211150174294,
       "comments": 0
     },
     {
       "time": "4_9",
-      "interactions": 8.158135374032113,
-      "likes": 8.158135374032113,
+      "interactions": 8.113442954817561,
+      "likes": 8.113442954817561,
       "comments": 0
     },
     {
       "time": "4_10",
-      "interactions": 10.872738185919161,
-      "likes": 10.872738185919161,
+      "interactions": 10.81317445588326,
+      "likes": 10.81317445588326,
       "comments": 0
     },
     {
       "time": "4_11",
-      "interactions": 10.231063439635626,
-      "likes": 10.231063439635626,
+      "interactions": 10.175014973253178,
+      "likes": 10.175014973253178,
       "comments": 0
     },
     {
       "time": "4_12",
-      "interactions": 9.679310738050503,
-      "likes": 9.679310738050503,
+      "interactions": 9.62628491862247,
+      "likes": 9.62628491862247,
       "comments": 0
     },
     {
       "time": "4_13",
-      "interactions": 8.982030000502586,
-      "likes": 8.982030000502586,
+      "interactions": 8.93282406902737,
+      "likes": 8.93282406902737,
       "comments": 0
     },
     {
       "time": "4_14",
-      "interactions": 9.914694560903214,
-      "likes": 9.914694560903214,
+      "interactions": 9.8603792467555,
+      "likes": 9.8603792467555,
       "comments": 0
     },
     {
       "time": "4_15",
-      "interactions": 8.08528605188628,
-      "likes": 8.08528605188628,
+      "interactions": 8.040992720489662,
+      "likes": 8.040992720489662,
       "comments": 0
     },
     {
       "time": "4_16",
-      "interactions": 7.363539744758191,
-      "likes": 7.363539744758191,
+      "interactions": 7.323200330163125,
+      "likes": 7.323200330163125,
       "comments": 0
     },
     {
       "time": "4_17",
-      "interactions": 7.552820230906579,
-      "likes": 7.552820230906579,
+      "interactions": 7.5114438878409455,
+      "likes": 7.5114438878409455,
       "comments": 0
     },
     {
       "time": "4_18",
-      "interactions": 8.472184074934859,
-      "likes": 8.472184074934859,
+      "interactions": 8.425771214032219,
+      "likes": 8.425771214032219,
       "comments": 0
     },
     {
       "time": "4_19",
-      "interactions": 6.923554599616573,
-      "likes": 6.923554599616573,
+      "interactions": 6.885625539796624,
+      "likes": 6.885625539796624,
       "comments": 0
     },
     {
       "time": "4_20",
-      "interactions": 6.436255213796527,
-      "likes": 6.436255213796527,
+      "interactions": 6.400995708652439,
+      "likes": 6.400995708652439,
       "comments": 0
     },
     {
       "time": "4_21",
-      "interactions": 5.756810424492239,
-      "likes": 5.756810424492239,
+      "interactions": 5.725273097268046,
+      "likes": 5.725273097268046,
       "comments": 0
     },
     {
       "time": "4_22",
-      "interactions": 7.542439855619997,
-      "likes": 7.542439855619997,
+      "interactions": 7.501120378990459,
+      "likes": 7.501120378990459,
       "comments": 0
     },
     {
       "time": "4_23",
-      "interactions": 4.378835503067334,
-      "likes": 4.378835503067334,
+      "interactions": 4.354847086229145,
+      "likes": 4.354847086229145,
       "comments": 0
     },
     {
       "time": "5_0",
-      "interactions": 3.71919453989401,
-      "likes": 3.71919453989401,
+      "interactions": 3.6988198103882315,
+      "likes": 3.6988198103882315,
       "comments": 0
     },
     {
       "time": "5_1",
-      "interactions": 3.0132478517093837,
-      "likes": 3.0132478517093837,
+      "interactions": 2.9967404845217036,
+      "likes": 2.9967404845217036,
       "comments": 0
     },
     {
       "time": "5_2",
-      "interactions": 3.2762652890546655,
-      "likes": 3.2762652890546655,
+      "interactions": 3.25831704291222,
+      "likes": 3.25831704291222,
       "comments": 0
     },
     {
       "time": "5_3",
-      "interactions": 1.5420021871482679,
-      "likes": 1.5420021871482679,
+      "interactions": 1.5335546920996872,
+      "likes": 1.5335546920996872,
       "comments": 0
     },
     {
       "time": "5_4",
-      "interactions": 1.9448717579404695,
-      "likes": 1.9448717579404695,
+      "interactions": 1.9342172370310593,
+      "likes": 1.9342172370310593,
       "comments": 0
     },
     {
       "time": "5_5",
-      "interactions": 5.0137832181372515,
-      "likes": 5.0137832181372515,
+      "interactions": 4.98631639009844,
+      "likes": 4.98631639009844,
       "comments": 0
     },
     {
       "time": "5_6",
-      "interactions": 6.687690336799417,
-      "likes": 6.687690336799417,
+      "interactions": 6.6510534036761015,
+      "likes": 6.6510534036761015,
       "comments": 0
     },
     {
       "time": "5_7",
-      "interactions": 5.121778521536645,
-      "likes": 5.121778521536645,
+      "interactions": 5.0937200667165365,
+      "likes": 5.0937200667165365,
       "comments": 0
     },
     {
       "time": "5_8",
-      "interactions": 8.122104811327288,
-      "likes": 8.122104811327288,
+      "interactions": 8.077609777046804,
+      "likes": 8.077609777046804,
       "comments": 0
     },
     {
       "time": "5_9",
-      "interactions": 10.216098788869632,
-      "likes": 10.216098788869632,
+      "interactions": 10.160132302794544,
+      "likes": 10.160132302794544,
       "comments": 0
     },
     {
       "time": "5_10",
-      "interactions": 11.503237262805316,
-      "likes": 11.503237262805316,
+      "interactions": 11.44021949238314,
+      "likes": 11.44021949238314,
       "comments": 0
     },
     {
       "time": "5_11",
-      "interactions": 9.417089697643792,
-      "likes": 9.417089697643792,
+      "interactions": 9.365500394297857,
+      "likes": 9.365500394297857,
       "comments": 0
     },
     {
       "time": "5_12",
-      "interactions": 8.892827932484483,
-      "likes": 8.892827932484483,
+      "interactions": 8.84411067348599,
+      "likes": 8.84411067348599,
       "comments": 0
     },
     {
       "time": "5_13",
-      "interactions": 9.631122131540241,
-      "likes": 9.631122131540241,
+      "interactions": 9.5783603020198,
+      "likes": 9.5783603020198,
       "comments": 0
     },
     {
       "time": "5_14",
-      "interactions": 9.89241201294545,
-      "likes": 9.89241201294545,
+      "interactions": 9.838218768477732,
+      "likes": 9.838218768477732,
       "comments": 0
     },
     {
       "time": "5_15",
-      "interactions": 8.912589832022562,
-      "likes": 8.912589832022562,
+      "interactions": 8.86376431212153,
+      "likes": 8.86376431212153,
       "comments": 0
     },
     {
       "time": "5_16",
-      "interactions": 8.233847396900627,
-      "likes": 8.233847396900627,
+      "interactions": 8.188740207237867,
+      "likes": 8.188740207237867,
       "comments": 0
     },
     {
       "time": "5_17",
-      "interactions": 9.114729305839237,
-      "likes": 9.114729305839237,
+      "interactions": 9.064796412538595,
+      "likes": 9.064796412538595,
       "comments": 0
     },
     {
       "time": "5_18",
-      "interactions": 8.912894949732669,
-      "likes": 8.912894949732669,
+      "interactions": 8.864067758316274,
+      "likes": 8.864067758316274,
       "comments": 0
     },
     {
       "time": "5_19",
-      "interactions": 7.100811781101102,
-      "likes": 7.100811781101102,
+      "interactions": 7.061911659647521,
+      "likes": 7.061911659647521,
       "comments": 0
     },
     {
       "time": "5_20",
-      "interactions": 6.563565457039813,
-      "likes": 6.563565457039813,
+      "interactions": 6.527608512775084,
+      "likes": 6.527608512775084,
       "comments": 0
     },
     {
       "time": "5_21",
-      "interactions": 5.98488270013413,
-      "likes": 5.98488270013413,
+      "interactions": 5.9520959327760234,
+      "likes": 5.9520959327760234,
       "comments": 0
     },
     {
       "time": "5_22",
-      "interactions": 6.514544977347463,
-      "likes": 6.514544977347463,
+      "interactions": 6.478856580211223,
+      "likes": 6.478856580211223,
       "comments": 0
     },
     {
       "time": "5_23",
-      "interactions": 6.17140285340483,
-      "likes": 6.17140285340483,
+      "interactions": 6.13759427940835,
+      "likes": 6.13759427940835,
       "comments": 0
     },
     {
       "time": "6_0",
-      "interactions": 3.0430509410189748,
-      "likes": 3.0430509410189748,
+      "interactions": 3.0263803046404507,
+      "likes": 3.0263803046404507,
       "comments": 0
     },
     {
       "time": "6_1",
-      "interactions": 1.6381589746141851,
-      "likes": 1.6381589746141851,
+      "interactions": 1.6291847072997958,
+      "likes": 1.6291847072997958,
       "comments": 0
     },
     {
       "time": "6_2",
-      "interactions": 3.6372910587662166,
-      "likes": 3.6372910587662166,
+      "interactions": 3.61736501815145,
+      "likes": 3.61736501815145,
       "comments": 0
     },
     {
       "time": "6_3",
-      "interactions": 1.1792326532550663,
-      "likes": 1.1792326532550663,
+      "interactions": 1.172772505479323,
+      "likes": 1.172772505479323,
       "comments": 0
     },
     {
       "time": "6_4",
-      "interactions": 1.3422619076129567,
-      "likes": 1.3422619076129567,
+      "interactions": 1.3349086425443586,
+      "likes": 1.3349086425443586,
       "comments": 0
     },
     {
       "time": "6_5",
-      "interactions": 5.330676528186184,
-      "likes": 5.330676528186184,
+      "interactions": 5.301473674939447,
+      "likes": 5.301473674939447,
       "comments": 0
     },
     {
       "time": "6_6",
-      "interactions": 6.732387887900943,
-      "likes": 6.732387887900943,
+      "interactions": 6.695506089793155,
+      "likes": 6.695506089793155,
       "comments": 0
     },
     {
       "time": "6_7",
-      "interactions": 5.667904959972409,
-      "likes": 5.667904959972409,
+      "interactions": 5.636854680352676,
+      "likes": 5.636854680352676,
       "comments": 0
     },
     {
       "time": "6_8",
-      "interactions": 5.961729385806566,
-      "likes": 5.961729385806566,
+      "interactions": 5.929069458416505,
+      "likes": 5.929069458416505,
       "comments": 0
     },
     {
       "time": "6_9",
-      "interactions": 9.445114912995315,
-      "likes": 9.445114912995315,
+      "interactions": 9.393372080121413,
+      "likes": 9.393372080121413,
       "comments": 0
     },
     {
       "time": "6_10",
-      "interactions": 10.500915433147645,
-      "likes": 10.500915433147645,
+      "interactions": 10.443388646307524,
+      "likes": 10.443388646307524,
       "comments": 0
     },
     {
       "time": "6_11",
-      "interactions": 8.547331315802765,
-      "likes": 8.547331315802765,
+      "interactions": 8.500506778476812,
+      "likes": 8.500506778476812,
       "comments": 0
     },
     {
       "time": "6_12",
-      "interactions": 8.047832825565449,
-      "likes": 8.047832825565449,
+      "interactions": 8.003744672829754,
+      "likes": 8.003744672829754,
       "comments": 0
     },
     {
       "time": "6_13",
-      "interactions": 7.426454203526206,
-      "likes": 7.426454203526206,
+      "interactions": 7.385770126917455,
+      "likes": 7.385770126917455,
       "comments": 0
     },
     {
       "time": "6_14",
-      "interactions": 8.168282836087172,
-      "likes": 8.168282836087172,
+      "interactions": 8.12353482639669,
+      "likes": 8.12353482639669,
       "comments": 0
     },
     {
       "time": "6_15",
-      "interactions": 7.060799562738619,
-      "likes": 7.060799562738619,
+      "interactions": 7.022118638779902,
+      "likes": 7.022118638779902,
       "comments": 0
     },
     {
       "time": "6_16",
-      "interactions": 6.6365671441059115,
-      "likes": 6.6365671441059115,
+      "interactions": 6.600210277327992,
+      "likes": 6.600210277327992,
       "comments": 0
     },
     {
       "time": "6_17",
-      "interactions": 5.296669184291147,
-      "likes": 5.296669184291147,
+      "interactions": 5.267652632251737,
+      "likes": 5.267652632251737,
       "comments": 0
     },
     {
       "time": "6_18",
-      "interactions": 7.735708616011161,
-      "likes": 7.735708616011161,
+      "interactions": 7.6933303620919045,
+      "likes": 7.6933303620919045,
       "comments": 0
     },
     {
       "time": "6_19",
-      "interactions": 5.479128191234137,
-      "likes": 5.479128191234137,
+      "interactions": 5.449112080588025,
+      "likes": 5.449112080588025,
       "comments": 0
     },
     {
       "time": "6_20",
-      "interactions": 4.960872486875516,
-      "likes": 4.960872486875516,
+      "interactions": 4.933695517790262,
+      "likes": 4.933695517790262,
       "comments": 0
     },
     {
       "time": "6_21",
-      "interactions": 4.600803852163313,
-      "likes": 4.600803852163313,
+      "interactions": 4.575599434112183,
+      "likes": 4.575599434112183,
       "comments": 0
     },
     {
       "time": "6_22",
-      "interactions": 6.39862933118496,
-      "likes": 6.39862933118496,
+      "interactions": 6.363575950558534,
+      "likes": 6.363575950558534,
       "comments": 0
     },
     {
       "time": "6_23",
-      "interactions": 4.017619682162155,
-      "likes": 4.017619682162155,
+      "interactions": 3.9956101009468963,
+      "likes": 3.9956101009468963,
       "comments": 0
     },
     {
       "time": "7_0",
-      "interactions": 3.426859123954665,
-      "likes": 3.426859123954665,
+      "interactions": 3.4080858850299345,
+      "likes": 3.4080858850299345,
       "comments": 0
     },
     {
       "time": "7_1",
-      "interactions": 1.6514443709037352,
-      "likes": 1.6514443709037352,
+      "interactions": 1.6423973226813093,
+      "likes": 1.6423973226813093,
       "comments": 0
     },
     {
       "time": "7_2",
-      "interactions": 2.0598333557003423,
-      "likes": 2.0598333557003423,
+      "interactions": 2.0485490448101222,
+      "likes": 2.0485490448101222,
       "comments": 0
     },
     {
       "time": "7_3",
-      "interactions": 1.6091979151404807,
-      "likes": 1.6091979151404807,
+      "interactions": 1.60038230415521,
+      "likes": 1.60038230415521,
       "comments": 0
     },
     {
       "time": "7_4",
-      "interactions": 8.070545976336962,
-      "likes": 8.070545976336962,
+      "interactions": 8.026333394965379,
+      "likes": 8.026333394965379,
       "comments": 0
     },
     {
       "time": "7_5",
-      "interactions": 9.149012931876225,
-      "likes": 9.149012931876225,
+      "interactions": 9.098892223821744,
+      "likes": 9.098892223821744,
       "comments": 0
     },
     {
       "time": "7_6",
-      "interactions": 16.147350189568275,
-      "likes": 16.147350189568275,
+      "interactions": 16.058890742551313,
+      "likes": 16.058890742551313,
       "comments": 0
     },
     {
       "time": "7_7",
-      "interactions": 14.524797786502202,
-      "likes": 14.524797786502202,
+      "interactions": 14.445227109880769,
+      "likes": 14.445227109880769,
       "comments": 0
     },
     {
       "time": "7_8",
-      "interactions": 28.981886313237585,
-      "likes": 28.981886313237585,
+      "interactions": 28.82311588919404,
+      "likes": 28.82311588919404,
       "comments": 0
     },
     {
       "time": "7_9",
-      "interactions": 29.93085174378082,
-      "likes": 29.93085174378082,
+      "interactions": 29.76688263659493,
+      "likes": 29.76688263659493,
       "comments": 0
     },
     {
       "time": "7_10",
-      "interactions": 32.45935802027777,
-      "likes": 32.45935802027777,
+      "interactions": 32.281537088218315,
+      "likes": 32.281537088218315,
       "comments": 0
     },
     {
       "time": "7_11",
-      "interactions": 30.683601805192488,
-      "likes": 30.683601805192488,
+      "interactions": 30.515508934454516,
+      "likes": 30.515508934454516,
       "comments": 0
     },
     {
       "time": "7_12",
-      "interactions": 27.464835900617278,
-      "likes": 27.464835900617278,
+      "interactions": 27.31437627921452,
+      "likes": 27.31437627921452,
       "comments": 0
     },
     {
       "time": "7_13",
-      "interactions": 26.975622891736307,
-      "likes": 26.975622891736307,
+      "interactions": 26.82784330834171,
+      "likes": 26.82784330834171,
       "comments": 0
     },
     {
       "time": "7_14",
-      "interactions": 27.33319151545052,
-      "likes": 27.33319151545052,
+      "interactions": 27.18345307674202,
+      "likes": 27.18345307674202,
       "comments": 0
     },
     {
       "time": "7_15",
-      "interactions": 25.287281448896664,
-      "likes": 25.287281448896664,
+      "interactions": 25.14875104562488,
+      "likes": 25.14875104562488,
       "comments": 0
     },
     {
       "time": "7_16",
-      "interactions": 21.26839421505824,
-      "likes": 21.26839421505824,
+      "interactions": 21.15188033698441,
+      "likes": 21.15188033698441,
       "comments": 0
     },
     {
       "time": "7_17",
-      "interactions": 21.306760631284604,
-      "likes": 21.306760631284604,
+      "interactions": 21.190036571854478,
+      "likes": 21.190036571854478,
       "comments": 0
     },
     {
       "time": "7_18",
-      "interactions": 22.30693988402964,
-      "likes": 22.30693988402964,
+      "interactions": 22.184736578619404,
+      "likes": 22.184736578619404,
       "comments": 0
     },
     {
       "time": "7_19",
-      "interactions": 20.37074163272444,
-      "likes": 20.37074163272444,
+      "interactions": 20.259145332464577,
+      "likes": 20.259145332464577,
       "comments": 0
     },
     {
       "time": "7_20",
-      "interactions": 17.29874711556122,
-      "likes": 17.29874711556122,
+      "interactions": 17.37285718138793,
+      "likes": 17.37285718138793,
       "comments": 0
     },
     {
       "time": "7_21",
-      "interactions": 18.444208633535048,
-      "likes": 18.444208633535048,
+      "interactions": 18.512064418599437,
+      "likes": 18.512064418599437,
       "comments": 0
     },
     {
       "time": "7_22",
-      "interactions": 16.941402912366414,
-      "likes": 16.941402912366414,
+      "interactions": 16.84859343491496,
+      "likes": 16.84859343491496,
       "comments": 0
     },
     {
       "time": "7_23",
-      "interactions": 13.285559012035986,
-      "likes": 13.285559012035986,
+      "interactions": 13.212777212563084,
+      "likes": 13.212777212563084,
       "comments": 0
     }
   ],
-  "timestamp": "2025-10-19T14:36:40.801Z"
+  "timestamp": "2025-10-21T14:11:14.183Z"
 }
-🔍 Final competitorSite.contentChanges in response: EXISTS
+🔍 Final competitorSite.contentChanges in response: MISSING
 🔍 Generated comparison.seo: {
   "yours": 100,
   "competitor": 79,
@@ -2551,4 +1802,75 @@ FRONTEND_URL: http://localhost:3002
   }
 }
 🔍 Ads data included - Google: true Meta: true
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+🔧 Services loaded: {
+  lighthouse: true,
+  pagespeed: true,
+  analytics: true,
+  scoring: true,
+  searchConsole: true,
+  technicalSEO: true
+}
+🔍 Supabase Config Check:
+   SUPABASE_URL: https://krgaukhigntjdfacppbq.s...
+   SUPABASE_SERVICE_KEY: SET
+🔍 OAuth Route Environment Check:
+GOOGLE_CLIENT_ID: 5384374065...
+GOOGLE_CLIENT_SECRET: SET
+GOOGLE_REDIRECT_URI: http://localhost:3010/api/auth/google/callback
+FRONTEND_URL: http://localhost:3002
+✅ OAuth2 client initialized successfully
+🔍 Facebook OAuth Route Environment Check:
+FACEBOOK_APP_ID: 1146428707...
+FACEBOOK_APP_SECRET: SET
+FRONTEND_URL: http://localhost:3002
+✅ Facebook OAuth client initialized successfully
+   Redirect URI: http://localhost:3010/api/auth/facebook/callback
+🚀 SEO Health Score API running on port 3010
+📍 Health endpoint: http://localhost:3010/api/status
+🔐 Google Auth: http://localhost:3010/api/auth/google
+📘 Facebook Auth: http://localhost:3010/api/auth/facebook
+⚡ Lighthouse: http://localhost:3010/api/lighthouse
+📈 Analytics: http://localhost:3010/api/analytics
+🔍 Search Console: http://localhost:3010/api/search-console
+📊 Traffic: http://localhost:3010/api/traffic
+🏆 Competitor: http://localhost:3010/api/competitor
+📱 Facebook Metrics: http://localhost:3010/api/facebook
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+🔧 Services loaded: {
+  lighthouse: true,
+  pagespeed: true,
+  analytics: true,
+  scoring: true,
+  searchConsole: true,
+  technicalSEO: true
+}
+🔍 Supabase Config Check:
+   SUPABASE_URL: https://krgaukhigntjdfacppbq.s...
+   SUPABASE_SERVICE_KEY: SET
+🔍 OAuth Route Environment Check:
+GOOGLE_CLIENT_ID: 5384374065...
+GOOGLE_CLIENT_SECRET: SET
+GOOGLE_REDIRECT_URI: http://localhost:3010/api/auth/google/callback
+FRONTEND_URL: http://localhost:3002
+✅ OAuth2 client initialized successfully
+🔍 Facebook OAuth Route Environment Check:
+FACEBOOK_APP_ID: 1146428707...
+FACEBOOK_APP_SECRET: SET
+FRONTEND_URL: http://localhost:3002
+✅ Facebook OAuth client initialized successfully
+   Redirect URI: http://localhost:3010/api/auth/facebook/callback
+🚀 SEO Health Score API running on port 3010
+📍 Health endpoint: http://localhost:3010/api/status
+🔐 Google Auth: http://localhost:3010/api/auth/google
+📘 Facebook Auth: http://localhost:3010/api/auth/facebook
+⚡ Lighthouse: http://localhost:3010/api/lighthouse
+📈 Analytics: http://localhost:3010/api/analytics
+🔍 Search Console: http://localhost:3010/api/search-console
+📊 Traffic: http://localhost:3010/api/traffic
+🏆 Competitor: http://localhost:3010/api/competitor
+📱 Facebook Metrics: http://localhost:3010/api/facebook
 ^C

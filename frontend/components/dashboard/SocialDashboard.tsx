@@ -55,6 +55,34 @@ interface FacebookMetrics {
   lastUpdated?: string
 }
 
+interface LinkedInMetrics {
+  dataAvailable: boolean
+  companyName?: string
+  companyUrl?: string
+  companyFollowers?: number
+  source?: string
+  scrapedPostsCount?: number
+  engagementScore?: {
+    likes: number
+    comments: number
+    shares: number
+    engagementRate: number
+    reach: number
+  }
+  followerGrowth?: FollowerGrowthData[]
+  topPosts?: TopPost[]
+  allPosts?: TopPost[]
+  reputationBenchmark?: {
+    score: number
+    followers: number
+    avgEngagementRate: number
+    sentiment: string
+    avgEngagementPerPost?: number
+  }
+  reason?: string
+  lastUpdated?: string
+}
+
 interface SocialData {
   dataAvailable: boolean
   totalSocialSessions: number
@@ -71,13 +99,17 @@ interface SocialData {
 export default function SocialMediaMetricsContent({ userEmail = 'test@example.com' }: SocialMediaMetricsCardProps) {
   const [socialData, setSocialData] = useState<SocialData | null>(null)
   const [facebookData, setFacebookData] = useState<FacebookMetrics | null>(null)
+  const [linkedinData, setLinkedinData] = useState<LinkedInMetrics | null>(null)
   const [loadingData, setLoadingData] = useState(false)
   const [connected, setConnected] = useState(false)
+  const [linkedinConnected, setLinkedinConnected] = useState(false)
   const [checkingConnection, setCheckingConnection] = useState(true)
   const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d'>('30d')
   const [network, setNetwork] = useState<'linkedin' | 'facebook' | 'instagram' | 'twitter' | 'all'>('facebook')
   // Modal state
   const [showConnectModal, setShowConnectModal] = useState(false)
+  const [linkedinUrl, setLinkedinUrl] = useState('')
+  const [savingLinkedin, setSavingLinkedin] = useState(false)
   // State for client-side random data to prevent Hydration Error
   const [followerGrowthData, setFollowerGrowthData] = useState<any[]>([]);
 
@@ -89,28 +121,61 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
       if (response.ok) {
         const data = await response.json()
         setConnected(data.connected || false)
-        setShowConnectModal(!data.connected)
         console.log('✅ Facebook connection status:', data.connected)
       } else {
         setConnected(false)
-        setShowConnectModal(true)
       }
     } catch (error) {
       console.error('Error checking Facebook connection:', error)
       setConnected(false)
-      setShowConnectModal(true)
     } finally {
       setCheckingConnection(false)
     }
   }
 
+  const checkLinkedInConnection = async () => {
+    try {
+      const response = await fetch(`http://localhost:3010/api/linkedin/organizations?email=${encodeURIComponent(userEmail)}`)
+      if (response.ok) {
+        const data = await response.json()
+        setLinkedinConnected(data.connected || false)
+        if (data.connected && data.companyUrl) {
+          setLinkedinUrl(data.companyUrl)
+          console.log('✅ LinkedIn company URL found:', data.companyUrl)
+        }
+      } else {
+        setLinkedinConnected(false)
+      }
+    } catch (error) {
+      console.error('Error checking LinkedIn connection:', error)
+      setLinkedinConnected(false)
+    }
+  }
+
   const fetchSocialMetrics = async () => {
-    if (!connected) {
+    if (!connected && network === 'facebook') {
       console.log('Not connected to Facebook, skipping metrics fetch')
       return
     }
 
+    if (!linkedinConnected && network === 'linkedin') {
+      console.log('No LinkedIn URL saved, skipping metrics fetch')
+      return
+    }
+
     setLoadingData(true)
+    try {
+      if (network === 'facebook' && connected) {
+        await fetchFacebookMetrics()
+      } else if (network === 'linkedin' && linkedinConnected) {
+        await fetchLinkedInMetrics()
+      }
+    } finally {
+      setLoadingData(false)
+    }
+  }
+
+  const fetchFacebookMetrics = async () => {
     try {
       const periodMap = {
         '7d': 'week',
@@ -156,18 +221,49 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
     } catch (error) {
       console.error('Error fetching Facebook metrics:', error)
       setFacebookData(null)
-      setSocialData({
-        dataAvailable: false,
-        totalSocialSessions: 0,
-        totalSocialUsers: 0,
-        totalSocialConversions: 0,
-        socialConversionRate: 0,
-        socialTrafficPercentage: 0,
-        topSocialSources: [],
-        reason: 'Failed to fetch Facebook data'
-      })
-    } finally {
-      setLoadingData(false)
+    }
+  }
+
+  const fetchLinkedInMetrics = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:3010/api/linkedin/metrics?email=${encodeURIComponent(userEmail)}`
+      )
+      
+      const data = await response.json()
+      
+      if (data.dataAvailable) {
+        setLinkedinData(data)
+        
+        // Also set socialData for backward compatibility
+        setSocialData({
+          dataAvailable: true,
+          totalSocialSessions: data.engagementScore?.reach || 0,
+          totalSocialUsers: data.reputationBenchmark?.followers || data.companyFollowers || 0,
+          totalSocialConversions: data.engagementScore?.shares || 0,
+          socialConversionRate: data.engagementScore?.engagementRate || 0,
+          socialTrafficPercentage: 0.25,
+          topSocialSources: [],
+          lastUpdated: data.lastUpdated
+        })
+        console.log('✅ LinkedIn data loaded:', data)
+      } else {
+        console.log('⚠️ No LinkedIn data available:', data.reason)
+        setLinkedinData(null)
+        setSocialData({
+          dataAvailable: false,
+          totalSocialSessions: 0,
+          totalSocialUsers: 0,
+          totalSocialConversions: 0,
+          socialConversionRate: 0,
+          socialTrafficPercentage: 0,
+          topSocialSources: [],
+          reason: data.reason || 'Failed to fetch data'
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching LinkedIn metrics:', error)
+      setLinkedinData(null)
     }
   }
 
@@ -184,11 +280,69 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
       
       if (response.ok) {
         setConnected(false)
+        setFacebookData(null)
         setSocialData(null)
         setShowConnectModal(true)
       }
     } catch (error) {
       console.error('Error disconnecting Facebook:', error)
+    }
+  }
+
+  const saveLinkedInUrl = async () => {
+    if (!linkedinUrl.trim()) {
+      alert('Please enter a LinkedIn company URL')
+      return
+    }
+
+    setSavingLinkedin(true)
+    try {
+      const response = await fetch('http://localhost:3010/api/linkedin/save-company', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: userEmail,
+          companyUrl: linkedinUrl
+        })
+      })
+
+      const data = await response.json()
+      
+      if (data.success) {
+        setLinkedinConnected(true)
+        setShowConnectModal(false)
+        console.log('✅ LinkedIn URL saved:', linkedinUrl)
+        // Fetch metrics immediately
+        await fetchLinkedInMetrics()
+      } else {
+        alert(data.error || 'Failed to save LinkedIn URL')
+      }
+    } catch (error) {
+      console.error('Error saving LinkedIn URL:', error)
+      alert('Failed to save LinkedIn URL')
+    } finally {
+      setSavingLinkedin(false)
+    }
+  }
+
+  const disconnectLinkedIn = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:3010/api/linkedin/disconnect?email=${encodeURIComponent(userEmail)}`,
+        { method: 'DELETE' }
+      )
+      
+      if (response.ok) {
+        setLinkedinConnected(false)
+        setLinkedinData(null)
+        setLinkedinUrl('')
+        setSocialData(null)
+        setShowConnectModal(true)
+      }
+    } catch (error) {
+      console.error('Error disconnecting LinkedIn:', error)
     }
   }
 
@@ -199,17 +353,25 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
   }
 
   const computeEngagementScore = useMemo(() => {
-    if (!facebookData?.dataAvailable || !facebookData.engagementScore) return 0
+    // Check which platform is selected
+    if (network === 'facebook' && facebookData?.dataAvailable && facebookData.engagementScore) {
+      const engagementRate = facebookData.engagementScore.engagementRate || 0
+      const hasActivity = (facebookData.engagementScore.likes || 0) + 
+                          (facebookData.engagementScore.comments || 0) + 
+                          (facebookData.engagementScore.shares || 0) > 0
+      return hasActivity ? Math.min(100, Math.round(engagementRate * 10)) : 0
+    }
     
-    // Calculate a score based on engagement rate and activity
-    const engagementRate = facebookData.engagementScore.engagementRate || 0
-    const hasActivity = (facebookData.engagementScore.likes || 0) + 
-                        (facebookData.engagementScore.comments || 0) + 
-                        (facebookData.engagementScore.shares || 0) > 0
+    if (network === 'linkedin' && linkedinData?.dataAvailable && linkedinData.engagementScore) {
+      const engagementRate = linkedinData.engagementScore.engagementRate || 0
+      const hasActivity = (linkedinData.engagementScore.likes || 0) + 
+                          (linkedinData.engagementScore.comments || 0) + 
+                          (linkedinData.engagementScore.shares || 0) > 0
+      return hasActivity ? Math.min(100, Math.round(engagementRate * 10)) : 0
+    }
     
-    // If there's activity, use engagement rate, otherwise show 0
-    return hasActivity ? Math.min(100, Math.round(engagementRate * 10)) : 0
-  }, [facebookData])
+    return 0
+  }, [facebookData, linkedinData, network])
 
   const getNetworkStats = useMemo(() => {
     // Use real Facebook data if available
@@ -223,10 +385,24 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
         reach: engagement.reach || 0
       }
     }
+
+    // Use real LinkedIn data if available
+    if (network === 'linkedin' && linkedinData?.dataAvailable && linkedinData.engagementScore) {
+      const engagement = linkedinData.engagementScore
+      return {
+        likes: (engagement.likes / 1000) || 0,
+        comments: (engagement.comments / 1000) || 0,
+        shares: (engagement.shares / 1000) || 0,
+        engagementRate: engagement.engagementRate || 0,
+        reach: engagement.reach || 0
+      }
+    }
     
     // Fallback for other networks or when no data
     const engagementScore = computeEngagementScore
-    const baseReach = facebookData?.reputationBenchmark?.followers || socialData?.totalSocialUsers || 0
+    const baseReach = facebookData?.reputationBenchmark?.followers || 
+                     linkedinData?.reputationBenchmark?.followers || 
+                     socialData?.totalSocialUsers || 0
     
     const stats = {
       linkedin: { likes: 0, comments: 0, shares: 0, engagementRate: 0, reach: baseReach },
@@ -237,7 +413,7 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
     }
     
     return stats[network]
-  }, [network, facebookData, socialData, computeEngagementScore])
+  }, [network, facebookData, linkedinData, socialData, computeEngagementScore])
   
   const networkStats = getNetworkStats
 
@@ -245,6 +421,14 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
       // Use real Facebook follower growth data if available
       if (currentNetwork === 'facebook' && facebookData?.followerGrowth && facebookData.followerGrowth.length > 0) {
         return facebookData.followerGrowth.map((item, index) => ({
+          value: item.followers,
+          label: index
+        }))
+      }
+      
+      // Use real LinkedIn follower growth data if available
+      if (currentNetwork === 'linkedin' && linkedinData?.followerGrowth && linkedinData.followerGrowth.length > 0) {
+        return linkedinData.followerGrowth.map((item, index) => ({
           value: item.followers,
           label: index
         }))
@@ -270,7 +454,9 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
   };
   
   useEffect(() => {
+    // Check both connections on mount
     checkFacebookConnection()
+    checkLinkedInConnection()
     
     // Check for OAuth callback success/error
     const urlParams = new URLSearchParams(window.location.search)
@@ -290,34 +476,72 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
   }, [])
 
   useEffect(() => {
-    if (connected && !loadingData) {
-      fetchSocialMetrics()
+    // Fetch metrics when connection state changes or network changes
+    if (network === 'facebook' && connected && !loadingData) {
+      fetchFacebookMetrics()
+    } else if (network === 'linkedin' && linkedinConnected && !loadingData) {
+      fetchLinkedInMetrics()
     }
-  }, [connected, timeframe, network])
+  }, [connected, linkedinConnected, timeframe, network])
 
   useEffect(() => {
     setFollowerGrowthData(calculateFollowerGrowthData(network));
-  }, [network, socialData]);
+  }, [network, facebookData, linkedinData]);
+
+  // Handle network change - show modal if platform not connected
+  useEffect(() => {
+    if (network === 'facebook' && !connected && !checkingConnection) {
+      setShowConnectModal(true)
+    } else if (network === 'linkedin' && !linkedinConnected && !checkingConnection) {
+      setShowConnectModal(true)
+    } else {
+      setShowConnectModal(false)
+    }
+  }, [network, connected, linkedinConnected, checkingConnection])
 
   // --- JSX Rendering (Content Only) ---
   return (
     <div className="p-8 space-y-6 relative">
       {/* Blurred Modal for Connect Facebook/LinkedIn */}
-  {showConnectModal && !connected && !checkingConnection && (
+  {showConnectModal && ((network === 'facebook' && !connected) || (network === 'linkedin' && !linkedinConnected)) && !checkingConnection && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md mx-auto text-center relative">
-            <h2 className="text-2xl font-bold mb-2 text-gray-900">Connect Social Accounts</h2>
-            <p className="text-gray-500 mb-6">To view your social metrics, please connect your Facebook and LinkedIn accounts.</p>
-            <div className="flex flex-col gap-4">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={connectFacebook}>
-                Connect Facebook
-              </Button>
-              <Button className="bg-blue-800 hover:bg-blue-900 text-white" onClick={() => {
-                alert('LinkedIn OAuth coming soon!')
-              }}>
-                Connect LinkedIn
-              </Button>
-            </div>
+            <h2 className="text-2xl font-bold mb-2 text-gray-900">
+              {network === 'facebook' ? 'Connect Facebook' : 'Connect LinkedIn'}
+            </h2>
+            <p className="text-gray-500 mb-6">
+              {network === 'facebook' 
+                ? 'To view your Facebook metrics, please connect your Facebook account.' 
+                : 'To view your LinkedIn metrics, please enter your LinkedIn company URL.'}
+            </p>
+            
+            {network === 'facebook' && (
+              <div className="flex flex-col gap-4">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={connectFacebook}>
+                  Connect Facebook
+                </Button>
+              </div>
+            )}
+            
+            {network === 'linkedin' && (
+              <div className="flex flex-col gap-4">
+                <input
+                  type="text"
+                  value={linkedinUrl}
+                  onChange={(e) => setLinkedinUrl(e.target.value)}
+                  placeholder="https://www.linkedin.com/company/yourcompany"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <Button 
+                  className="bg-blue-800 hover:bg-blue-900 text-white" 
+                  onClick={saveLinkedInUrl}
+                  disabled={savingLinkedin || !linkedinUrl}
+                >
+                  {savingLinkedin ? 'Saving...' : 'Save & Fetch Metrics'}
+                </Button>
+              </div>
+            )}
+            
             <button className="absolute top-3 right-3 text-gray-400 hover:text-gray-600" onClick={() => setShowConnectModal(false)}>
               ✕
             </button>
@@ -353,13 +577,13 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
           </select>
         </div>
 
-        {connected && (
+        {((network === 'facebook' && connected) || (network === 'linkedin' && linkedinConnected)) && (
           <Button 
             variant="outline" 
-            onClick={disconnectFacebook}
+            onClick={network === 'facebook' ? disconnectFacebook : disconnectLinkedIn}
             className="text-sm text-red-600 border-red-300 hover:bg-red-50"
           >
-            Disconnect
+            Disconnect {network === 'facebook' ? 'Facebook' : 'LinkedIn'}
           </Button>
         )}
       </div>
@@ -499,23 +723,26 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
                       </tr>
                     </thead>
                     <tbody className="text-gray-900">
-                      {facebookData?.topPosts && facebookData.topPosts.length > 0 ? (
-                        facebookData.topPosts.map((post, index) => (
-                          <tr key={index} className="border-b border-gray-100 last:border-b-0">
-                            <td className="py-3 font-medium">{post.format}</td>
-                            <td className="py-3 text-right">{post.reach}</td>
-                            <td className="py-3 text-right">{post.likes}</td>
-                            <td className="py-3 text-right">{post.comments}</td>
-                            <td className="py-3 text-right">{post.shares}</td>
+                      {(() => {
+                        const currentData = network === 'facebook' ? facebookData : linkedinData;
+                        return currentData?.topPosts && currentData.topPosts.length > 0 ? (
+                          currentData.topPosts.map((post, index) => (
+                            <tr key={index} className="border-b border-gray-100 last:border-b-0">
+                              <td className="py-3 font-medium">{post.format}</td>
+                              <td className="py-3 text-right">{post.reach}</td>
+                              <td className="py-3 text-right">{post.likes}</td>
+                              <td className="py-3 text-right">{post.comments}</td>
+                              <td className="py-3 text-right">{post.shares}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={5} className="py-6 text-center text-gray-400 text-sm">
+                              No posts available yet. Start posting to see engagement data!
+                            </td>
                           </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={5} className="py-6 text-center text-gray-400 text-sm">
-                            No posts available yet. Start posting to see engagement data!
-                          </td>
-                        </tr>
-                      )}
+                        );
+                      })()}
                     </tbody>
                   </table>
                 </div>
@@ -593,13 +820,15 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
                     
                     {/* Data pentagon (orange fill) */}
                     {(() => {
-                      // Calculate scores from real Facebook data
+                      // Calculate scores from real platform data (Facebook or LinkedIn)
                       const calculateReputationScores = () => {
-                        if (!facebookData || !facebookData.engagementScore) {
+                        const currentData = network === 'facebook' ? facebookData : linkedinData;
+                        
+                        if (!currentData || !currentData.engagementScore) {
                           return [50, 50, 50, 50, 50]; // Default neutral scores
                         }
 
-                        const engagement = facebookData.engagementScore;
+                        const engagement = currentData.engagementScore;
                         
                         // 1. Review Score (based on engagement rate)
                         const reviewScore = Math.min(100, engagement.engagementRate * 10);
@@ -608,8 +837,8 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
                         const brandScore = engagement.likes > 0 ? Math.min(100, (engagement.likes / 100) * 100) : 50;
                         
                         // 3. Consistency (based on post frequency)
-                        const consistencyScore = facebookData.topPosts && facebookData.topPosts.length > 0 
-                          ? Math.min(100, (facebookData.topPosts.length / 10) * 100) 
+                        const consistencyScore = currentData.topPosts && currentData.topPosts.length > 0 
+                          ? Math.min(100, (currentData.topPosts.length / 10) * 100) 
                           : 50;
                         
                         // 4. Responsiveness (based on comments - indicates interaction)
@@ -660,10 +889,12 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
                   
                   <div className="text-center mt-2">
                     <p className="text-5xl font-extrabold text-orange-600">
-                      {facebookData?.reputationBenchmark?.score 
-                        ? `${facebookData.reputationBenchmark.score}%`
-                        : '50%'
-                      }
+                      {(() => {
+                        const currentData = network === 'facebook' ? facebookData : linkedinData;
+                        return currentData?.reputationBenchmark?.score 
+                          ? `${currentData.reputationBenchmark.score}%`
+                          : '50%';
+                      })()}
                     </p>
                     <p className="text-sm text-gray-500 mt-1">Overall Score</p>
                   </div>

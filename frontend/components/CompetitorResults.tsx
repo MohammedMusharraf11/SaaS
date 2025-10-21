@@ -378,23 +378,37 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                     <div className="p-3 bg-green-50 rounded-lg">
                       <p className="text-xs text-muted-foreground mb-1">Your Monthly Visits</p>
                       <p className="text-xl font-bold text-green-600">
-                        {typeof yourSite?.traffic?.metrics?.monthlyVisits === 'number' 
-                          ? yourSite.traffic.metrics.monthlyVisits.toLocaleString() 
-                          : yourSite?.traffic?.metrics?.monthlyVisits || 'N/A'}
+                        {(() => {
+                          const visits = yourSite?.traffic?.metrics?.monthlyVisits;
+                          console.log('🔍 YOUR Monthly Visits:', visits, typeof visits);
+                          if (visits === undefined || visits === null) return 'N/A';
+                          return typeof visits === 'number' ? visits.toLocaleString() : visits;
+                        })()}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Bounce: {yourSite?.traffic?.metrics?.bounceRate || 'N/A'}
+                        Bounce: {(() => {
+                          const bounce = yourSite?.traffic?.metrics?.bounceRate;
+                          console.log('🔍 YOUR Bounce Rate:', bounce);
+                          return (bounce !== undefined && bounce !== null) ? bounce : 'N/A';
+                        })()}
                       </p>
                     </div>
                     <div className="p-3 bg-blue-50 rounded-lg">
                       <p className="text-xs text-muted-foreground mb-1">Competitor Monthly Visits</p>
                       <p className="text-xl font-bold text-blue-600">
-                        {typeof competitorSite?.traffic?.metrics?.monthlyVisits === 'number'
-                          ? competitorSite.traffic.metrics.monthlyVisits.toLocaleString()
-                          : competitorSite?.traffic?.metrics?.monthlyVisits || 'N/A'}
+                        {(() => {
+                          const visits = competitorSite?.traffic?.metrics?.monthlyVisits;
+                          console.log('🔍 COMPETITOR Monthly Visits:', visits, typeof visits);
+                          if (visits === undefined || visits === null) return 'N/A';
+                          return typeof visits === 'number' ? visits.toLocaleString() : visits;
+                        })()}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Bounce: {competitorSite?.traffic?.metrics?.bounceRate || 'N/A'}
+                        Bounce: {(() => {
+                          const bounce = competitorSite?.traffic?.metrics?.bounceRate;
+                          console.log('🔍 COMPETITOR Bounce Rate:', bounce);
+                          return (bounce !== undefined && bounce !== null) ? bounce : 'N/A';
+                        })()}
                       </p>
                     </div>
                   </div>
@@ -512,10 +526,8 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                 </CardContent>
               </Card>
             )}
-          </div>
 
-          {/* Market Share Row */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
+            {/* Market Share (Search Visibility) */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg font-semibold">Market Share (Search Visibility)</CardTitle>
@@ -656,7 +668,6 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                 </div>
               </CardContent>
             </Card>
-
           </div>
         </>
       )}
@@ -1488,21 +1499,32 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                       Your Site
                     </h4>
                     <div className="space-y-2">
-                      {yourSite?.puppeteer?.technologies && yourSite.puppeteer.technologies.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {yourSite.puppeteer.technologies.map((tech: string, idx: number) => (
-                            <Badge key={idx} variant="secondary" className="text-xs">{tech}</Badge>
-                          ))}
-                        </div>
-                      ) : comparison?.technology?.your?.frameworks?.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {comparison.technology.your.frameworks.map((fw: string, idx: number) => (
-                            <Badge key={idx} variant="secondary" className="text-xs">{fw}</Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No frameworks detected</p>
-                      )}
+                      {(() => {
+                        console.log('🔧 YOUR puppeteer.technology:', yourSite?.puppeteer?.technology);
+                        console.log('🔧 YOUR comparison.technology.your:', comparison?.technology?.your);
+                        const frameworks = yourSite?.puppeteer?.technology?.frameworks;
+                        const comparisonFrameworks = comparison?.technology?.your?.frameworks;
+                        
+                        if (frameworks && frameworks.length > 0) {
+                          return (
+                            <div className="flex flex-wrap gap-2">
+                              {frameworks.map((tech: string, idx: number) => (
+                                <Badge key={idx} variant="secondary" className="text-xs">{tech}</Badge>
+                              ))}
+                            </div>
+                          );
+                        } else if (comparisonFrameworks && comparisonFrameworks.length > 0) {
+                          return (
+                            <div className="flex flex-wrap gap-2">
+                              {comparisonFrameworks.map((fw: string, idx: number) => (
+                                <Badge key={idx} variant="secondary" className="text-xs">{fw}</Badge>
+                              ))}
+                            </div>
+                          );
+                        } else {
+                          return <p className="text-sm text-muted-foreground">No frameworks detected</p>;
+                        }
+                      })()}
                     </div>
                   </div>
                   <div>
@@ -1511,21 +1533,32 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                       Competitor
                     </h4>
                     <div className="space-y-2">
-                      {competitorSite?.puppeteer?.technologies && competitorSite.puppeteer.technologies.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {competitorSite.puppeteer.technologies.map((tech: string, idx: number) => (
-                            <Badge key={idx} variant="secondary" className="text-xs">{tech}</Badge>
-                          ))}
-                        </div>
-                      ) : comparison?.technology?.competitor?.frameworks?.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {comparison.technology.competitor.frameworks.map((fw: string, idx: number) => (
-                            <Badge key={idx} variant="secondary" className="text-xs">{fw}</Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No frameworks detected</p>
-                      )}
+                      {(() => {
+                        console.log('🔧 COMPETITOR puppeteer.technology:', competitorSite?.puppeteer?.technology);
+                        console.log('🔧 COMPETITOR comparison.technology.competitor:', comparison?.technology?.competitor);
+                        const frameworks = competitorSite?.puppeteer?.technology?.frameworks;
+                        const comparisonFrameworks = comparison?.technology?.competitor?.frameworks;
+                        
+                        if (frameworks && frameworks.length > 0) {
+                          return (
+                            <div className="flex flex-wrap gap-2">
+                              {frameworks.map((tech: string, idx: number) => (
+                                <Badge key={idx} variant="secondary" className="text-xs">{tech}</Badge>
+                              ))}
+                            </div>
+                          );
+                        } else if (comparisonFrameworks && comparisonFrameworks.length > 0) {
+                          return (
+                            <div className="flex flex-wrap gap-2">
+                              {comparisonFrameworks.map((fw: string, idx: number) => (
+                                <Badge key={idx} variant="secondary" className="text-xs">{fw}</Badge>
+                              ))}
+                            </div>
+                          );
+                        } else {
+                          return <p className="text-sm text-muted-foreground">No frameworks detected</p>;
+                        }
+                      })()}
                     </div>
                   </div>
                 </div>

@@ -38,29 +38,36 @@ const oauthTokenService = {
   /**
    * Store OAuth tokens in database
    * @param {string} userEmail - User's email
-   * @param {object} tokens - OAuth tokens from Google
+   * @param {object} tokens - OAuth tokens from provider
+   * @param {string} provider - OAuth provider ('google' or 'facebook')
    * @returns {Promise<boolean>} Success status
    */
-  async storeTokens(userEmail, tokens) {
+  async storeTokens(userEmail, tokens, provider = 'google') {
     try {
-      console.log(`💾 Storing OAuth tokens for: ${userEmail}`);
+      console.log(`💾 Storing OAuth tokens for: ${userEmail} (${provider})`);
 
       const tokenData = {
         user_email: userEmail,
-        provider: 'google',
+        provider: provider,
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token || null,
-        expires_at: tokens.expiry_date || null,
+        expires_at: tokens.expires_at || tokens.expiry_date || null,
         scope: tokens.scope || null,
         updated_at: new Date().toISOString()
       };
 
-      // Check if user already has tokens
+      // For Facebook, store additional user info
+      if (provider === 'facebook') {
+        tokenData.provider_user_id = tokens.user_id || null;
+        tokenData.provider_user_name = tokens.user_name || null;
+      }
+
+      // Check if user already has tokens for this provider
       const { data: existing } = await supabase
         .from('oauth_tokens')
         .select('id')
         .eq('user_email', userEmail)
-        .eq('provider', 'google')
+        .eq('provider', provider)
         .single();
 
       if (existing) {
@@ -71,7 +78,7 @@ const oauthTokenService = {
           .eq('id', existing.id);
 
         if (error) throw error;
-        console.log(`✅ OAuth tokens updated for: ${userEmail}`);
+        console.log(`✅ OAuth tokens updated for: ${userEmail} (${provider})`);
       } else {
         // Insert new tokens
         const { error } = await supabase
@@ -79,7 +86,7 @@ const oauthTokenService = {
           .insert(tokenData);
 
         if (error) throw error;
-        console.log(`✅ OAuth tokens stored for: ${userEmail}`);
+        console.log(`✅ OAuth tokens stored for: ${userEmail} (${provider})`);
       }
 
       return true;
@@ -92,42 +99,51 @@ const oauthTokenService = {
   /**
    * Get stored OAuth tokens for a user
    * @param {string} userEmail - User's email
+   * @param {string} provider - OAuth provider ('google' or 'facebook')
    * @returns {Promise<object|null>} OAuth tokens or null
    */
-  async getTokens(userEmail) {
+  async getTokens(userEmail, provider = 'google') {
     try {
-      console.log(`🔍 Fetching OAuth tokens for: ${userEmail}`);
+      console.log(`🔍 Fetching OAuth tokens for: ${userEmail} (${provider})`);
 
       const { data, error } = await supabase
         .from('oauth_tokens')
         .select('*')
         .eq('user_email', userEmail)
-        .eq('provider', 'google')
+        .eq('provider', provider)
         .single();
 
       if (error) {
         if (error.code === 'PGRST116') {
-          console.log(`📭 No OAuth tokens found for: ${userEmail}`);
+          console.log(`📭 No OAuth tokens found for: ${userEmail} (${provider})`);
           return null;
         }
         throw error;
       }
 
       if (!data) {
-        console.log(`📭 No OAuth tokens found for: ${userEmail}`);
+        console.log(`📭 No OAuth tokens found for: ${userEmail} (${provider})`);
         return null;
       }
 
-      // Convert to Google OAuth format
+      // Convert to standard OAuth format
       const tokens = {
         access_token: data.access_token,
         refresh_token: data.refresh_token,
         expiry_date: data.expires_at,
+        expires_at: data.expires_at,
         scope: data.scope,
-        token_type: 'Bearer'
+        token_type: 'Bearer',
+        provider: provider
       };
 
-      console.log(`✅ OAuth tokens retrieved for: ${userEmail}`);
+      // Add provider-specific fields
+      if (provider === 'facebook') {
+        tokens.user_id = data.provider_user_id;
+        tokens.user_name = data.provider_user_name;
+      }
+
+      console.log(`✅ OAuth tokens retrieved for: ${userEmail} (${provider})`);
       return tokens;
     } catch (error) {
       console.error('❌ Error fetching OAuth tokens:', error);
@@ -138,11 +154,12 @@ const oauthTokenService = {
   /**
    * Check if user has valid OAuth connection
    * @param {string} userEmail - User's email
+   * @param {string} provider - OAuth provider ('google' or 'facebook')
    * @returns {Promise<boolean>} True if connected
    */
-  async isConnected(userEmail) {
+  async isConnected(userEmail, provider = 'google') {
     try {
-      const tokens = await this.getTokens(userEmail);
+      const tokens = await this.getTokens(userEmail, provider);
       return tokens !== null && (tokens.access_token || tokens.refresh_token);
     } catch (error) {
       console.error('❌ Error checking connection:', error);
@@ -235,20 +252,24 @@ const oauthTokenService = {
   /**
    * Disconnect user's OAuth connection
    * @param {string} userEmail - User's email
+   * @param {string} provider - OAuth provider ('google' or 'facebook')
    * @returns {Promise<boolean>} Success status
    */
-  async disconnect(userEmail) {
+  async disconnect(userEmail, provider = 'google') {
     try {
-      console.log(`🔌 Disconnecting OAuth for: ${userEmail}`);
+      console.log(`🔌 Disconnecting OAuth for: ${userEmail} (${provider})`);
 
-      // Revoke tokens with Google
-      const tokens = await this.getTokens(userEmail);
+      // Revoke tokens with provider
+      const tokens = await this.getTokens(userEmail, provider);
       if (tokens?.access_token) {
         try {
-          await oauth2Client.revokeToken(tokens.access_token);
-          console.log(`✅ Token revoked with Google`);
+          if (provider === 'google') {
+            await oauth2Client.revokeToken(tokens.access_token);
+            console.log(`✅ Token revoked with Google`);
+          }
+          // Facebook doesn't require explicit token revocation
         } catch (error) {
-          console.warn('⚠️ Failed to revoke token with Google:', error.message);
+          console.warn(`⚠️ Failed to revoke token with ${provider}:`, error.message);
         }
       }
 
@@ -257,16 +278,26 @@ const oauthTokenService = {
         .from('oauth_tokens')
         .delete()
         .eq('user_email', userEmail)
-        .eq('provider', 'google');
+        .eq('provider', provider);
 
       if (error) throw error;
 
-      console.log(`✅ OAuth disconnected for: ${userEmail}`);
+      console.log(`✅ OAuth disconnected for: ${userEmail} (${provider})`);
       return true;
     } catch (error) {
       console.error('❌ Error disconnecting OAuth:', error);
       return false;
     }
+  },
+
+  /**
+   * Delete tokens from database (alias for disconnect)
+   * @param {string} userEmail - User's email
+   * @param {string} provider - OAuth provider ('google' or 'facebook')
+   * @returns {Promise<boolean>} Success status
+   */
+  async deleteTokens(userEmail, provider = 'google') {
+    return this.disconnect(userEmail, provider);
   },
 
   /**

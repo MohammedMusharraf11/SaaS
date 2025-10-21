@@ -218,6 +218,40 @@ router.post('/analyze', async (req, res) => {
           console.log(`   ✅ Using cached Facebook data for competitor`);
         }
         
+        // Fetch traffic data if not in cache
+        if (!cachedResult.competitorSite.traffic) {
+          console.log(`   📊 Fetching traffic data for cached competitor: ${competitorSite}`);
+          try {
+            const similarWebTrafficService = (await import('../services/similarWebTrafficService.js')).default;
+            const trafficData = await similarWebTrafficService.getCompetitorTraffic(competitorSite);
+            if (trafficData.success) {
+              cachedResult.competitorSite.traffic = trafficData;
+              console.log(`   ✅ Got competitor traffic data (${trafficData.metrics.monthlyVisits?.toLocaleString() || 'N/A'} monthly visits)`);
+            }
+          } catch (error) {
+            console.warn(`   ⚠️ Failed to fetch competitor traffic data:`, error.message);
+          }
+        } else {
+          console.log(`   ✅ Using cached traffic data for competitor`);
+        }
+        
+        // Fetch traffic data for your site if not available
+        if (!yourSiteData.traffic) {
+          console.log(`   📊 Fetching traffic data for your cached site: ${yourSite}`);
+          try {
+            const similarWebTrafficService = (await import('../services/similarWebTrafficService.js')).default;
+            const trafficData = await similarWebTrafficService.getCompetitorTraffic(yourSite);
+            if (trafficData.success) {
+              yourSiteData.traffic = trafficData;
+              console.log(`   ✅ Got your site traffic data (${trafficData.metrics.monthlyVisits?.toLocaleString() || 'N/A'} monthly visits)`);
+            }
+          } catch (error) {
+            console.warn(`   ⚠️ Failed to fetch your site traffic data:`, error.message);
+          }
+        } else {
+          console.log(`   ✅ Using cached traffic data for your site`);
+        }
+        
         // Reconstruct full result with comparison
         const fullResult = {
           success: true,
@@ -263,6 +297,8 @@ router.post('/analyze', async (req, res) => {
     if (yourSiteData.contentChanges) {
       console.log('🔍 yourSiteData.contentChanges.success:', yourSiteData.contentChanges.success);
     }
+    console.log('🔧 yourSiteData.puppeteer.technology:', JSON.stringify(yourSiteData.puppeteer?.technology, null, 2));
+    console.log('🔧 yourSiteData.puppeteer.technology.frameworks:', yourSiteData.puppeteer?.technology?.frameworks);
     
     // Fetch fresh data for competitor (Lighthouse, PageSpeed, Technical SEO, Traffic, Content Updates)
     const competitorData = await competitorService.analyzeSingleSite(competitorSite, null, false);
@@ -270,6 +306,8 @@ router.post('/analyze', async (req, res) => {
     if (competitorData.contentChanges) {
       console.log('🔍 competitorData.contentChanges.success:', competitorData.contentChanges.success);
     }
+    console.log('🔧 competitorData.puppeteer.technology:', JSON.stringify(competitorData.puppeteer?.technology, null, 2));
+    console.log('🔧 competitorData.puppeteer.technology.frameworks:', competitorData.puppeteer?.technology?.frameworks);
 
     // Fetch SE Ranking backlinks for competitor (fresh data)
     console.log(`   🔗 Fetching SE Ranking backlinks for competitor: ${competitorSite}`);

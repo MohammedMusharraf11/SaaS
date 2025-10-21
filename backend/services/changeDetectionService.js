@@ -4,11 +4,20 @@ import axios from 'axios';
 class ChangeDetectionService {
   constructor() {
     this.baseUrl = process.env.CHANGEDETECTION_URL || 'https://changedetection-competitor.onrender.com';
-    this.apiKey = process.env.CHANGEDETECTION_API_KEY || '51f8d6a27e3fe8e040650de63ed7d5a2';
+    // Use the correct API key from environment
+    this.apiKey = process.env.CHANGEDETECTION_API_KEY;
+    
+    if (!this.apiKey) {
+      console.warn('⚠️ CHANGEDETECTION_API_KEY not set in environment variables');
+      this.apiKey = '924096c496fa46bd89441385456202cf'; // Fallback
+    }
+    
     this.headers = {
       'x-api-key': this.apiKey,
       'Content-Type': 'application/json'
     };
+    
+    console.log('🔧 ChangeDetection initialized with API key:', this.apiKey.substring(0, 8) + '...');
   }
 
   /**

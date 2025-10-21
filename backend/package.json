@@ -12,6 +12,7 @@
     "@google-analytics/data": "^5.2.0",
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.75.0",
+    "apify-client": "^2.19.0",
     "axios": "^1.12.2",
     "chrome-launcher": "^1.2.1",
     "cors": "^2.8.5",

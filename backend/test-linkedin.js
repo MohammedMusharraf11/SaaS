@@ -1,10 +1,11 @@
 // test-linkedin.js - Test LinkedIn Scraper Service
 import { ApifyClient } from 'apify-client';
+import dotenv from 'dotenv';    
 import fs from 'fs';
 
 // Initialize the Apify client with your API token
 const client = new ApifyClient({
-    token: 'apify_api_dYtI6Y7MinUfctcqvt9cCGUdEaafPx12CGTL',
+    token: process.env.APIFY_API_KEY,
 });
 
 async function scrapeLinkedInPosts() {

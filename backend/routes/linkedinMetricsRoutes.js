@@ -57,10 +57,50 @@ router.get('/metrics', async (req, res) => {
     console.log(`📊 Fetching LinkedIn metrics for: ${email}`);
     console.log(`   🔗 Company URL: ${linkedinUrl}`);
     
-    const metrics = await linkedinScraperService.scrapeCompanyPosts(linkedinUrl, 20);
-    res.json(metrics);
+    // Set a timeout for the entire operation
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout - LinkedIn scraping is taking too long')), 45000);
+    });
+
+    const metricsPromise = linkedinScraperService.scrapeCompanyPosts(linkedinUrl, 15); // Reduced from 20 to 15
+
+    try {
+      const metrics = await Promise.race([metricsPromise, timeoutPromise]);
+      
+      // Add performance metadata
+      metrics.fetchTime = new Date().toISOString();
+      metrics.processingNote = metrics.isFallbackData 
+        ? 'Using estimated data due to scraping limitations' 
+        : 'Data scraped from LinkedIn';
+      
+      res.json(metrics);
+    } catch (timeoutError) {
+      console.warn(`⏰ LinkedIn scraping timeout for ${linkedinUrl}`);
+      
+      // Return fallback data on timeout
+      const fallbackMetrics = linkedinScraperService.generateFallbackData(linkedinUrl);
+      fallbackMetrics.timeoutFallback = true;
+      fallbackMetrics.note = 'Scraping timed out - showing estimated metrics';
+      
+      res.json(fallbackMetrics);
+    }
+    
   } catch (error) {
     console.error('❌ Error in LinkedIn metrics endpoint:', error);
+    
+    // Try to return fallback data even on error
+    try {
+      const { companyUrl } = req.query;
+      if (companyUrl && linkedinScraperService.isValidLinkedInUrl(companyUrl)) {
+        const fallbackMetrics = linkedinScraperService.generateFallbackData(companyUrl);
+        fallbackMetrics.errorFallback = true;
+        fallbackMetrics.originalError = error.message;
+        return res.json(fallbackMetrics);
+      }
+    } catch (fallbackError) {
+      console.error('❌ Fallback data generation failed:', fallbackError);
+    }
+    
     res.status(500).json({
       dataAvailable: false,
       error: error.message,

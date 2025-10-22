@@ -31,12 +31,26 @@ interface Competitor {
 }
 
 export default function CompetitorIntelligence() {
-  const [userDomain, setUserDomain] = useState<string>('')
-  const [yourInstagram, setYourInstagram] = useState('')
-  const [yourFacebook, setYourFacebook] = useState('')
+  // Load persisted data from localStorage
+  const loadPersistedData = () => {
+    if (typeof window === 'undefined') return null
+    try {
+      const saved = localStorage.getItem('competitorIntelligenceData')
+      return saved ? JSON.parse(saved) : null
+    } catch (error) {
+      console.error('Error loading persisted data:', error)
+      return null
+    }
+  }
+
+  const persistedData = loadPersistedData()
+
+  const [userDomain, setUserDomain] = useState<string>(persistedData?.userDomain || '')
+  const [yourInstagram, setYourInstagram] = useState(persistedData?.yourInstagram || '')
+  const [yourFacebook, setYourFacebook] = useState(persistedData?.yourFacebook || '')
   const [userSocialOpen, setUserSocialOpen] = useState(false)
   
-  const [competitors, setCompetitors] = useState<Competitor[]>([])
+  const [competitors, setCompetitors] = useState<Competitor[]>(persistedData?.competitors || [])
   const [showAddCompetitor, setShowAddCompetitor] = useState(false)
   const [newCompetitorDomain, setNewCompetitorDomain] = useState('')
   const [newCompetitorInstagram, setNewCompetitorInstagram] = useState('')
@@ -45,14 +59,38 @@ export default function CompetitorIntelligence() {
   const [loading, setLoading] = useState(false)
   const [loadingDomain, setLoadingDomain] = useState(true)
   const [error, setError] = useState('')
-  const [results, setResults] = useState<any>(null)
+  const [results, setResults] = useState<any>(persistedData?.results || null)
   const [userEmail, setUserEmail] = useState<string>('')
-  const [isCached, setIsCached] = useState(false)
-  const [selectedCompetitor, setSelectedCompetitor] = useState<Competitor | null>(null)
+  const [isCached, setIsCached] = useState(persistedData?.isCached || false)
+  const [selectedCompetitor, setSelectedCompetitor] = useState<Competitor | null>(persistedData?.selectedCompetitor || null)
+  const [downloadingPDF, setDownloadingPDF] = useState(false)
   
   // Filter states
   const [timePeriod, setTimePeriod] = useState('last-30-days')
   const [analysisType, setAnalysisType] = useState<'seo' | 'ads' | 'content' | 'social' | 'technical'>('seo')
+
+  // Persist data to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    
+    const dataToSave = {
+      userDomain,
+      yourInstagram,
+      yourFacebook,
+      competitors,
+      results,
+      isCached,
+      selectedCompetitor,
+      timestamp: new Date().toISOString()
+    }
+    
+    try {
+      localStorage.setItem('competitorIntelligenceData', JSON.stringify(dataToSave))
+      console.log('💾 Data persisted to localStorage')
+    } catch (error) {
+      console.error('Error persisting data:', error)
+    }
+  }, [userDomain, yourInstagram, yourFacebook, competitors, results, isCached, selectedCompetitor])
 
   // Get user email and domain on mount
   useEffect(() => {
@@ -61,7 +99,10 @@ export default function CompetitorIntelligence() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user?.email) {
         setUserEmail(user.email)
-        await fetchUserDomain(user.email)
+        // Only fetch domain if we don't have it persisted
+        if (!userDomain) {
+          await fetchUserDomain(user.email)
+        }
       }
       setLoadingDomain(false)
     }
@@ -131,6 +172,67 @@ export default function CompetitorIntelligence() {
     }
   }
 
+  const handleDownloadReport = async () => {
+    if (!results) {
+      alert('Please run an analysis first to generate a report.')
+      return
+    }
+
+    setDownloadingPDF(true)
+    try {
+      console.log('📄 Generating PDF report...')
+      
+      const response = await fetch('http://localhost:3010/api/pdf/competitor-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          data: results
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Server error: ${response.status}`)
+      }
+
+      // Check if response is actually a PDF
+      const contentType = response.headers.get('content-type')
+      if (!contentType || !contentType.includes('application/pdf')) {
+        throw new Error('Invalid response format - expected PDF')
+      }
+
+      // Create blob from response
+      const blob = await response.blob()
+      
+      if (blob.size === 0) {
+        throw new Error('Empty PDF file received')
+      }
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `competitor-analysis-${new Date().toISOString().split('T')[0]}.pdf`
+      
+      // Trigger download
+      document.body.appendChild(link)
+      link.click()
+      
+      // Cleanup
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      console.log('✅ PDF report downloaded successfully')
+    } catch (error) {
+      console.error('❌ Failed to download report:', error)
+      alert(`Failed to generate PDF report: ${error.message}`)
+    } finally {
+      setDownloadingPDF(false)
+    }
+  }
+
   const handleAnalyze = async (competitor: Competitor) => {
     setError('')
     setResults(null)
@@ -150,6 +252,26 @@ export default function CompetitorIntelligence() {
     setLoading(true)
 
     try {
+      // Check cache status first
+      console.log('🔍 Checking cache status before analysis...')
+      const cacheCheckUrl = `http://localhost:3010/api/debug/cache-status?email=${encodeURIComponent(userEmail)}&yourSite=${encodeURIComponent(cleanUrl(userDomain))}&competitorSite=${encodeURIComponent(competitor.domain)}`
+      
+      try {
+        const cacheCheck = await fetch(cacheCheckUrl)
+        if (cacheCheck.ok) {
+          const cacheStatus = await cacheCheck.json()
+          console.log('📊 Cache Status:', cacheStatus)
+          if (cacheStatus.cached) {
+            console.log('✅ CACHE EXISTS - Should return instantly!')
+            console.log(`   Age: ${cacheStatus.cacheAge} hours`)
+          } else {
+            console.log('❌ NO CACHE - Will run full analysis')
+          }
+        }
+      } catch (err) {
+        console.log('⚠️ Cache check failed (non-critical):', err.message)
+      }
+
       const requestBody = {
         email: userEmail,
         yourSite: cleanUrl(userDomain),
@@ -163,6 +285,7 @@ export default function CompetitorIntelligence() {
       
       console.log('🔍 Sending request to /api/competitor/analyze:', requestBody)
       
+      const startTime = performance.now()
       const response = await fetch('/api/competitor/analyze', {
         method: 'POST',
         headers: {
@@ -176,7 +299,18 @@ export default function CompetitorIntelligence() {
       }
 
       const data = await response.json()
+      const endTime = performance.now()
+      const duration = ((endTime - startTime) / 1000).toFixed(2)
+      
       console.log('✅ Received response:', data)
+      console.log('⏱️ Response Time:', duration, 'seconds')
+      console.log('📊 Cache Status:', data.cached ? '✅ CACHE HIT' : '❌ CACHE MISS')
+      if (data.cached) {
+        console.log('⏰ Cache Age:', data.cacheAge, 'hours')
+        console.log('🚀 Cache hit should be < 2 seconds!')
+      } else {
+        console.log('🐌 Full analysis takes 10-30 seconds')
+      }
       
       setResults(data)
       setIsCached(data.cached || false)
@@ -268,9 +402,23 @@ export default function CompetitorIntelligence() {
               </div>
 
               {/* Download Button */}
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-2" />
-                Download
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleDownloadReport}
+                disabled={!results || downloadingPDF}
+              >
+                {downloadingPDF ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Report
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -385,21 +533,21 @@ export default function CompetitorIntelligence() {
                   >
                     <CardContent className="p-3">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm truncate mb-2">{competitor.domain}</p>
+                        <div className="flex-1 min-w-0 space-y-2">
+                          <p className="font-semibold text-sm truncate">{competitor.domain}</p>
                           
                           {(competitor.instagram || competitor.facebook) && (
-                            <div className="flex gap-2 mb-2">
+                            <div className="flex flex-wrap gap-1">
                               {competitor.instagram && (
-                                <Badge variant="outline" className="text-xs">
-                                  <InstagramIcon className="h-3 w-3 mr-1" />
-                                  {competitor.instagram}
+                                <Badge variant="outline" className="text-xs max-w-[120px]">
+                                  <InstagramIcon className="h-3 w-3 mr-1 flex-shrink-0" />
+                                  <span className="truncate">{competitor.instagram}</span>
                                 </Badge>
                               )}
                               {competitor.facebook && (
-                                <Badge variant="outline" className="text-xs">
-                                  <FacebookIcon className="h-3 w-3 mr-1" />
-                                  {competitor.facebook}
+                                <Badge variant="outline" className="text-xs max-w-[120px]">
+                                  <FacebookIcon className="h-3 w-3 mr-1 flex-shrink-0" />
+                                  <span className="truncate">{competitor.facebook}</span>
                                 </Badge>
                               )}
                             </div>
@@ -538,11 +686,26 @@ export default function CompetitorIntelligence() {
             {results && !loading && (
               <div className="space-y-4">
                 {isCached && (
-                  <Alert>
-                    <Clock className="h-4 w-4" />
-                    <AlertTitle>Cached Results</AlertTitle>
-                    <AlertDescription>
-                      Showing cached analysis. Results are updated periodically.
+                  <Alert className="bg-blue-50 border-blue-200">
+                    <Clock className="h-4 w-4 text-blue-600" />
+                    <AlertTitle className="text-blue-900">Cached Results (Loaded Instantly)</AlertTitle>
+                    <AlertDescription className="text-blue-700">
+                      {results.cacheAge !== undefined && (
+                        <span>Analysis from {results.cacheAge} hours ago. </span>
+                      )}
+                      Data persists across page reloads. 
+                      <Button 
+                        variant="link" 
+                        size="sm" 
+                        className="h-auto p-0 ml-2 text-blue-600"
+                        onClick={() => {
+                          if (selectedCompetitor) {
+                            handleAnalyze(selectedCompetitor)
+                          }
+                        }}
+                      >
+                        Refresh Analysis
+                      </Button>
                     </AlertDescription>
                   </Alert>
                 )}

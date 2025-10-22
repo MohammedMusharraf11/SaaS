@@ -6,10 +6,23 @@ CREATE TABLE public.competitor_cache (
   user_id uuid NOT NULL,
   user_domain character varying NOT NULL,
   competitor_domain character varying NOT NULL,
-  competitor_data jsonb NOT NULL,
+  lighthouse_data jsonb,
+  pagespeed_data jsonb,
+  technical_seo_data jsonb,
+  puppeteer_data jsonb,
+  backlinks_data jsonb,
+  analysis_status character varying DEFAULT 'completed'::character varying,
+  error_details text,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   expires_at timestamp with time zone NOT NULL,
+  google_ads_data jsonb,
+  meta_ads_data jsonb,
+  instagram_data jsonb,
+  facebook_data jsonb,
+  traffic_data jsonb,
+  content_changes_data jsonb,
+  content_updates_data jsonb,
   CONSTRAINT competitor_cache_pkey PRIMARY KEY (id),
   CONSTRAINT fk_competitor_cache_user FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
@@ -50,13 +63,16 @@ CREATE TABLE public.lighthouse_cache (
 CREATE TABLE public.oauth_tokens (
   id integer NOT NULL DEFAULT nextval('oauth_tokens_id_seq'::regclass),
   user_email text NOT NULL,
-  provider text NOT NULL DEFAULT 'google'::text,
+  provider character varying NOT NULL DEFAULT 'google'::text CHECK (provider::text = ANY (ARRAY['google'::character varying, 'facebook'::character varying, 'linkedin'::character varying, 'twitter'::character varying, 'instagram'::character varying]::text[])),
   access_token text NOT NULL,
   refresh_token text,
   expires_at bigint,
   scope text,
   created_at timestamp without time zone DEFAULT now(),
   updated_at timestamp without time zone DEFAULT now(),
+  provider_user_id character varying,
+  provider_user_name character varying,
+  provider_user_email character varying,
   CONSTRAINT oauth_tokens_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.se_ranking_cache (
@@ -90,8 +106,22 @@ CREATE TABLE public.search_console_cache (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   last_fetched_at timestamp with time zone DEFAULT now(),
+  pagespeed_data jsonb,
+  technical_seo_data jsonb,
+  puppeteer_data jsonb,
   CONSTRAINT search_console_cache_pkey PRIMARY KEY (id),
   CONSTRAINT search_console_cache_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users_table(id)
+);
+CREATE TABLE public.social_connections (
+  id integer NOT NULL DEFAULT nextval('social_connections_id_seq'::regclass),
+  email character varying NOT NULL,
+  platform character varying NOT NULL CHECK (platform::text = ANY (ARRAY['facebook'::character varying, 'linkedin'::character varying, 'instagram'::character varying, 'twitter'::character varying]::text[])),
+  company_url text,
+  company_name character varying,
+  oauth_connected boolean DEFAULT false,
+  created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT social_connections_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.users_data (
   id text NOT NULL,

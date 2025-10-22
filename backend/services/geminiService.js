@@ -5,7 +5,7 @@ class GeminiService {
     this.apiKey = process.env.GEMINI_API_KEY;
     this.genAI = null;
     this.model = null;
-    
+
     if (this.apiKey) {
       this.genAI = new GoogleGenerativeAI(this.apiKey);
       // Using gemini-flash-latest as it's the current available model
@@ -34,34 +34,34 @@ class GeminiService {
       try {
         // Prepare the analysis data for the AI
         const analysisData = this.prepareAnalysisData(yourSite, competitorSite, comparison);
-        
+
         // Create the prompt
         const prompt = this.buildPrompt(analysisData);
-        
+
         console.log(`🤖 Generating AI recommendations with Gemini (attempt ${attempt}/${maxRetries})...`);
-        
+
         // Generate content with timeout
         const result = await Promise.race([
           this.model.generateContent(prompt),
-          new Promise((_, reject) => 
+          new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Request timeout')), 30000)
           )
         ]);
-        
+
         const response = await result.response;
         const text = response.text();
-        
+
         console.log('✅ AI recommendations generated successfully');
-        
+
         // Parse the response
         const recommendations = this.parseRecommendations(text);
-        
+
         return recommendations;
-        
+
       } catch (error) {
         lastError = error;
         console.error(`❌ Attempt ${attempt} failed:`, error.message);
-        
+
         // Check if it's a 503 (overloaded) or timeout error
         if (error.status === 503 || error.message.includes('overloaded') || error.message.includes('timeout')) {
           if (attempt < maxRetries) {
@@ -70,7 +70,7 @@ class GeminiService {
             continue;
           }
         }
-        
+
         // For other errors, don't retry
         break;
       }
@@ -231,28 +231,28 @@ Focus areas to consider:
       } else if (cleanText.startsWith('```')) {
         cleanText = cleanText.replace(/```\n?/g, '');
       }
-      
+
       // Parse JSON
       const recommendations = JSON.parse(cleanText);
-      
+
       // Validate structure
       if (!Array.isArray(recommendations) || recommendations.length !== 3) {
         throw new Error('Expected exactly 3 recommendations');
       }
-      
+
       // Validate each recommendation has required fields
       recommendations.forEach((rec, index) => {
         if (!rec.title || !rec.impact || !rec.effort || !rec.description || !rec.steps) {
           throw new Error(`Recommendation ${index + 1} is missing required fields`);
         }
       });
-      
+
       return recommendations;
-      
+
     } catch (error) {
       console.error('❌ Error parsing AI recommendations:', error);
       console.log('Raw AI response:', text);
-      
+
       // Return fallback recommendations if parsing fails
       return this.getFallbackRecommendations();
     }

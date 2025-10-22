@@ -2,6 +2,7 @@ import express from 'express';
 import competitorService from '../services/competitorService.js';
 import competitorAnalysisService from '../services/competitorAnalysisService.js';
 import seoCacheService from '../services/seoCacheService.js';
+import competitorCacheService from '../services/competitorCacheService.js';
 import seRankingService from '../services/seRankingService.js';
 import geminiService from '../services/geminiService.js';
 import instagramEngagementService from '../services/instagramEngagementService.js';
@@ -62,11 +63,22 @@ router.post('/analyze', async (req, res) => {
 
     // Check cache first (unless force refresh)
     let cachedResult = null;
-    if (forceRefresh !== 'true' && forceRefresh !== true) {
-      cachedResult = await seoCacheService.getCompetitorCache(email, yourSite, competitorSite);
+    const shouldForceRefresh = forceRefresh === 'true' || forceRefresh === true;
+    
+    if (!shouldForceRefresh) {
+      cachedResult = await competitorCacheService.getCompetitorCache(email, yourSite, competitorSite);
       
-      if (cachedResult && cachedResult.competitorSite) {
-        console.log('✅ Returning cached competitor analysis');
+      if (cachedResult && cachedResult.yourSite && cachedResult.competitorSite) {
+        // NEW: Full result cache (includes both sites) - INSTANT RETURN!
+        console.log('✅ Returning FULL cached analysis (both sites included)');
+        console.log('⚡ Cache age:', cachedResult.cacheAge, 'hours');
+        console.log('🚀 INSTANT CACHE HIT - No additional fetching needed!');
+        
+        return res.json(cachedResult);
+      } else if (cachedResult && cachedResult.competitorSite) {
+        // Legacy: Only competitor cached, need to fetch your site
+        console.log('✅ Returning cached competitor analysis (legacy format)');
+        console.log('⚠️ Your site data not cached, fetching fresh...');
         console.log('🔍 Cached competitor puppeteer.seo.headings:', cachedResult.competitorSite.puppeteer?.seo?.headings);
         
         // Get YOUR site data from existing caches (with Instagram and Facebook usernames)
@@ -284,7 +296,7 @@ router.post('/analyze', async (req, res) => {
         
         return res.json(fullResult);
       }
-    } else {
+    } else if (shouldForceRefresh) {
       console.log('🔄 Force refresh requested, bypassing cache');
     }
 
@@ -464,7 +476,7 @@ router.post('/analyze', async (req, res) => {
     }
 
     // Cache the complete comparison (7 days)
-    await seoCacheService.saveCompetitorCache(email, yourSite, competitorSite, result, 7);
+    await competitorCacheService.saveCompetitorCache(email, yourSite, competitorSite, result, 7);
 
     console.log('📊 FINAL RESULT STRUCTURE:');
     console.log('   yourSite.traffic:', result.yourSite.traffic ? 'EXISTS' : 'MISSING');

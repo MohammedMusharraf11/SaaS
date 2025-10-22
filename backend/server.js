@@ -17,6 +17,9 @@ import userAnalyticsRoutes from './routes/userAnalyticsRoutes.js';
 import searchConsoleRoutes from './routes/searchConsoleRoutes.js';
 import trafficRoutes from './routes/trafficRoutes.js';
 import competitorRoutes from './routes/competitorRoutes.js';
+import debugRoutes from './routes/debugRoutes.js';
+import pdfRoutes from './routes/pdfRoutes.js';
+import socialReportRoutes from './routes/socialReportRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3010;
@@ -42,6 +45,9 @@ app.use('/api', userAnalyticsRoutes);
 app.use('/api', searchConsoleRoutes);
 app.use('/api', trafficRoutes);
 app.use('/api/competitor', competitorRoutes);
+app.use('/api/debug', debugRoutes);
+app.use('/api/pdf', pdfRoutes);
+app.use('/api/social', socialReportRoutes);
 
 // Health check endpoint
 app.get('/api/status', (req, res) => {

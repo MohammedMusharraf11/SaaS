@@ -5,10 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { 
-  TrendingUp, Target, Globe, Activity, Share2, Sparkles, 
-  Lightbulb, Loader2, AlertCircle, ArrowRight, Zap, Shield, 
-  CheckCircle2, Search, Instagram as InstagramIcon, 
+import {
+  TrendingUp, Target, Globe, Activity, Share2, Sparkles,
+  Lightbulb, Loader2, AlertCircle, ArrowRight, Zap, Shield,
+  CheckCircle2, Search, Instagram as InstagramIcon,
   Facebook as FacebookIcon, Trophy, FileText, Image, Link as LinkIcon,
   Code, Lock, BarChart3
 } from 'lucide-react'
@@ -35,7 +35,7 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
   }
 
   const actualData = data.data || data
-  
+
   if (!actualData.success && !actualData.yourSite) {
     return (
       <Card className="border-red-200 bg-red-50">
@@ -70,7 +70,7 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
       security: comparison?.security
     }
   })
-  
+
   // Puppeteer structure debug
   if (yourSite?.puppeteer) {
     console.log('🔧 YOUR PUPPETEER STRUCTURE:', JSON.stringify(yourSite.puppeteer, null, 2))
@@ -78,7 +78,7 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
   if (competitorSite?.puppeteer) {
     console.log('🔧 COMPETITOR PUPPETEER STRUCTURE:', JSON.stringify(competitorSite.puppeteer, null, 2))
   }
-  
+
   // Instagram structure debug
   if (yourSite?.instagram) {
     console.log('📱 YOUR INSTAGRAM FULL STRUCTURE:', JSON.stringify(yourSite.instagram, null, 2))
@@ -86,7 +86,7 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
   if (competitorSite?.instagram) {
     console.log('📱 COMPETITOR INSTAGRAM FULL STRUCTURE:', JSON.stringify(competitorSite.instagram, null, 2))
   }
-  
+
   // Facebook structure debug
   if (yourSite?.facebook) {
     console.log('📘 YOUR FACEBOOK FULL STRUCTURE:', JSON.stringify(yourSite.facebook, null, 2))
@@ -116,17 +116,17 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
   const showInstagramCard = !!(yourSite?.instagram || competitorSite?.instagram)
   const showFacebookCard = !!(yourSite?.facebook || competitorSite?.facebook)
   const showSEOCard = !!(comparison?.seo)
-  const showTechCard = !!(yourSite?.puppeteer?.technologies || competitorSite?.puppeteer?.technologies || comparison?.technology)
+  const showTechCard = !!(yourSite?.puppeteer?.technology || competitorSite?.puppeteer?.technology || comparison?.technology)
   const showSecurityCard = !!(yourSite?.puppeteer || competitorSite?.puppeteer || comparison?.security)
   const showContentChangesCard = !!(yourSite?.contentChanges?.success || competitorSite?.contentChanges?.success)
   const showBacklinksCard = !!(yourSite?.backlinks || competitorSite?.backlinks || comparison?.backlinks)
-  
+
   // Generate mock traffic data for charts (replace with real data when available)
   const generateTrafficData = () => {
     const labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4']
     const yourTrafficBase = yourSite?.traffic?.metrics?.monthlyVisits || 10000
     const compTrafficBase = competitorSite?.traffic?.metrics?.monthlyVisits || 8000
-    
+
     return {
       labels,
       datasets: [
@@ -163,7 +163,7 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
     const labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4']
     const yourBacklinksBase = yourSite?.backlinks?.totalBacklinks || 0
     const compBacklinksBase = competitorSite?.backlinks?.totalBacklinks || 0
-    
+
     return {
       labels,
       datasets: [
@@ -194,7 +194,7 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
       ]
     }
   }
-  
+
   const trafficChartData = generateTrafficData()
   const backlinksChartData = generateBacklinksData()
   const trafficChartOptions = {
@@ -210,7 +210,7 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
+          label: function (context: any) {
             return `${context.dataset.label}: ${context.parsed.y.toLocaleString()} visits`
           }
         }
@@ -220,7 +220,7 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
       y: {
         beginAtZero: true,
         ticks: {
-          callback: function(value: any) {
+          callback: function (value: any) {
             return value.toLocaleString()
           }
         }
@@ -241,7 +241,7 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
       },
       tooltip: {
         callbacks: {
-          label: function(context: any) {
+          label: function (context: any) {
             return `${context.dataset.label}: ${context.parsed.y.toLocaleString()} backlinks`
           }
         }
@@ -251,7 +251,7 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
       y: {
         beginAtZero: true,
         ticks: {
-          callback: function(value: any) {
+          callback: function (value: any) {
             return value.toLocaleString()
           }
         }
@@ -348,14 +348,14 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
   const competitorMarketShare = competitorSite?.lighthouse?.categories?.seo?.score || 29
 
   return (
-    <div className="w-full space-y-4 lg:space-y-6 animate-in fade-in duration-500">
-      
+    <div className="w-full space-y-3 lg:space-y-4 animate-in fade-in duration-500">
+
       {/* SEO Analysis View */}
       {analysisType === 'seo' && (
         <>
           {/* Top Row: Traffic Chart and SEO Metrics */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
-            
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 lg:gap-4">
+
             {/* Website Traffic Chart */}
             {showTrafficCard && (
               <Card>
@@ -366,7 +366,7 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                     <sup className="text-xs text-muted-foreground">+1</sup>
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    Your: {yourSite?.traffic?.source === 'google_analytics' ? '🟢 Google Analytics' : '🔵 SimilarWeb'} | 
+                    Your: {yourSite?.traffic?.source === 'google_analytics' ? '🟢 Google Analytics' : '🔵 SimilarWeb'} |
                     Competitor: 🔵 SimilarWeb
                   </CardDescription>
                 </CardHeader>
@@ -437,7 +437,7 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                         <p className="text-sm text-muted-foreground mt-1">Competitor Score</p>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between p-2 bg-gray-50 rounded">
                         <span>Meta Title</span>
@@ -476,7 +476,7 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                     <sup className="text-xs text-muted-foreground">+1</sup>
                   </CardTitle>
                   <CardDescription className="text-xs">
-                    Your: {yourSite?.backlinks?.source || 'SE Ranking'} | 
+                    Your: {yourSite?.backlinks?.source || 'SE Ranking'} |
                     Competitor: {competitorSite?.backlinks?.source || 'SE Ranking'}
                   </CardDescription>
                 </CardHeader>
@@ -488,8 +488,8 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                     <div className="p-3 bg-green-50 rounded-lg">
                       <p className="text-xs text-muted-foreground mb-1">Your Total Backlinks</p>
                       <p className="text-xl font-bold text-green-600">
-                        {typeof yourSite?.backlinks?.totalBacklinks === 'number' 
-                          ? yourSite.backlinks.totalBacklinks.toLocaleString() 
+                        {typeof yourSite?.backlinks?.totalBacklinks === 'number'
+                          ? yourSite.backlinks.totalBacklinks.toLocaleString()
                           : yourSite?.backlinks?.totalBacklinks || 'N/A'}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
@@ -499,8 +499,8 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                     <div className="p-3 bg-blue-50 rounded-lg">
                       <p className="text-xs text-muted-foreground mb-1">Competitor Backlinks</p>
                       <p className="text-xl font-bold text-blue-600">
-                        {typeof competitorSite?.backlinks?.totalBacklinks === 'number' 
-                          ? competitorSite.backlinks.totalBacklinks.toLocaleString() 
+                        {typeof competitorSite?.backlinks?.totalBacklinks === 'number'
+                          ? competitorSite.backlinks.totalBacklinks.toLocaleString()
                           : competitorSite?.backlinks?.totalBacklinks || 'N/A'}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
@@ -512,12 +512,11 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                     <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                       <div className="flex items-center justify-between text-sm">
                         <span>Backlink Advantage</span>
-                        <span className={`font-semibold ${
-                          comparison.backlinks.winner === 'yours' ? 'text-green-600' : 
+                        <span className={`font-semibold ${comparison.backlinks.winner === 'yours' ? 'text-green-600' :
                           comparison.backlinks.winner === 'competitor' ? 'text-red-600' : 'text-gray-600'
-                        }`}>
-                          {comparison.backlinks.winner === 'yours' ? 'You lead' : 
-                           comparison.backlinks.winner === 'competitor' ? 'Competitor leads' : 'Tied'} 
+                          }`}>
+                          {comparison.backlinks.winner === 'yours' ? 'You lead' :
+                            comparison.backlinks.winner === 'competitor' ? 'Competitor leads' : 'Tied'}
                           {comparison.backlinks.difference !== 0 && ` (${Math.abs(comparison.backlinks.difference).toLocaleString()})`}
                         </span>
                       </div>
@@ -558,21 +557,21 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                           // Calculate market share using weighted formula
                           const yourSEO = yourSite?.lighthouse?.categories?.seo?.displayValue || 0;
                           const compSEO = competitorSite?.lighthouse?.categories?.seo?.displayValue || 0;
-                          const yourTraffic = typeof yourSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                          const yourTraffic = typeof yourSite?.traffic?.metrics?.monthlyVisits === 'number'
                             ? yourSite.traffic.metrics.monthlyVisits : 0;
-                          const compTraffic = typeof competitorSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                          const compTraffic = typeof competitorSite?.traffic?.metrics?.monthlyVisits === 'number'
                             ? competitorSite.traffic.metrics.monthlyVisits : 0;
                           const yourBacklinks = yourSite?.backlinks?.totalBacklinks || 0;
                           const compBacklinks = competitorSite?.backlinks?.totalBacklinks || 0;
-                          
+
                           // Weighted formula: SEO (40%) + Traffic (35%) + Backlinks (25%)
-                          const yourScore = (yourSEO * 0.4) + 
-                            (Math.min(yourTraffic / 10000, 100) * 0.35) + 
+                          const yourScore = (yourSEO * 0.4) +
+                            (Math.min(yourTraffic / 10000, 100) * 0.35) +
                             (Math.min(yourBacklinks / 1000, 100) * 0.25);
-                          const compScore = (compSEO * 0.4) + 
-                            (Math.min(compTraffic / 10000, 100) * 0.35) + 
+                          const compScore = (compSEO * 0.4) +
+                            (Math.min(compTraffic / 10000, 100) * 0.35) +
                             (Math.min(compBacklinks / 1000, 100) * 0.25);
-                          
+
                           const totalScore = yourScore + compScore;
                           const yourShare = totalScore > 0 ? (yourScore / totalScore) * 100 : 50;
                           return Math.max(0, Math.min(100, yourShare)) * 5.02;
@@ -584,20 +583,20 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                         {(() => {
                           const yourSEO = yourSite?.lighthouse?.categories?.seo?.displayValue || 0;
                           const compSEO = competitorSite?.lighthouse?.categories?.seo?.displayValue || 0;
-                          const yourTraffic = typeof yourSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                          const yourTraffic = typeof yourSite?.traffic?.metrics?.monthlyVisits === 'number'
                             ? yourSite.traffic.metrics.monthlyVisits : 0;
-                          const compTraffic = typeof competitorSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                          const compTraffic = typeof competitorSite?.traffic?.metrics?.monthlyVisits === 'number'
                             ? competitorSite.traffic.metrics.monthlyVisits : 0;
                           const yourBacklinks = yourSite?.backlinks?.totalBacklinks || 0;
                           const compBacklinks = competitorSite?.backlinks?.totalBacklinks || 0;
-                          
-                          const yourScore = (yourSEO * 0.4) + 
-                            (Math.min(yourTraffic / 10000, 100) * 0.35) + 
+
+                          const yourScore = (yourSEO * 0.4) +
+                            (Math.min(yourTraffic / 10000, 100) * 0.35) +
                             (Math.min(yourBacklinks / 1000, 100) * 0.25);
-                          const compScore = (compSEO * 0.4) + 
-                            (Math.min(compTraffic / 10000, 100) * 0.35) + 
+                          const compScore = (compSEO * 0.4) +
+                            (Math.min(compTraffic / 10000, 100) * 0.35) +
                             (Math.min(compBacklinks / 1000, 100) * 0.25);
-                          
+
                           const totalScore = yourScore + compScore;
                           return totalScore > 0 ? Math.round((yourScore / totalScore) * 100) : 50;
                         })()}%
@@ -613,20 +612,20 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                       {(() => {
                         const yourSEO = yourSite?.lighthouse?.categories?.seo?.displayValue || 0;
                         const compSEO = competitorSite?.lighthouse?.categories?.seo?.displayValue || 0;
-                        const yourTraffic = typeof yourSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                        const yourTraffic = typeof yourSite?.traffic?.metrics?.monthlyVisits === 'number'
                           ? yourSite.traffic.metrics.monthlyVisits : 0;
-                        const compTraffic = typeof competitorSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                        const compTraffic = typeof competitorSite?.traffic?.metrics?.monthlyVisits === 'number'
                           ? competitorSite.traffic.metrics.monthlyVisits : 0;
                         const yourBacklinks = yourSite?.backlinks?.totalBacklinks || 0;
                         const compBacklinks = competitorSite?.backlinks?.totalBacklinks || 0;
-                        
-                        const yourScore = (yourSEO * 0.4) + 
-                          (Math.min(yourTraffic / 10000, 100) * 0.35) + 
+
+                        const yourScore = (yourSEO * 0.4) +
+                          (Math.min(yourTraffic / 10000, 100) * 0.35) +
                           (Math.min(yourBacklinks / 1000, 100) * 0.25);
-                        const compScore = (compSEO * 0.4) + 
-                          (Math.min(compTraffic / 10000, 100) * 0.35) + 
+                        const compScore = (compSEO * 0.4) +
+                          (Math.min(compTraffic / 10000, 100) * 0.35) +
                           (Math.min(compBacklinks / 1000, 100) * 0.25);
-                        
+
                         const totalScore = yourScore + compScore;
                         const yourShare = totalScore > 0 ? Math.round((yourScore / totalScore) * 100) : 50;
                         return `${yourShare}% ↑`;
@@ -639,20 +638,20 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                       {(() => {
                         const yourSEO = yourSite?.lighthouse?.categories?.seo?.displayValue || 0;
                         const compSEO = competitorSite?.lighthouse?.categories?.seo?.displayValue || 0;
-                        const yourTraffic = typeof yourSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                        const yourTraffic = typeof yourSite?.traffic?.metrics?.monthlyVisits === 'number'
                           ? yourSite.traffic.metrics.monthlyVisits : 0;
-                        const compTraffic = typeof competitorSite?.traffic?.metrics?.monthlyVisits === 'number' 
+                        const compTraffic = typeof competitorSite?.traffic?.metrics?.monthlyVisits === 'number'
                           ? competitorSite.traffic.metrics.monthlyVisits : 0;
                         const yourBacklinks = yourSite?.backlinks?.totalBacklinks || 0;
                         const compBacklinks = competitorSite?.backlinks?.totalBacklinks || 0;
-                        
-                        const yourScore = (yourSEO * 0.4) + 
-                          (Math.min(yourTraffic / 10000, 100) * 0.35) + 
+
+                        const yourScore = (yourSEO * 0.4) +
+                          (Math.min(yourTraffic / 10000, 100) * 0.35) +
                           (Math.min(yourBacklinks / 1000, 100) * 0.25);
-                        const compScore = (compSEO * 0.4) + 
-                          (Math.min(compTraffic / 10000, 100) * 0.35) + 
+                        const compScore = (compSEO * 0.4) +
+                          (Math.min(compTraffic / 10000, 100) * 0.35) +
                           (Math.min(compBacklinks / 1000, 100) * 0.25);
-                        
+
                         const totalScore = yourScore + compScore;
                         const compShare = totalScore > 0 ? Math.round((compScore / totalScore) * 100) : 50;
                         return `${compShare}%`;
@@ -675,22 +674,6 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
       {/* Ads Analysis View */}
       {analysisType === 'ads' && (
         <>
-          {/* Traffic (Referral) */}
-          {showTrafficCard && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Website Traffic (Referral)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64">
-                  <Line data={trafficChartData} options={trafficChartOptions} />
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Google Ads Monitoring */}
           {showGoogleAdsCard && (
@@ -1151,307 +1134,307 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
             <>
               {/* Instagram Engagement */}
               {showInstagramCard && (
-            <Card className="border-2 border-pink-400">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                  <InstagramIcon className="h-5 w-5 text-pink-600" />
-                  Instagram Engagement Analysis
-                </CardTitle>
-                <CardDescription>
-                  Follower growth, engagement rates, and posting activity
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Your Instagram */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-green-600" />
-                      Your Instagram
-                    </h4>
-                    {yourSite?.instagram?.profile ? (
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                            <p className="text-xs text-muted-foreground mb-1">Followers</p>
-                            <p className="text-2xl font-bold text-green-700">
-                              {yourSite.instagram.profile.followers?.toLocaleString() || '0'}
-                            </p>
+                <Card className="border-2 border-pink-400">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                      <InstagramIcon className="h-5 w-5 text-pink-600" />
+                      Instagram Engagement Analysis
+                    </CardTitle>
+                    <CardDescription>
+                      Follower growth, engagement rates, and posting activity
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Your Instagram */}
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-medium flex items-center gap-2">
+                          <Globe className="h-4 w-4 text-green-600" />
+                          Your Instagram
+                        </h4>
+                        {yourSite?.instagram?.profile ? (
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                                <p className="text-xs text-muted-foreground mb-1">Followers</p>
+                                <p className="text-2xl font-bold text-green-700">
+                                  {yourSite.instagram.profile.followers?.toLocaleString() || '0'}
+                                </p>
+                              </div>
+                              <div className="p-4 bg-gray-50 rounded-lg">
+                                <p className="text-xs text-muted-foreground mb-1">Avg Interactions</p>
+                                <p className="text-2xl font-bold">{yourSite.instagram.profile.avgInteractions?.toLocaleString() || '0'}</p>
+                              </div>
+                            </div>
+                            <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                              <p className="text-xs text-muted-foreground mb-1">Engagement Rate</p>
+                              <p className="text-3xl font-bold text-purple-700">
+                                {yourSite.instagram.profile.avgEngagementRate !== undefined && yourSite.instagram.profile.avgEngagementRate !== null
+                                  ? `${(yourSite.instagram.profile.avgEngagementRate * 100).toFixed(2)}%`
+                                  : yourSite.instagram.engagement?.summary?.engagementRate || 'N/A'}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">Avg. likes + comments per post</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="p-3 bg-gray-50 rounded-lg">
+                                <p className="text-xs text-muted-foreground">Avg. Likes</p>
+                                <p className="text-lg font-bold">
+                                  {yourSite.instagram.engagement?.summary?.avgLikesPerPost !== undefined
+                                    ? yourSite.instagram.engagement.summary.avgLikesPerPost.toLocaleString()
+                                    : 'N/A'}
+                                </p>
+                              </div>
+                              <div className="p-3 bg-gray-50 rounded-lg">
+                                <p className="text-xs text-muted-foreground">Avg. Comments</p>
+                                <p className="text-lg font-bold">
+                                  {yourSite.instagram.engagement?.summary?.avgCommentsPerPost !== undefined
+                                    ? yourSite.instagram.engagement.summary.avgCommentsPerPost.toLocaleString()
+                                    : 'N/A'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="p-3 bg-blue-50 rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">Best Posting Days</p>
+                              <div className="flex flex-wrap gap-1">
+                                {yourSite.instagram.engagement?.postingPattern?.bestDays?.slice(0, 3).map((day: any, idx: number) => (
+                                  <Badge key={idx} variant="outline" className="text-xs">{day.day}</Badge>
+                                )) || <span className="text-xs">N/A</span>}
+                              </div>
+                            </div>
                           </div>
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-muted-foreground mb-1">Avg Interactions</p>
-                            <p className="text-2xl font-bold">{yourSite.instagram.profile.avgInteractions?.toLocaleString() || '0'}</p>
-                          </div>
-                        </div>
-                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                          <p className="text-xs text-muted-foreground mb-1">Engagement Rate</p>
-                          <p className="text-3xl font-bold text-purple-700">
-                            {yourSite.instagram.profile.avgEngagementRate !== undefined && yourSite.instagram.profile.avgEngagementRate !== null
-                              ? `${(yourSite.instagram.profile.avgEngagementRate * 100).toFixed(2)}%`
-                              : yourSite.instagram.engagement?.summary?.engagementRate || 'N/A'}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">Avg. likes + comments per post</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-muted-foreground">Avg. Likes</p>
-                            <p className="text-lg font-bold">
-                              {yourSite.instagram.engagement?.summary?.avgLikesPerPost !== undefined 
-                                ? yourSite.instagram.engagement.summary.avgLikesPerPost.toLocaleString()
-                                : 'N/A'}
-                            </p>
-                          </div>
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-muted-foreground">Avg. Comments</p>
-                            <p className="text-lg font-bold">
-                              {yourSite.instagram.engagement?.summary?.avgCommentsPerPost !== undefined
-                                ? yourSite.instagram.engagement.summary.avgCommentsPerPost.toLocaleString()
-                                : 'N/A'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="p-3 bg-blue-50 rounded-lg">
-                          <p className="text-xs text-muted-foreground mb-1">Best Posting Days</p>
-                          <div className="flex flex-wrap gap-1">
-                            {yourSite.instagram.engagement?.postingPattern?.bestDays?.slice(0, 3).map((day: any, idx: number) => (
-                              <Badge key={idx} variant="outline" className="text-xs">{day.day}</Badge>
-                            )) || <span className="text-xs">N/A</span>}
-                          </div>
-                        </div>
+                        ) : (
+                          <Alert>
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription className="text-sm">
+                              Instagram not connected
+                            </AlertDescription>
+                          </Alert>
+                        )}
                       </div>
-                    ) : (
-                      <Alert>
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription className="text-sm">
-                          Instagram not connected
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
 
-                  {/* Competitor Instagram */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium flex items-center gap-2">
-                      <Target className="h-4 w-4 text-blue-600" />
-                      Competitor Instagram
-                    </h4>
-                    {competitorSite?.instagram?.profile ? (
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                            <p className="text-xs text-muted-foreground mb-1">Followers</p>
-                            <p className="text-2xl font-bold text-blue-700">
-                              {competitorSite.instagram.profile.followers?.toLocaleString() || '0'}
-                            </p>
+                      {/* Competitor Instagram */}
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-medium flex items-center gap-2">
+                          <Target className="h-4 w-4 text-blue-600" />
+                          Competitor Instagram
+                        </h4>
+                        {competitorSite?.instagram?.profile ? (
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <p className="text-xs text-muted-foreground mb-1">Followers</p>
+                                <p className="text-2xl font-bold text-blue-700">
+                                  {competitorSite.instagram.profile.followers?.toLocaleString() || '0'}
+                                </p>
+                              </div>
+                              <div className="p-4 bg-gray-50 rounded-lg">
+                                <p className="text-xs text-muted-foreground mb-1">Avg Interactions</p>
+                                <p className="text-2xl font-bold">{competitorSite.instagram.profile.avgInteractions?.toLocaleString() || '0'}</p>
+                              </div>
+                            </div>
+                            <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                              <p className="text-xs text-muted-foreground mb-1">Engagement Rate</p>
+                              <p className="text-3xl font-bold text-purple-700">
+                                {competitorSite.instagram.profile.avgEngagementRate !== undefined && competitorSite.instagram.profile.avgEngagementRate !== null
+                                  ? `${(competitorSite.instagram.profile.avgEngagementRate * 100).toFixed(2)}%`
+                                  : competitorSite.instagram.engagement?.summary?.engagementRate || 'N/A'}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">Avg. likes + comments per post</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="p-3 bg-gray-50 rounded-lg">
+                                <p className="text-xs text-muted-foreground">Avg. Likes</p>
+                                <p className="text-lg font-bold">
+                                  {competitorSite.instagram.engagement?.summary?.avgLikesPerPost !== undefined
+                                    ? competitorSite.instagram.engagement.summary.avgLikesPerPost.toLocaleString()
+                                    : 'N/A'}
+                                </p>
+                              </div>
+                              <div className="p-3 bg-gray-50 rounded-lg">
+                                <p className="text-xs text-muted-foreground">Avg. Comments</p>
+                                <p className="text-lg font-bold">
+                                  {competitorSite.instagram.engagement?.summary?.avgCommentsPerPost !== undefined
+                                    ? competitorSite.instagram.engagement.summary.avgCommentsPerPost.toLocaleString()
+                                    : 'N/A'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="p-3 bg-blue-50 rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">Best Posting Days</p>
+                              <div className="flex flex-wrap gap-1">
+                                {competitorSite.instagram.engagement?.postingPattern?.bestDays?.slice(0, 3).map((day: any, idx: number) => (
+                                  <Badge key={idx} variant="outline" className="text-xs">{day.day}</Badge>
+                                )) || <span className="text-xs">N/A</span>}
+                              </div>
+                            </div>
                           </div>
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-muted-foreground mb-1">Avg Interactions</p>
-                            <p className="text-2xl font-bold">{competitorSite.instagram.profile.avgInteractions?.toLocaleString() || '0'}</p>
-                          </div>
-                        </div>
-                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                          <p className="text-xs text-muted-foreground mb-1">Engagement Rate</p>
-                          <p className="text-3xl font-bold text-purple-700">
-                            {competitorSite.instagram.profile.avgEngagementRate !== undefined && competitorSite.instagram.profile.avgEngagementRate !== null
-                              ? `${(competitorSite.instagram.profile.avgEngagementRate * 100).toFixed(2)}%`
-                              : competitorSite.instagram.engagement?.summary?.engagementRate || 'N/A'}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">Avg. likes + comments per post</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-muted-foreground">Avg. Likes</p>
-                            <p className="text-lg font-bold">
-                              {competitorSite.instagram.engagement?.summary?.avgLikesPerPost !== undefined
-                                ? competitorSite.instagram.engagement.summary.avgLikesPerPost.toLocaleString()
-                                : 'N/A'}
-                            </p>
-                          </div>
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-muted-foreground">Avg. Comments</p>
-                            <p className="text-lg font-bold">
-                              {competitorSite.instagram.engagement?.summary?.avgCommentsPerPost !== undefined
-                                ? competitorSite.instagram.engagement.summary.avgCommentsPerPost.toLocaleString()
-                                : 'N/A'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="p-3 bg-blue-50 rounded-lg">
-                          <p className="text-xs text-muted-foreground mb-1">Best Posting Days</p>
-                          <div className="flex flex-wrap gap-1">
-                            {competitorSite.instagram.engagement?.postingPattern?.bestDays?.slice(0, 3).map((day: any, idx: number) => (
-                              <Badge key={idx} variant="outline" className="text-xs">{day.day}</Badge>
-                            )) || <span className="text-xs">N/A</span>}
-                          </div>
-                        </div>
+                        ) : (
+                          <Alert>
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription className="text-sm">
+                              Competitor Instagram data not available
+                            </AlertDescription>
+                          </Alert>
+                        )}
                       </div>
-                    ) : (
-                      <Alert>
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription className="text-sm">
-                          Competitor Instagram data not available
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-          {/* Facebook Engagement */}
-          {showFacebookCard && (
-            <Card className="border-2 border-blue-500">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                  <FacebookIcon className="h-5 w-5 text-blue-600" />
-                  Facebook Engagement Analysis
-                </CardTitle>
-                <CardDescription>
-                  Page likes, follower growth, and engagement metrics
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Your Facebook */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-green-600" />
-                      Your Facebook
-                    </h4>
-                    {yourSite?.facebook?.profile ? (
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                            <p className="text-xs text-muted-foreground mb-1">Page Likes</p>
-                            <p className="text-2xl font-bold text-green-700">
-                              {yourSite.facebook.profile.likes?.toLocaleString() || '0'}
-                            </p>
+              {/* Facebook Engagement */}
+              {showFacebookCard && (
+                <Card className="border-2 border-blue-500">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                      <FacebookIcon className="h-5 w-5 text-blue-600" />
+                      Facebook Engagement Analysis
+                    </CardTitle>
+                    <CardDescription>
+                      Page likes, follower growth, and engagement metrics
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Your Facebook */}
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-medium flex items-center gap-2">
+                          <Globe className="h-4 w-4 text-green-600" />
+                          Your Facebook
+                        </h4>
+                        {yourSite?.facebook?.profile ? (
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                                <p className="text-xs text-muted-foreground mb-1">Page Likes</p>
+                                <p className="text-2xl font-bold text-green-700">
+                                  {yourSite.facebook.profile.likes?.toLocaleString() || '0'}
+                                </p>
+                              </div>
+                              <div className="p-4 bg-gray-50 rounded-lg">
+                                <p className="text-xs text-muted-foreground mb-1">Followers</p>
+                                <p className="text-2xl font-bold">
+                                  {yourSite.facebook.metrics?.followers?.toLocaleString() || '0'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                              <p className="text-xs text-muted-foreground mb-1">Engagement Rate</p>
+                              <p className="text-3xl font-bold text-purple-700">
+                                {yourSite.facebook.profile.avgEngagementRate
+                                  ? `${(yourSite.facebook.profile.avgEngagementRate * 100).toFixed(2)}%`
+                                  : 'N/A'}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">Reactions + comments + shares</p>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <div className="p-3 bg-gray-50 rounded-lg">
+                                <p className="text-xs text-muted-foreground">Reactions</p>
+                                <p className="text-lg font-bold">
+                                  {yourSite.facebook.engagement?.summary?.avgReactionsPerPost?.toLocaleString() || 'N/A'}
+                                </p>
+                              </div>
+                              <div className="p-3 bg-gray-50 rounded-lg">
+                                <p className="text-xs text-muted-foreground">Comments</p>
+                                <p className="text-lg font-bold">
+                                  {yourSite.facebook.engagement?.summary?.avgCommentsPerPost?.toLocaleString() || 'N/A'}
+                                </p>
+                              </div>
+                              <div className="p-3 bg-gray-50 rounded-lg">
+                                <p className="text-xs text-muted-foreground">Shares</p>
+                                <p className="text-lg font-bold">
+                                  {yourSite.facebook.engagement?.summary?.avgSharesPerPost?.toLocaleString() || 'N/A'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="p-3 bg-blue-50 rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">Talking About</p>
+                              <p className="text-lg font-semibold">
+                                {yourSite.facebook.metrics?.talkingAbout?.toLocaleString() || 'N/A'} people
+                              </p>
+                            </div>
                           </div>
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-muted-foreground mb-1">Followers</p>
-                            <p className="text-2xl font-bold">
-                              {yourSite.facebook.metrics?.followers?.toLocaleString() || '0'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                          <p className="text-xs text-muted-foreground mb-1">Engagement Rate</p>
-                          <p className="text-3xl font-bold text-purple-700">
-                            {yourSite.facebook.profile.avgEngagementRate 
-                              ? `${(yourSite.facebook.profile.avgEngagementRate * 100).toFixed(2)}%`
-                              : 'N/A'}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">Reactions + comments + shares</p>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-muted-foreground">Reactions</p>
-                            <p className="text-lg font-bold">
-                              {yourSite.facebook.engagement?.summary?.avgReactionsPerPost?.toLocaleString() || 'N/A'}
-                            </p>
-                          </div>
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-muted-foreground">Comments</p>
-                            <p className="text-lg font-bold">
-                              {yourSite.facebook.engagement?.summary?.avgCommentsPerPost?.toLocaleString() || 'N/A'}
-                            </p>
-                          </div>
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-muted-foreground">Shares</p>
-                            <p className="text-lg font-bold">
-                              {yourSite.facebook.engagement?.summary?.avgSharesPerPost?.toLocaleString() || 'N/A'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="p-3 bg-blue-50 rounded-lg">
-                          <p className="text-xs text-muted-foreground mb-1">Talking About</p>
-                          <p className="text-lg font-semibold">
-                            {yourSite.facebook.metrics?.talkingAbout?.toLocaleString() || 'N/A'} people
-                          </p>
-                        </div>
+                        ) : (
+                          <Alert>
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription className="text-sm">
+                              Facebook not connected
+                            </AlertDescription>
+                          </Alert>
+                        )}
                       </div>
-                    ) : (
-                      <Alert>
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription className="text-sm">
-                          Facebook not connected
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
 
-                  {/* Competitor Facebook */}
-                  <div className="space-y-4">
-                    <h4 className="text-sm font-medium flex items-center gap-2">
-                      <Target className="h-4 w-4 text-blue-600" />
-                      Competitor Facebook
-                    </h4>
-                    {competitorSite?.facebook?.profile ? (
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                            <p className="text-xs text-muted-foreground mb-1">Page Likes</p>
-                            <p className="text-2xl font-bold text-blue-700">
-                              {competitorSite.facebook.profile.likes?.toLocaleString() || '0'}
-                            </p>
+                      {/* Competitor Facebook */}
+                      <div className="space-y-4">
+                        <h4 className="text-sm font-medium flex items-center gap-2">
+                          <Target className="h-4 w-4 text-blue-600" />
+                          Competitor Facebook
+                        </h4>
+                        {competitorSite?.facebook?.profile ? (
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                <p className="text-xs text-muted-foreground mb-1">Page Likes</p>
+                                <p className="text-2xl font-bold text-blue-700">
+                                  {competitorSite.facebook.profile.likes?.toLocaleString() || '0'}
+                                </p>
+                              </div>
+                              <div className="p-4 bg-gray-50 rounded-lg">
+                                <p className="text-xs text-muted-foreground mb-1">Followers</p>
+                                <p className="text-2xl font-bold">
+                                  {competitorSite.facebook.metrics?.followers?.toLocaleString() || '0'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                              <p className="text-xs text-muted-foreground mb-1">Engagement Rate</p>
+                              <p className="text-3xl font-bold text-purple-700">
+                                {competitorSite.facebook.profile.avgEngagementRate
+                                  ? `${(competitorSite.facebook.profile.avgEngagementRate * 100).toFixed(2)}%`
+                                  : 'N/A'}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">Reactions + comments + shares</p>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <div className="p-3 bg-gray-50 rounded-lg">
+                                <p className="text-xs text-muted-foreground">Reactions</p>
+                                <p className="text-lg font-bold">
+                                  {competitorSite.facebook.engagement?.summary?.avgReactionsPerPost?.toLocaleString() || 'N/A'}
+                                </p>
+                              </div>
+                              <div className="p-3 bg-gray-50 rounded-lg">
+                                <p className="text-xs text-muted-foreground">Comments</p>
+                                <p className="text-lg font-bold">
+                                  {competitorSite.facebook.engagement?.summary?.avgCommentsPerPost?.toLocaleString() || 'N/A'}
+                                </p>
+                              </div>
+                              <div className="p-3 bg-gray-50 rounded-lg">
+                                <p className="text-xs text-muted-foreground">Shares</p>
+                                <p className="text-lg font-bold">
+                                  {competitorSite.facebook.engagement?.summary?.avgSharesPerPost?.toLocaleString() || 'N/A'}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="p-3 bg-blue-50 rounded-lg">
+                              <p className="text-xs text-muted-foreground mb-1">Talking About</p>
+                              <p className="text-lg font-semibold">
+                                {competitorSite.facebook.metrics?.talkingAbout?.toLocaleString() || 'N/A'} people
+                              </p>
+                            </div>
                           </div>
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-muted-foreground mb-1">Followers</p>
-                            <p className="text-2xl font-bold">
-                              {competitorSite.facebook.metrics?.followers?.toLocaleString() || '0'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                          <p className="text-xs text-muted-foreground mb-1">Engagement Rate</p>
-                          <p className="text-3xl font-bold text-purple-700">
-                            {competitorSite.facebook.profile.avgEngagementRate 
-                              ? `${(competitorSite.facebook.profile.avgEngagementRate * 100).toFixed(2)}%`
-                              : 'N/A'}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">Reactions + comments + shares</p>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-muted-foreground">Reactions</p>
-                            <p className="text-lg font-bold">
-                              {competitorSite.facebook.engagement?.summary?.avgReactionsPerPost?.toLocaleString() || 'N/A'}
-                            </p>
-                          </div>
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-muted-foreground">Comments</p>
-                            <p className="text-lg font-bold">
-                              {competitorSite.facebook.engagement?.summary?.avgCommentsPerPost?.toLocaleString() || 'N/A'}
-                            </p>
-                          </div>
-                          <div className="p-3 bg-gray-50 rounded-lg">
-                            <p className="text-xs text-muted-foreground">Shares</p>
-                            <p className="text-lg font-bold">
-                              {competitorSite.facebook.engagement?.summary?.avgSharesPerPost?.toLocaleString() || 'N/A'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="p-3 bg-blue-50 rounded-lg">
-                          <p className="text-xs text-muted-foreground mb-1">Talking About</p>
-                          <p className="text-lg font-semibold">
-                            {competitorSite.facebook.metrics?.talkingAbout?.toLocaleString() || 'N/A'} people
-                          </p>
-                        </div>
+                        ) : (
+                          <Alert>
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription className="text-sm">
+                              Competitor Facebook data not available
+                            </AlertDescription>
+                          </Alert>
+                        )}
                       </div>
-                    ) : (
-                      <Alert>
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription className="text-sm">
-                          Competitor Facebook data not available
-                        </AlertDescription>
-                      </Alert>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </>
           ) : (
             <Card>
@@ -1469,7 +1452,7 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Social Media Data Unavailable</AlertTitle>
                   <AlertDescription>
-                    Social media analysis is currently unavailable due to API rate limits or authentication issues. 
+                    Social media analysis is currently unavailable due to API rate limits or authentication issues.
                     Please try again later or contact support if the issue persists.
                   </AlertDescription>
                 </Alert>
@@ -1482,7 +1465,7 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
       {/* Technical Analysis View */}
       {analysisType === 'technical' && (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
             {/* Technology Stack */}
             <Card>
               <CardHeader>
@@ -1498,32 +1481,69 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                       <Globe className="h-4 w-4 text-green-600" />
                       Your Site
                     </h4>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {(() => {
                         console.log('🔧 YOUR puppeteer.technology:', yourSite?.puppeteer?.technology);
                         console.log('🔧 YOUR comparison.technology.your:', comparison?.technology?.your);
-                        const frameworks = yourSite?.puppeteer?.technology?.frameworks;
-                        const comparisonFrameworks = comparison?.technology?.your?.frameworks;
-                        
-                        if (frameworks && frameworks.length > 0) {
-                          return (
-                            <div className="flex flex-wrap gap-2">
-                              {frameworks.map((tech: string, idx: number) => (
-                                <Badge key={idx} variant="secondary" className="text-xs">{tech}</Badge>
-                              ))}
-                            </div>
-                          );
-                        } else if (comparisonFrameworks && comparisonFrameworks.length > 0) {
-                          return (
-                            <div className="flex flex-wrap gap-2">
-                              {comparisonFrameworks.map((fw: string, idx: number) => (
-                                <Badge key={idx} variant="secondary" className="text-xs">{fw}</Badge>
-                              ))}
-                            </div>
-                          );
-                        } else {
-                          return <p className="text-sm text-muted-foreground">No frameworks detected</p>;
+
+                        const tech = yourSite?.puppeteer?.technology || comparison?.technology?.your;
+                        const hasAnyTech = tech && (
+                          tech.cms ||
+                          (tech.frameworks && tech.frameworks.length > 0) ||
+                          (tech.analytics && tech.analytics.length > 0) ||
+                          (tech.thirdPartyScripts && tech.thirdPartyScripts.length > 0)
+                        );
+
+                        if (!hasAnyTech) {
+                          return <p className="text-sm text-muted-foreground">No technologies detected</p>;
                         }
+
+                        return (
+                          <div className="space-y-2">
+                            {tech.cms && (
+                              <div>
+                                <div className="text-xs text-gray-600 mb-1">CMS</div>
+                                <Badge variant="outline" className="text-xs">{tech.cms}</Badge>
+                              </div>
+                            )}
+
+                            {tech.frameworks && tech.frameworks.length > 0 && (
+                              <div>
+                                <div className="text-xs text-gray-600 mb-1">Frameworks</div>
+                                <div className="flex flex-wrap gap-1">
+                                  {tech.frameworks.map((fw: string, idx: number) => (
+                                    <Badge key={idx} variant="secondary" className="text-xs">{fw}</Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {tech.analytics && tech.analytics.length > 0 && (
+                              <div>
+                                <div className="text-xs text-gray-600 mb-1">Analytics</div>
+                                <div className="flex flex-wrap gap-1">
+                                  {tech.analytics.map((tool: string, idx: number) => (
+                                    <Badge key={idx} variant="outline" className="text-xs bg-blue-50">{tool}</Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {tech.thirdPartyScripts && tech.thirdPartyScripts.length > 0 && (
+                              <div>
+                                <div className="text-xs text-gray-600 mb-1">Third-party Services</div>
+                                <div className="flex flex-wrap gap-1">
+                                  {tech.thirdPartyScripts.slice(0, 3).map((script: string, idx: number) => (
+                                    <Badge key={idx} variant="outline" className="text-xs bg-gray-50">{script}</Badge>
+                                  ))}
+                                  {tech.thirdPartyScripts.length > 3 && (
+                                    <Badge variant="outline" className="text-xs bg-gray-50">+{tech.thirdPartyScripts.length - 3} more</Badge>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
                       })()}
                     </div>
                   </div>
@@ -1532,32 +1552,69 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                       <Target className="h-4 w-4 text-blue-600" />
                       Competitor
                     </h4>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {(() => {
                         console.log('🔧 COMPETITOR puppeteer.technology:', competitorSite?.puppeteer?.technology);
                         console.log('🔧 COMPETITOR comparison.technology.competitor:', comparison?.technology?.competitor);
-                        const frameworks = competitorSite?.puppeteer?.technology?.frameworks;
-                        const comparisonFrameworks = comparison?.technology?.competitor?.frameworks;
-                        
-                        if (frameworks && frameworks.length > 0) {
-                          return (
-                            <div className="flex flex-wrap gap-2">
-                              {frameworks.map((tech: string, idx: number) => (
-                                <Badge key={idx} variant="secondary" className="text-xs">{tech}</Badge>
-                              ))}
-                            </div>
-                          );
-                        } else if (comparisonFrameworks && comparisonFrameworks.length > 0) {
-                          return (
-                            <div className="flex flex-wrap gap-2">
-                              {comparisonFrameworks.map((fw: string, idx: number) => (
-                                <Badge key={idx} variant="secondary" className="text-xs">{fw}</Badge>
-                              ))}
-                            </div>
-                          );
-                        } else {
-                          return <p className="text-sm text-muted-foreground">No frameworks detected</p>;
+
+                        const tech = competitorSite?.puppeteer?.technology || comparison?.technology?.competitor;
+                        const hasAnyTech = tech && (
+                          tech.cms ||
+                          (tech.frameworks && tech.frameworks.length > 0) ||
+                          (tech.analytics && tech.analytics.length > 0) ||
+                          (tech.thirdPartyScripts && tech.thirdPartyScripts.length > 0)
+                        );
+
+                        if (!hasAnyTech) {
+                          return <p className="text-sm text-muted-foreground">No technologies detected</p>;
                         }
+
+                        return (
+                          <div className="space-y-2">
+                            {tech.cms && (
+                              <div>
+                                <div className="text-xs text-gray-600 mb-1">CMS</div>
+                                <Badge variant="outline" className="text-xs">{tech.cms}</Badge>
+                              </div>
+                            )}
+
+                            {tech.frameworks && tech.frameworks.length > 0 && (
+                              <div>
+                                <div className="text-xs text-gray-600 mb-1">Frameworks</div>
+                                <div className="flex flex-wrap gap-1">
+                                  {tech.frameworks.map((fw: string, idx: number) => (
+                                    <Badge key={idx} variant="secondary" className="text-xs">{fw}</Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {tech.analytics && tech.analytics.length > 0 && (
+                              <div>
+                                <div className="text-xs text-gray-600 mb-1">Analytics</div>
+                                <div className="flex flex-wrap gap-1">
+                                  {tech.analytics.map((tool: string, idx: number) => (
+                                    <Badge key={idx} variant="outline" className="text-xs bg-blue-50">{tool}</Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {tech.thirdPartyScripts && tech.thirdPartyScripts.length > 0 && (
+                              <div>
+                                <div className="text-xs text-gray-600 mb-1">Third-party Services</div>
+                                <div className="flex flex-wrap gap-1">
+                                  {tech.thirdPartyScripts.slice(0, 3).map((script: string, idx: number) => (
+                                    <Badge key={idx} variant="outline" className="text-xs bg-gray-50">{script}</Badge>
+                                  ))}
+                                  {tech.thirdPartyScripts.length > 3 && (
+                                    <Badge variant="outline" className="text-xs bg-gray-50">+{tech.thirdPartyScripts.length - 3} more</Badge>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
                       })()}
                     </div>
                   </div>
@@ -1573,125 +1630,125 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                   Security & SEO Files
                 </CardTitle>
               </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <h4 className="font-medium mb-3">Your Site</h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                          <span>HTTPS</span>
-                          <span>{comparison?.security?.your?.https ? '✅' : '❌'}</span>
-                        </div>
-                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                          <span>Robots.txt</span>
-                          <span>{comparison?.security?.your?.hasRobotsTxt ? '✅' : '❌'}</span>
-                        </div>
-                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                          <span>Sitemap</span>
-                          <span>{comparison?.security?.your?.hasSitemap ? '✅' : '❌'}</span>
-                        </div>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <h4 className="font-medium mb-3">Your Site</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <span>HTTPS</span>
+                        <span>{comparison?.security?.your?.https ? '✅' : '❌'}</span>
                       </div>
-                    </div>
-                    <div>
-                      <h4 className="font-medium mb-3">Competitor</h4>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                          <span>HTTPS</span>
-                          <span>{comparison?.security?.competitor?.https ? '✅' : '❌'}</span>
-                        </div>
-                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                          <span>Robots.txt</span>
-                          <span>{comparison?.security?.competitor?.hasRobotsTxt ? '✅' : '❌'}</span>
-                        </div>
-                        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                          <span>Sitemap</span>
-                          <span>{comparison?.security?.competitor?.hasSitemap ? '✅' : '❌'}</span>
-                        </div>
+                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <span>Robots.txt</span>
+                        <span>{comparison?.security?.your?.hasRobotsTxt ? '✅' : '❌'}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <span>Sitemap</span>
+                        <span>{comparison?.security?.your?.hasSitemap ? '✅' : '❌'}</span>
                       </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                  <div>
+                    <h4 className="font-medium mb-3">Competitor</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <span>HTTPS</span>
+                        <span>{comparison?.security?.competitor?.https ? '✅' : '❌'}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <span>Robots.txt</span>
+                        <span>{comparison?.security?.competitor?.hasRobotsTxt ? '✅' : '❌'}</span>
+                      </div>
+                      <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <span>Sitemap</span>
+                        <span>{comparison?.security?.competitor?.hasSitemap ? '✅' : '❌'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Show Performance Comparison only in Technical view */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-          
-          {/* Your Site Performance */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Globe className="h-5 w-5 text-green-600" />
-                {yourSite?.domain || 'Your Site'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <ScoreCircle 
-                  label="Performance" 
-                  score={yourSite?.lighthouse?.categories?.performance?.displayValue || 0} 
-                  icon={<Zap className="h-4 w-4" />}
-                />
-                <ScoreCircle 
-                  label="Accessibility" 
-                  score={yourSite?.lighthouse?.categories?.accessibility?.displayValue || 0} 
-                  icon={<Shield className="h-4 w-4" />}
-                />
-                <ScoreCircle 
-                  label="Best Practices" 
-                  score={yourSite?.lighthouse?.categories?.['best-practices']?.displayValue || 0} 
-                  icon={<CheckCircle2 className="h-4 w-4" />}
-                />
-                <ScoreCircle 
-                  label="SEO" 
-                  score={yourSite?.lighthouse?.categories?.seo?.displayValue || 0} 
-                  icon={<Search className="h-4 w-4" />}
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
 
-          {/* Competitor Performance */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-blue-600" />
-                {competitorSite?.domain || 'Competitor'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <ScoreCircle 
-                  label="Performance" 
-                  score={competitorSite?.lighthouse?.categories?.performance?.displayValue || 0} 
-                  icon={<Zap className="h-4 w-4" />}
-                />
-                <ScoreCircle 
-                  label="Accessibility" 
-                  score={competitorSite?.lighthouse?.categories?.accessibility?.displayValue || 0} 
-                  icon={<Shield className="h-4 w-4" />}
-                />
-                <ScoreCircle 
-                  label="Best Practices" 
-                  score={competitorSite?.lighthouse?.categories?.['best-practices']?.displayValue || 0} 
-                  icon={<CheckCircle2 className="h-4 w-4" />}
-                />
-                <ScoreCircle 
-                  label="SEO" 
-                  score={competitorSite?.lighthouse?.categories?.seo?.displayValue || 0} 
-                  icon={<Search className="h-4 w-4" />}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            {/* Your Site Performance */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-green-600" />
+                  {yourSite?.domain || 'Your Site'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <ScoreCircle
+                    label="Performance"
+                    score={yourSite?.lighthouse?.categories?.performance?.displayValue || 0}
+                    icon={<Zap className="h-4 w-4" />}
+                  />
+                  <ScoreCircle
+                    label="Accessibility"
+                    score={yourSite?.lighthouse?.categories?.accessibility?.displayValue || 0}
+                    icon={<Shield className="h-4 w-4" />}
+                  />
+                  <ScoreCircle
+                    label="Best Practices"
+                    score={yourSite?.lighthouse?.categories?.['best-practices']?.displayValue || 0}
+                    icon={<CheckCircle2 className="h-4 w-4" />}
+                  />
+                  <ScoreCircle
+                    label="SEO"
+                    score={yourSite?.lighthouse?.categories?.seo?.displayValue || 0}
+                    icon={<Search className="h-4 w-4" />}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Competitor Performance */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-blue-600" />
+                  {competitorSite?.domain || 'Competitor'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <ScoreCircle
+                    label="Performance"
+                    score={competitorSite?.lighthouse?.categories?.performance?.displayValue || 0}
+                    icon={<Zap className="h-4 w-4" />}
+                  />
+                  <ScoreCircle
+                    label="Accessibility"
+                    score={competitorSite?.lighthouse?.categories?.accessibility?.displayValue || 0}
+                    icon={<Shield className="h-4 w-4" />}
+                  />
+                  <ScoreCircle
+                    label="Best Practices"
+                    score={competitorSite?.lighthouse?.categories?.['best-practices']?.displayValue || 0}
+                    icon={<CheckCircle2 className="h-4 w-4" />}
+                  />
+                  <ScoreCircle
+                    label="SEO"
+                    score={competitorSite?.lighthouse?.categories?.seo?.displayValue || 0}
+                    icon={<Search className="h-4 w-4" />}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </>
       )}
 
       {/* Remove the duplicate Social Media section that appears after technical view */}
       {false && (showInstagramCard || showFacebookCard) && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
+
           {/* Social Media Card */}
           <Card>
             <CardHeader>
@@ -1734,7 +1791,7 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                     </div>
                   </div>
                 )}
-                
+
                 {showFacebookCard && (
                   <div className="mt-4">
                     <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
@@ -1773,45 +1830,68 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
         </div>
       )}
 
-      {/* AI-Powered Recommendations */}
-      <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-blue-50">
-        <CardHeader>
+      {/* AI-Powered Recommendations - Clean Design */}
+      <Card className="border border-gray-200 bg-white shadow-sm">
+        <CardHeader className="border-b border-gray-100">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-purple-600" />
-              AI-Powered Recommendations
+            <CardTitle className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gray-900 flex items-center justify-center">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <span className="text-xl font-semibold text-gray-900">
+                  AI-Powered Recommendations
+                </span>
+                <div className="text-sm text-gray-500 mt-1">
+                  Strategic insights based on competitor analysis
+                </div>
+              </div>
             </CardTitle>
+            
             {!showAIRecommendations && (
-              <Button 
+              <Button
                 onClick={() => {
                   setShowAIRecommendations(true)
                   fetchAIRecommendations()
                 }}
                 disabled={isLoadingAI}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-2 rounded-lg font-medium transition-colors"
               >
                 {isLoadingAI ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Generating...
                   </>
                 ) : (
                   <>
-                    <Lightbulb className="mr-2 h-4 w-4" />
-                    Get AI Insights
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate Insights
                   </>
                 )}
               </Button>
             )}
           </div>
         </CardHeader>
-        
+
         {showAIRecommendations && (
-          <CardContent>
+          <CardContent className="relative z-10">
             {isLoadingAI ? (
-              <div className="text-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-purple-600" />
-                <p className="text-sm text-muted-foreground">Analyzing competitor data...</p>
+              <div className="text-center py-16">
+                {/* Clean loading animation */}
+                <div className="relative">
+                  <div className="w-8 h-8 mx-auto mb-4">
+                    <div className="absolute inset-0 rounded-full border-2 border-gray-200"></div>
+                    <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-gray-900 animate-spin"></div>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-lg font-semibold text-gray-900">
+                      Analyzing competitor data
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      This may take a few moments...
+                    </p>
+                  </div>
+                </div>
               </div>
             ) : aiError ? (
               <Alert variant="destructive">
@@ -1819,25 +1899,49 @@ export default function CompetitorResults({ data, analysisType, timePeriod }: Co
                 <AlertDescription>{aiError}</AlertDescription>
               </Alert>
             ) : aiRecommendations.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {isFallback && (
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription className="text-xs">
+                  <Alert className="border-amber-200 bg-amber-50">
+                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                    <AlertDescription className="text-amber-700 text-sm">
                       Showing template recommendations. AI service temporarily unavailable.
                     </AlertDescription>
                   </Alert>
                 )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* Clean grid layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {aiRecommendations.map((rec, idx) => (
                     <AIRecommendationCard key={idx} {...rec} />
                   ))}
                 </div>
+                
+                {/* Simple CTA section */}
+                <div className="mt-8 p-6 rounded-lg bg-gray-50 border border-gray-200">
+                  <div className="text-center">
+                    <h4 className="font-semibold text-lg text-gray-900 mb-2">
+                      Ready to implement these insights?
+                    </h4>
+                    <p className="text-gray-600 text-sm mb-4">
+                      These recommendations are based on your competitor analysis
+                    </p>
+                    <Button className="bg-gray-900 hover:bg-gray-800 text-white px-6 py-2 rounded-lg">
+                      <Trophy className="h-4 w-4 mr-2" />
+                      Get Implementation Guide
+                    </Button>
+                  </div>
+                </div>
               </div>
             ) : (
-              <p className="text-center text-muted-foreground py-8">
-                Click "Get AI Insights" to receive personalized recommendations
-              </p>
+              <div className="text-center py-12">
+                <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-gray-100 flex items-center justify-center">
+                  <Lightbulb className="h-6 w-6 text-gray-600" />
+                </div>
+                <p className="text-lg font-semibold text-gray-900 mb-2">Ready for AI insights?</p>
+                <p className="text-sm text-gray-500">
+                  Click "Generate Insights" to receive personalized recommendations
+                </p>
+              </div>
             )}
           </CardContent>
         )}
@@ -1894,7 +1998,7 @@ function ScoreCircle({ label, score, icon }: { label: string; score: number; ico
   )
 }
 
-// AI Recommendation Card Component
+// AI Recommendation Card Component - Clean Design
 function AIRecommendationCard({ title, impact, effort, description, steps }: {
   title: string
   impact: string
@@ -1903,39 +2007,54 @@ function AIRecommendationCard({ title, impact, effort, description, steps }: {
   steps: string[]
 }) {
   const getImpactColor = (impact: string) => {
-    if (impact === 'High') return 'bg-red-100 text-red-700 border-red-200'
-    if (impact === 'Medium') return 'bg-yellow-100 text-yellow-700 border-yellow-200'
-    return 'bg-green-100 text-green-700 border-green-200'
+    if (impact === 'High') return 'bg-red-50 border-red-200 text-red-700'
+    if (impact === 'Medium') return 'bg-amber-50 border-amber-200 text-amber-700'
+    return 'bg-green-50 border-green-200 text-green-700'
   }
 
   const getEffortColor = (effort: string) => {
-    if (effort === 'High') return 'bg-orange-100 text-orange-700 border-orange-200'
-    if (effort === 'Medium') return 'bg-blue-100 text-blue-700 border-blue-200'
-    return 'bg-emerald-100 text-emerald-700 border-emerald-200'
+    if (effort === 'High') return 'bg-gray-900 text-white'
+    if (effort === 'Medium') return 'bg-gray-600 text-white'
+    return 'bg-gray-400 text-white'
   }
 
   return (
-    <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-2">
-        <h3 className="font-semibold text-sm">{title}</h3>
-        <div className="flex gap-2">
-          <Badge className={`text-xs ${getImpactColor(impact)}`}>
+    <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4">
+        <h3 className="font-semibold text-lg text-gray-900 pr-4">
+          {title}
+        </h3>
+        <div className="flex gap-2 flex-shrink-0">
+          <Badge className={`text-xs px-2 py-1 ${getImpactColor(impact)} border`}>
             {impact} Impact
           </Badge>
-          <Badge className={`text-xs ${getEffortColor(effort)}`}>
+          <Badge className={`text-xs px-2 py-1 ${getEffortColor(effort)}`}>
             {effort} Effort
           </Badge>
         </div>
       </div>
-      <p className="text-sm text-gray-600 mb-3">{description}</p>
-      <div className="space-y-1">
-        <p className="text-xs font-medium text-gray-700">Steps:</p>
-        {steps.map((step, idx) => (
-          <div key={idx} className="flex items-start gap-2">
-            <span className="text-xs text-gray-500">{idx + 1}.</span>
-            <span className="text-xs text-gray-600">{step}</span>
-          </div>
-        ))}
+
+      {/* Description */}
+      <p className="text-gray-600 mb-6 leading-relaxed">
+        {description}
+      </p>
+
+      {/* Action Steps */}
+      <div className="space-y-3">
+        <h4 className="font-medium text-gray-900 text-sm">Action Steps:</h4>
+        <div className="space-y-2">
+          {steps.map((step, idx) => (
+            <div key={idx} className="flex items-start gap-3">
+              <div className="w-5 h-5 rounded-full bg-gray-900 flex items-center justify-center text-white text-xs font-medium flex-shrink-0 mt-0.5">
+                {idx + 1}
+              </div>
+              <span className="text-sm text-gray-600 leading-relaxed">
+                {step}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

@@ -37,8 +37,18 @@ FRONTEND_URL: http://localhost:3002
 🏆 Competitor: http://localhost:3010/api/competitor
 📱 Facebook Metrics: http://localhost:3010/api/facebook
 
+🔍 Cache Status Check:
+   Email: mush4rr4f@gmail.com
+   Your Site: agenticforge.tech
+   Competitor: pes.edu
+🔍 [CompetitorCache] Looking up user by email: mush4rr4f@gmail.com
+✅ [CompetitorCache] Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+🔍 [CompetitorCache] Checking cache: agenticforge.tech vs pes.edu
+✅ [CompetitorCache] Cache hit! Age: 0 hours
+⚠️ [CompetitorCache] Using legacy cache format (competitor only)
+
 🔍 RAW REQUEST BODY: {
-  "email": "kousersony43@gmail.com",
+  "email": "mush4rr4f@gmail.com",
   "yourSite": "agenticforge.tech",
   "competitorSite": "pes.edu",
   "yourInstagram": "rvcollegeofengineering",
@@ -51,7 +61,7 @@ FRONTEND_URL: http://localhost:3002
 📊 Competitor Analysis Request:
    Your Site: agenticforge.tech
    Competitor: pes.edu
-   Email: kousersony43@gmail.com
+   Email: mush4rr4f@gmail.com
    Force Refresh: false
    Your Instagram: rvcollegeofengineering
    Competitor Instagram: pesuniversity
@@ -59,11 +69,13 @@ FRONTEND_URL: http://localhost:3002
    Competitor Facebook: pesuniversity
    Has Instagram? true
    Has Facebook? true
-🔍 Looking up user by email: kousersony43@gmail.com
-✅ Found user ID: 65b722e2-595b-40ab-8cae-30ac1282de0d
-🔍 Checking competitor cache: agenticforge.tech vs pes.edu
-✅ Competitor cache hit! Age: 55 hours
-✅ Returning cached competitor analysis
+🔍 [CompetitorCache] Looking up user by email: mush4rr4f@gmail.com
+✅ [CompetitorCache] Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+🔍 [CompetitorCache] Checking cache: agenticforge.tech vs pes.edu
+✅ [CompetitorCache] Cache hit! Age: 0 hours
+⚠️ [CompetitorCache] Using legacy cache format (competitor only)
+✅ Returning cached competitor analysis (legacy format)
+⚠️ Your site data not cached, fetching fresh...
 🔍 Cached competitor puppeteer.seo.headings: {
   h1: [ 'Pesuvians for Life' ],
   h2: [
@@ -130,24 +142,24 @@ FRONTEND_URL: http://localhost:3002
   h3Count: 45
 }
    📦 Fetching cached data for user site: agenticforge.tech
-🔍 Looking up user by email: kousersony43@gmail.com
-✅ Found user ID: 65b722e2-595b-40ab-8cae-30ac1282de0d
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
 ✅ Using expired Lighthouse cache (fallback mode)
    🔍 Lighthouse cache structure: ["url","chartData","timestamp","seoAnalysis","coreWebVitals","opportunities","categoryScores","resourceMetrics","scoreComparison","lighthouseVersion","performanceTimeline","accessibilityBreakdown","bestPracticesBreakdown"]
    🔍 Has categoryScores? true
-   🔍 CategoryScores: {"seo":100,"performance":38,"accessibility":85,"bestPractices":96}
-   ✅ Found cached Lighthouse data (Performance: 38)
-🔍 Looking up user by email: kousersony43@gmail.com
-✅ Found user ID: 65b722e2-595b-40ab-8cae-30ac1282de0d
+   🔍 CategoryScores: {"seo":100,"performance":49,"accessibility":85,"bestPractices":96}
+   ✅ Found cached Lighthouse data (Performance: 49)
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
 ✅ Using expired Search Console cache (fallback mode)
 ✅ Using cached Search Console data
    ℹ️ No PageSpeed data in Search Console cache
    ℹ️ No Technical SEO data in Search Console cache
    ℹ️ No Puppeteer data in Search Console cache
-🔍 Looking up user by email: kousersony43@gmail.com
-✅ Found user ID: 65b722e2-595b-40ab-8cae-30ac1282de0d
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
 🔍 Checking SE Ranking cache for domain: agenticforge.tech
-✅ SE Ranking cache hit! Age: 1710 minutes (expired but used anyway)
+✅ SE Ranking cache hit! Age: 1412 minutes
    🔍 SE Ranking cache result: Found
    🔍 SE Ranking cache keys: [
   'note',            'source',
@@ -163,66 +175,71 @@ FRONTEND_URL: http://localhost:3002
    🔍 Has totalBacklinks? true
    ✅ Found cached SE Ranking backlinks
    📊 Fetching traffic data for user site...
-📊 Fetching user GA data for: kousersony43@gmail.com
-🔍 Fetching OAuth tokens for: kousersony43@gmail.com (google)
-✅ OAuth tokens retrieved for: kousersony43@gmail.com (google)
-✅ OAuth client ready for: kousersony43@gmail.com
+📊 Fetching user GA data for: mush4rr4f@gmail.com
+🔍 Fetching OAuth tokens for: mush4rr4f@gmail.com (google)
+✅ OAuth tokens retrieved for: mush4rr4f@gmail.com (google)
+✅ OAuth client ready for: mush4rr4f@gmail.com
 ✅ OAuth client ready
-📊 Fetching GA properties for: kousersony43@gmail.com
-🔍 Fetching OAuth tokens for: kousersony43@gmail.com (google)
-✅ OAuth tokens retrieved for: kousersony43@gmail.com (google)
-✅ OAuth client ready for: kousersony43@gmail.com
+📊 Fetching GA properties for: mush4rr4f@gmail.com
+🔍 Fetching OAuth tokens for: mush4rr4f@gmail.com (google)
+✅ OAuth tokens retrieved for: mush4rr4f@gmail.com (google)
+✅ OAuth client ready for: mush4rr4f@gmail.com
 ✅ OAuth client ready, fetching properties...
 ✅ Found 1 GA4 properties
 📌 Using first available property: 507800388
 ✅ User Analytics data received
-   ✅ Got traffic data from Google Analytics (279 sessions)
+   ✅ Got traffic data from Google Analytics (288 sessions)
    📝 Fetching content changes monitoring for user site...
+🔧 ChangeDetection initialized with API key: 48fda803...
    🔧 ChangeDetection service loaded successfully
 📊 Analyzing content changes for: agenticforge.tech
 🔍 Searching for watch with URL: agenticforge.tech
 📋 Fetching all watches...
-❌ Error listing watches: Invalid access - API key invalid.
-📝 No existing watch found for https://agenticforge.tech, creating new one...
-📝 Adding ChangeDetection watch for: https://agenticforge.tech
-❌ Error adding watch for https://agenticforge.tech: Invalid access - API key invalid.
+✅ Found 4 watches
+✅ Found existing watch for https://agenticforge.tech: 318e5971-bbe5-4d04-821b-185250ec9164
+🔍 Fetching details for watch: 318e5971-bbe5-4d04-821b-185250ec9164
+📜 Fetching history for watch: 318e5971-bbe5-4d04-821b-185250ec9164
    📊 ChangeDetection response: {
-  "success": false,
-  "error": "Invalid access - API key invalid.",
-  "domain": "agenticforge.tech"
+  "success": true,
+  "domain": "agenticforge.tech",
+  "uuid": "318e5971-bbe5-4d04-821b-185250ec9164",
+  "url": "https://agenticforge.tech",
+  "monitoring": {
+    "lastChecked": "2025-10-22T13:11:45.000Z",
+    "lastChanged": null,
+    "checkCount": 1,
+    "changeCount": 0,
+    "status": null,
+    "paused": false
+  },
+  "triggers": [
+    "price",
+    "pricing",
+    "new",
+    "feature",
+    "launch",
+    "update",
+    "release"
+  ],
+  "history": {},
+  "activity": {
+    "isActive": false,
+    "daysSinceLastCheck": 0,
+    "daysSinceLastChange": null,
+    "totalChecks": 1,
+    "totalChanges": 0,
+    "changeFrequency": "no changes detected",
+    "activityLevel": "inactive"
+  },
+  "comparison": "dormant"
 }
-   ⚠️ ChangeDetection failed: Invalid access - API key invalid., falling back to RSS/Sitemap...
-📝 Analyzing content updates for: agenticforge.tech
-  Trying RSS feed: https://agenticforge.tech/feed
-  ❌ Failed to parse RSS feed: Request failed with status code 404
-  Trying RSS feed: https://agenticforge.tech/rss
-  ❌ Failed to parse RSS feed: Request failed with status code 404
-  Trying RSS feed: https://agenticforge.tech/feed.xml
-  ❌ Failed to parse RSS feed: Request failed with status code 404
-  Trying RSS feed: https://agenticforge.tech/rss.xml
-  ❌ Failed to parse RSS feed: Request failed with status code 404
-  Trying RSS feed: https://agenticforge.tech/atom.xml
-  ❌ Failed to parse RSS feed: Request failed with status code 404
-  Trying RSS feed: https://agenticforge.tech/blog/feed
-  ❌ Failed to parse RSS feed: Request failed with status code 404
-  Trying RSS feed: https://agenticforge.tech/blog/rss
-  ❌ Failed to parse RSS feed: Request failed with status code 404
-  Trying RSS feed: https://agenticforge.tech/feeds/posts/default
-  ❌ Failed to parse RSS feed: Request failed with status code 404
-  Trying sitemap: https://agenticforge.tech/sitemap.xml
-  ✅ Found sitemap with 8 URLs, 0 recently modified
-✅ Content updates analysis complete for agenticforge.tech
-   ✅ Got content updates data (fallback)
+   ✅ Got ChangeDetection monitoring data (1 checks, 0 changes)
+   📌 Activity Level: inactive
    📸 Fetching Instagram engagement for: rvcollegeofengineering
 
 📱 Starting Instagram engagement analysis for: rvcollegeofengineering
 📸 Fetching Instagram CID for: rvcollegeofengineering
-✅ Found Instagram account: RV College Of Engineering (@rvcollegeofengineering)
-   CID: INST:17841431146363531
-   Followers: 12,995
-📊 Fetching Instagram activity for CID: INST:17841431146363531
-✅ Instagram activity data received (168 data points)
-   ✅ Got Instagram engagement data (12,995 followers)
+❌ Error fetching Instagram CID for rvcollegeofengineering: Request failed with status code 429
    📘 Fetching Facebook engagement for: RVCEngineering
 
 📱 Analyzing Facebook page: RVCEngineering
@@ -230,9 +247,9 @@ FRONTEND_URL: http://localhost:3002
 
 
 🔍 Fetching Facebook page info for: RVCEngineering
-❌ Error fetching Facebook page info: No data found for page: RVCEngineering
-❌ Analysis failed: No data found for page: RVCEngineering
-   ⚠️ Failed to fetch Facebook data: No data found for page: RVCEngineering
+❌ Error fetching Facebook page info: Request failed with status code 429
+❌ Analysis failed: Request failed with status code 429
+   ⚠️ Failed to fetch Facebook data: Request failed with status code 429
    📊 Cached data summary:
       - Lighthouse: ✅
       - PageSpeed: ❌
@@ -240,9 +257,9 @@ FRONTEND_URL: http://localhost:3002
       - Puppeteer: ❌
       - Backlinks: ✅
       - Traffic: ✅
-      - Content Changes (ChangeDetection): ❌
-      - Content Updates (RSS/Sitemap): ✅
-      - Instagram: ✅
+      - Content Changes (ChangeDetection): ✅
+      - Content Updates (RSS/Sitemap): ❌
+      - Instagram: ❌
       - Facebook: ❌
    🔍 Puppeteer data missing, fetching separately...
 🔍 Starting Puppeteer analysis for: https://agenticforge.tech
@@ -254,7 +271,7 @@ FRONTEND_URL: http://localhost:3002
 📱 Fetching PageSpeed data for: https://agenticforge.tech
 📱 Fetching mobile and desktop PageSpeed data...
 ✅ PageSpeed data retrieved for agenticforge.tech
-   Desktop: 61% | Mobile: 53%
+   Desktop: 69% | Mobile: 55%
    ✅ PageSpeed analysis completed for user site
 🔍 Your site puppeteer.seo.headings: {
   h1: [
@@ -302,7 +319,7 @@ FRONTEND_URL: http://localhost:3002
   "url": "https://agenticforge.tech",
   "desktop": {
     "strategy": "desktop",
-    "performanceScore": 61,
+    "performanceScore": 69,
     "category": "AVERAGE",
     "fieldData": {
       "lcp": null,
@@ -311,18 +328,18 @@ FRONTEND_URL: http://localhost:3002
       "overall_category": "UNKNOWN"
     },
     "labData": {
-      "lcp": 2810.210384691999,
-      "fid": 375,
-      "cls": 0.031477472556036654,
-      "fcp": 1061.5343361813434,
-      "tti": 2992.874848876173,
-      "tbt": 432.0517035771261,
-      "speedIndex": 1888.6950836180145
+      "lcp": 2846.047438256629,
+      "fid": 398,
+      "cls": 0.0010208138323906533,
+      "fcp": 1212.506775102814,
+      "tti": 2993.236376189954,
+      "tbt": 254,
+      "speedIndex": 1812.1988618024025
     }
   },
   "mobile": {
     "strategy": "mobile",
-    "performanceScore": 53,
+    "performanceScore": 55,
     "category": "AVERAGE",
     "fieldData": {
       "lcp": null,
@@ -331,61 +348,35 @@ FRONTEND_URL: http://localhost:3002
       "overall_category": "UNKNOWN"
     },
     "labData": {
-      "lcp": 13607.161332886435,
-      "fid": 353,
-      "cls": 0.0016963583700780594,
-      "fcp": 4762.063772122948,
-      "tti": 13935.11412033682,
-      "tbt": 353,
-      "speedIndex": 5503.3724816997965
+      "lcp": 13865.47481443498,
+      "fid": 367,
+      "cls": 0.002695607462246732,
+      "fcp": 4767.910550629263,
+      "tti": 14150.976698029286,
+      "tbt": 308,
+      "speedIndex": 5317.256832733669
     }
   }
 }
-   🟢 Fetching Google Ads monitoring for cached competitor: pes.edu
-   ✅ Got competitor Google Ads data (Total Ads: 300)
+   ✅ Using cached Google Ads data for competitor
    🟢 Fetching Google Ads monitoring for your cached site: agenticforge.tech
    ✅ Got your site Google Ads data (Total Ads: 0)
-   📝 Fetching content changes monitoring for cached competitor: pes.edu
-   🔧 ChangeDetection service loaded for competitor
-📊 Analyzing content changes for: pes.edu
-🔍 Searching for watch with URL: pes.edu
-📋 Fetching all watches...
-❌ Error listing watches: Invalid access - API key invalid.
-📝 No existing watch found for https://pes.edu, creating new one...
-📝 Adding ChangeDetection watch for: https://pes.edu
-❌ Error adding watch for https://pes.edu: Invalid access - API key invalid.
-   📊 Competitor ChangeDetection response: {
-  "success": false,
-  "error": "Invalid access - API key invalid.",
-  "domain": "pes.edu"
-}
-   ⚠️ Competitor ChangeDetection failed: Invalid access - API key invalid.
-   🟣 Fetching Meta Ads monitoring for cached competitor (username only): pesuniversity
-[MetaAds] getMetaAdsMonitoring called with username: pesuniversity
-[MetaAds] Username received for Page ID lookup: pesuniversity
-[MetaAds] Querying RapidAPI for Page ID with URL: https://www.facebook.com/pesuniversity
-[MetaAds] RapidAPI response for Page ID: undefined
-[MetaAds] No Page ID found for username: pesuniversity
-[MetaAds] Could not resolve Facebook page ID for username: pesuniversity
-   ⚠️ Failed to fetch competitor Meta Ads data: Could not resolve Facebook page ID for username.
+   ✅ Using cached ChangeDetection data for competitor
+   ✅ Using cached Meta Ads data for competitor
    🟣 Fetching Meta Ads monitoring for your cached site: RVCEngineering
 [MetaAds] getMetaAdsMonitoring called with username: RVCEngineering
 [MetaAds] Username received for Page ID lookup: RVCEngineering
 [MetaAds] Querying RapidAPI for Page ID with URL: https://www.facebook.com/RVCEngineering
-[MetaAds] RapidAPI response for Page ID: undefined
-[MetaAds] No Page ID found for username: RVCEngineering
+[MetaAds] Error fetching Facebook page ID: {
+  message: 'You have exceeded the MONTHLY quota for Requests on your current plan, BASIC. Upgrade your plan at https://rapidapi.com/ousema.frikha/api/facebook-pages-scraper2'
+}
 [MetaAds] Could not resolve Facebook page ID for username: RVCEngineering
    ⚠️ Failed to fetch your site Meta Ads data: Could not resolve Facebook page ID for username.
    📸 Fetching Instagram engagement for cached competitor: pesuniversity
 
 📱 Starting Instagram engagement analysis for: pesuniversity
 📸 Fetching Instagram CID for: pesuniversity
-✅ Found Instagram account: PES University (@pesuniversity)
-   CID: INST:17841401132460128
-   Followers: 29,688
-📊 Fetching Instagram activity for CID: INST:17841401132460128
-✅ Instagram activity data received (168 data points)
-   ✅ Got competitor Instagram data (29,688 followers)
+❌ Error fetching Instagram CID for pesuniversity: Request failed with status code 429
    📘 Fetching Facebook engagement for cached competitor: pesuniversity
 
 📱 Analyzing Facebook page: pesuniversity
@@ -393,9 +384,11 @@ FRONTEND_URL: http://localhost:3002
 
 
 🔍 Fetching Facebook page info for: pesuniversity
-❌ Error fetching Facebook page info: No data found for page: pesuniversity
-❌ Analysis failed: No data found for page: pesuniversity
-   ⚠️ Failed to fetch competitor Facebook data: No data found for page: pesuniversity
+❌ Error fetching Facebook page info: Request failed with status code 429
+❌ Analysis failed: Request failed with status code 429
+   ⚠️ Failed to fetch competitor Facebook data: Request failed with status code 429
+   ✅ Using cached traffic data for competitor
+   ✅ Using cached traffic data for your site
 🔍 SEO Comparison - yourSeoData.headings: {
   h1: [
     'Scale Your Business with AI Automation',
@@ -506,1163 +499,10 @@ FRONTEND_URL: http://localhost:3002
 🔍 Final yourHeadings: { h1Count: 2, h2Count: 5, h3Count: 22 }
 🔍 Final compHeadings: { h1Count: 1, h2Count: 10, h3Count: 45 }
 🔍 Final yourSite.pagespeed in response: EXISTS
-🔍 Final yourSite.contentChanges in response: MISSING
-🔍 Final yourSite.instagram in response: EXISTS
-🔍 Final competitorSite.instagram in response: EXISTS
-📱 YOUR INSTAGRAM IN RESPONSE: {
-  "success": true,
-  "profile": {
-    "username": "rvcollegeofengineering",
-    "name": "RV College Of Engineering",
-    "followers": 12995,
-    "verified": false,
-    "avgEngagementRate": 0.03816263766534076,
-    "avgInteractions": 488,
-    "qualityScore": 0.5725482596384699,
-    "categories": [
-      "education-education"
-    ],
-    "bio": "Officially NAAC ‘A+’ & NIRF Rank 99 (2024)! Excellence starts here! Follow for updates! Since 1963"
-  },
-  "engagement": {
-    "summary": {
-      "avgInteractionsPerPost": 10,
-      "avgLikesPerPost": 10,
-      "avgCommentsPerPost": 0,
-      "engagementRate": "0.001%",
-      "consistency": "medium",
-      "totalDataPoints": 168
-    },
-    "peakTimes": {
-      "bestDays": [
-        {
-          "day": "Sunday",
-          "avgInteractions": 18,
-          "avgLikes": 18,
-          "avgComments": 0
-        },
-        {
-          "day": "Monday",
-          "avgInteractions": 14,
-          "avgLikes": 14,
-          "avgComments": 0
-        },
-        {
-          "day": "Wednesday",
-          "avgInteractions": 8,
-          "avgLikes": 8,
-          "avgComments": 0
-        }
-      ],
-      "bestHours": [
-        {
-          "hour": "10:00",
-          "avgInteractions": 15,
-          "avgLikes": 15,
-          "avgComments": 0
-        },
-        {
-          "hour": "11:00",
-          "avgInteractions": 15,
-          "avgLikes": 15,
-          "avgComments": 0
-        },
-        {
-          "hour": "14:00",
-          "avgInteractions": 15,
-          "avgLikes": 15,
-          "avgComments": 0
-        }
-      ],
-      "top5PostingTimes": [
-        {
-          "time": "Sun 10:00",
-          "interactions": 32,
-          "likes": 32,
-          "comments": 0
-        },
-        {
-          "time": "Sun 11:00",
-          "interactions": 31,
-          "likes": 31,
-          "comments": 0
-        },
-        {
-          "time": "Sun 09:00",
-          "interactions": 30,
-          "likes": 30,
-          "comments": 0
-        },
-        {
-          "time": "Sun 08:00",
-          "interactions": 29,
-          "likes": 29,
-          "comments": 0
-        },
-        {
-          "time": "Sun 12:00",
-          "interactions": 27,
-          "likes": 27,
-          "comments": 0
-        }
-      ]
-    },
-    "postingPattern": {
-      "bestDays": [
-        {
-          "day": "Sunday",
-          "avgInteractions": 18,
-          "avgLikes": 18,
-          "avgComments": 0
-        },
-        {
-          "day": "Monday",
-          "avgInteractions": 14,
-          "avgLikes": 14,
-          "avgComments": 0
-        },
-        {
-          "day": "Wednesday",
-          "avgInteractions": 8,
-          "avgLikes": 8,
-          "avgComments": 0
-        }
-      ],
-      "bestHours": [
-        {
-          "hour": "10:00",
-          "avgInteractions": 15,
-          "avgLikes": 15,
-          "avgComments": 0
-        },
-        {
-          "hour": "11:00",
-          "avgInteractions": 15,
-          "avgLikes": 15,
-          "avgComments": 0
-        },
-        {
-          "hour": "14:00",
-          "avgInteractions": 15,
-          "avgLikes": 15,
-          "avgComments": 0
-        }
-      ]
-    }
-  },
-  "rawActivity": [
-    {
-      "time": "1_0",
-      "interactions": 5.210722760793822,
-      "likes": 5.210722760793822,
-      "comments": 0
-    },
-    {
-      "time": "1_1",
-      "interactions": 4.789997314015047,
-      "likes": 4.789997314015047,
-      "comments": 0
-    },
-    {
-      "time": "1_2",
-      "interactions": 5.154653067706805,
-      "likes": 5.154653067706805,
-      "comments": 0
-    },
-    {
-      "time": "1_3",
-      "interactions": 3.004885940116506,
-      "likes": 3.004885940116506,
-      "comments": 0
-    },
-    {
-      "time": "1_4",
-      "interactions": 1.7637731790206321,
-      "likes": 1.7637731790206321,
-      "comments": 0
-    },
-    {
-      "time": "1_5",
-      "interactions": 3.5579338277208814,
-      "likes": 3.5579338277208814,
-      "comments": 0
-    },
-    {
-      "time": "1_6",
-      "interactions": 6.02331049715211,
-      "likes": 6.02331049715211,
-      "comments": 0
-    },
-    {
-      "time": "1_7",
-      "interactions": 10.473077778149122,
-      "likes": 10.473077778149122,
-      "comments": 0
-    },
-    {
-      "time": "1_8",
-      "interactions": 12.010960254888248,
-      "likes": 12.010960254888248,
-      "comments": 0
-    },
-    {
-      "time": "1_9",
-      "interactions": 14.339391246302295,
-      "likes": 14.339391246302295,
-      "comments": 0
-    },
-    {
-      "time": "1_10",
-      "interactions": 15.417597707105685,
-      "likes": 15.417597707105685,
-      "comments": 0
-    },
-    {
-      "time": "1_11",
-      "interactions": 24.739541593793952,
-      "likes": 24.739541593793952,
-      "comments": 0
-    },
-    {
-      "time": "1_12",
-      "interactions": 24.752141397298896,
-      "likes": 24.752141397298896,
-      "comments": 0
-    },
-    {
-      "time": "1_13",
-      "interactions": 25.648204755263773,
-      "likes": 25.648204755263773,
-      "comments": 0
-    },
-    {
-      "time": "1_14",
-      "interactions": 25.511461067880205,
-      "likes": 25.511461067880205,
-      "comments": 0
-    },
-    {
-      "time": "1_15",
-      "interactions": 20.639954779720657,
-      "likes": 20.639954779720657,
-      "comments": 0
-    },
-    {
-      "time": "1_16",
-      "interactions": 19.759625538733385,
-      "likes": 19.759625538733385,
-      "comments": 0
-    },
-    {
-      "time": "1_17",
-      "interactions": 19.826137217266957,
-      "likes": 19.826137217266957,
-      "comments": 0
-    },
-    {
-      "time": "1_18",
-      "interactions": 20.651936016000324,
-      "likes": 20.651936016000324,
-      "comments": 0
-    },
-    {
-      "time": "1_19",
-      "interactions": 16.75867519304422,
-      "likes": 16.75867519304422,
-      "comments": 0
-    },
-    {
-      "time": "1_20",
-      "interactions": 16.568119996541522,
-      "likes": 16.568119996541522,
-      "comments": 0
-    },
-    {
-      "time": "1_21",
-      "interactions": 15.796081047804005,
-      "likes": 15.796081047804005,
-      "comments": 0
-    },
-    {
-      "time": "1_22",
-      "interactions": 15.491143222231107,
-      "likes": 15.491143222231107,
-      "comments": 0
-    },
-    {
-      "time": "1_23",
-      "interactions": 7.56575899442082,
-      "likes": 7.56575899442082,
-      "comments": 0
-    },
-    {
-      "time": "2_0",
-      "interactions": 6.504698000318846,
-      "likes": 6.504698000318846,
-      "comments": 0
-    },
-    {
-      "time": "2_1",
-      "interactions": 5.614581489789252,
-      "likes": 5.614581489789252,
-      "comments": 0
-    },
-    {
-      "time": "2_2",
-      "interactions": 5.523326744112797,
-      "likes": 5.523326744112797,
-      "comments": 0
-    },
-    {
-      "time": "2_3",
-      "interactions": 2.581552832544587,
-      "likes": 2.581552832544587,
-      "comments": 0
-    },
-    {
-      "time": "2_4",
-      "interactions": 1.2905274277207406,
-      "likes": 1.2905274277207406,
-      "comments": 0
-    },
-    {
-      "time": "2_5",
-      "interactions": 4.753284323980217,
-      "likes": 4.753284323980217,
-      "comments": 0
-    },
-    {
-      "time": "2_6",
-      "interactions": 7.674324039604789,
-      "likes": 7.674324039604789,
-      "comments": 0
-    },
-    {
-      "time": "2_7",
-      "interactions": 8.112990009832977,
-      "likes": 8.112990009832977,
-      "comments": 0
-    },
-    {
-      "time": "2_8",
-      "interactions": 7.944097483341673,
-      "likes": 7.944097483341673,
-      "comments": 0
-    },
-    {
-      "time": "2_9",
-      "interactions": 10.032855784783617,
-      "likes": 10.032855784783617,
-      "comments": 0
-    },
-    {
-      "time": "2_10",
-      "interactions": 12.461043455101983,
-      "likes": 12.461043455101983,
-      "comments": 0
-    },
-    {
-      "time": "2_11",
-      "interactions": 10.47649086327037,
-      "likes": 10.47649086327037,
-      "comments": 0
-    },
-    {
-      "time": "2_12",
-      "interactions": 9.825771003230601,
-      "likes": 9.825771003230601,
-      "comments": 0
-    },
-    {
-      "time": "2_13",
-      "interactions": 9.115309243149392,
-      "likes": 9.115309243149392,
-      "comments": 0
-    },
-    {
-      "time": "2_14",
-      "interactions": 11.317338725061434,
-      "likes": 11.317338725061434,
-      "comments": 0
-    },
-    {
-      "time": "2_15",
-      "interactions": 8.193102295076406,
-      "likes": 8.193102295076406,
-      "comments": 0
-    },
-    {
-      "time": "2_16",
-      "interactions": 7.8674699533887615,
-      "likes": 7.8674699533887615,
-      "comments": 0
-    },
-    {
-      "time": "2_17",
-      "interactions": 7.763255075000002,
-      "likes": 7.763255075000002,
-      "comments": 0
-    },
-    {
-      "time": "2_18",
-      "interactions": 8.973758764772251,
-      "likes": 8.973758764772251,
-      "comments": 0
-    },
-    {
-      "time": "2_19",
-      "interactions": 6.596353683503051,
-      "likes": 6.596353683503051,
-      "comments": 0
-    },
-    {
-      "time": "2_20",
-      "interactions": 6.49866761892146,
-      "likes": 6.49866761892146,
-      "comments": 0
-    },
-    {
-      "time": "2_21",
-      "interactions": 6.577538434490884,
-      "likes": 6.577538434490884,
-      "comments": 0
-    },
-    {
-      "time": "2_22",
-      "interactions": 6.531253817482566,
-      "likes": 6.531253817482566,
-      "comments": 0
-    },
-    {
-      "time": "2_23",
-      "interactions": 3.8490672163651634,
-      "likes": 3.8490672163651634,
-      "comments": 0
-    },
-    {
-      "time": "3_0",
-      "interactions": 3.8718810759495965,
-      "likes": 3.8718810759495965,
-      "comments": 0
-    },
-    {
-      "time": "3_1",
-      "interactions": 3.361720781081752,
-      "likes": 3.361720781081752,
-      "comments": 0
-    },
-    {
-      "time": "3_2",
-      "interactions": 3.2032723518447255,
-      "likes": 3.2032723518447255,
-      "comments": 0
-    },
-    {
-      "time": "3_3",
-      "interactions": 2.2045045675461616,
-      "likes": 2.2045045675461616,
-      "comments": 0
-    },
-    {
-      "time": "3_4",
-      "interactions": 1.7363687403623131,
-      "likes": 1.7363687403623131,
-      "comments": 0
-    },
-    {
-      "time": "3_5",
-      "interactions": 7.390964657572157,
-      "likes": 7.390964657572157,
-      "comments": 0
-    },
-    {
-      "time": "3_6",
-      "interactions": 8.853109048733929,
-      "likes": 8.853109048733929,
-      "comments": 0
-    },
-    {
-      "time": "3_7",
-      "interactions": 8.698438824072843,
-      "likes": 8.698438824072843,
-      "comments": 0
-    },
-    {
-      "time": "3_8",
-      "interactions": 8.654802914215635,
-      "likes": 8.654802914215635,
-      "comments": 0
-    },
-    {
-      "time": "3_9",
-      "interactions": 11.994894944893792,
-      "likes": 11.994894944893792,
-      "comments": 0
-    },
-    {
-      "time": "3_10",
-      "interactions": 14.480631762261357,
-      "likes": 14.480631762261357,
-      "comments": 0
-    },
-    {
-      "time": "3_11",
-      "interactions": 12.712099671489757,
-      "likes": 12.712099671489757,
-      "comments": 0
-    },
-    {
-      "time": "3_12",
-      "interactions": 12.713675687793152,
-      "likes": 12.713675687793152,
-      "comments": 0
-    },
-    {
-      "time": "3_13",
-      "interactions": 11.980249000278478,
-      "likes": 11.980249000278478,
-      "comments": 0
-    },
-    {
-      "time": "3_14",
-      "interactions": 12.539149880629074,
-      "likes": 12.539149880629074,
-      "comments": 0
-    },
-    {
-      "time": "3_15",
-      "interactions": 10.598409843832583,
-      "likes": 10.598409843832583,
-      "comments": 0
-    },
-    {
-      "time": "3_16",
-      "interactions": 10.076554340049706,
-      "likes": 10.076554340049706,
-      "comments": 0
-    },
-    {
-      "time": "3_17",
-      "interactions": 9.362396480528705,
-      "likes": 9.362396480528705,
-      "comments": 0
-    },
-    {
-      "time": "3_18",
-      "interactions": 10.182102211323333,
-      "likes": 10.182102211323333,
-      "comments": 0
-    },
-    {
-      "time": "3_19",
-      "interactions": 8.814211705410266,
-      "likes": 8.814211705410266,
-      "comments": 0
-    },
-    {
-      "time": "3_20",
-      "interactions": 8.19611717476923,
-      "likes": 8.19611717476923,
-      "comments": 0
-    },
-    {
-      "time": "3_21",
-      "interactions": 6.7676720415041345,
-      "likes": 6.7676720415041345,
-      "comments": 0
-    },
-    {
-      "time": "3_22",
-      "interactions": 7.902583551542337,
-      "likes": 7.902583551542337,
-      "comments": 0
-    },
-    {
-      "time": "3_23",
-      "interactions": 5.27446758028966,
-      "likes": 5.27446758028966,
-      "comments": 0
-    },
-    {
-      "time": "4_0",
-      "interactions": 5.199736321703708,
-      "likes": 5.199736321703708,
-      "comments": 0
-    },
-    {
-      "time": "4_1",
-      "interactions": 2.293951015079613,
-      "likes": 2.293951015079613,
-      "comments": 0
-    },
-    {
-      "time": "4_2",
-      "interactions": 2.071341315849719,
-      "likes": 2.071341315849719,
-      "comments": 0
-    },
-    {
-      "time": "4_3",
-      "interactions": 1.477330501115625,
-      "likes": 1.477330501115625,
-      "comments": 0
-    },
-    {
-      "time": "4_4",
-      "interactions": 1.2640761342613016,
-      "likes": 1.2640761342613016,
-      "comments": 0
-    },
-    {
-      "time": "4_5",
-      "interactions": 5.061321142956233,
-      "likes": 5.061321142956233,
-      "comments": 0
-    },
-    {
-      "time": "4_6",
-      "interactions": 6.14353724975458,
-      "likes": 6.14353724975458,
-      "comments": 0
-    },
-    {
-      "time": "4_7",
-      "interactions": 5.074146462172125,
-      "likes": 5.074146462172125,
-      "comments": 0
-    },
-    {
-      "time": "4_8",
-      "interactions": 5.251211150174294,
-      "likes": 5.251211150174294,
-      "comments": 0
-    },
-    {
-      "time": "4_9",
-      "interactions": 8.113442954817561,
-      "likes": 8.113442954817561,
-      "comments": 0
-    },
-    {
-      "time": "4_10",
-      "interactions": 10.81317445588326,
-      "likes": 10.81317445588326,
-      "comments": 0
-    },
-    {
-      "time": "4_11",
-      "interactions": 10.175014973253178,
-      "likes": 10.175014973253178,
-      "comments": 0
-    },
-    {
-      "time": "4_12",
-      "interactions": 9.62628491862247,
-      "likes": 9.62628491862247,
-      "comments": 0
-    },
-    {
-      "time": "4_13",
-      "interactions": 8.93282406902737,
-      "likes": 8.93282406902737,
-      "comments": 0
-    },
-    {
-      "time": "4_14",
-      "interactions": 9.8603792467555,
-      "likes": 9.8603792467555,
-      "comments": 0
-    },
-    {
-      "time": "4_15",
-      "interactions": 8.040992720489662,
-      "likes": 8.040992720489662,
-      "comments": 0
-    },
-    {
-      "time": "4_16",
-      "interactions": 7.323200330163125,
-      "likes": 7.323200330163125,
-      "comments": 0
-    },
-    {
-      "time": "4_17",
-      "interactions": 7.5114438878409455,
-      "likes": 7.5114438878409455,
-      "comments": 0
-    },
-    {
-      "time": "4_18",
-      "interactions": 8.425771214032219,
-      "likes": 8.425771214032219,
-      "comments": 0
-    },
-    {
-      "time": "4_19",
-      "interactions": 6.885625539796624,
-      "likes": 6.885625539796624,
-      "comments": 0
-    },
-    {
-      "time": "4_20",
-      "interactions": 6.400995708652439,
-      "likes": 6.400995708652439,
-      "comments": 0
-    },
-    {
-      "time": "4_21",
-      "interactions": 5.725273097268046,
-      "likes": 5.725273097268046,
-      "comments": 0
-    },
-    {
-      "time": "4_22",
-      "interactions": 7.501120378990459,
-      "likes": 7.501120378990459,
-      "comments": 0
-    },
-    {
-      "time": "4_23",
-      "interactions": 4.354847086229145,
-      "likes": 4.354847086229145,
-      "comments": 0
-    },
-    {
-      "time": "5_0",
-      "interactions": 3.6988198103882315,
-      "likes": 3.6988198103882315,
-      "comments": 0
-    },
-    {
-      "time": "5_1",
-      "interactions": 2.9967404845217036,
-      "likes": 2.9967404845217036,
-      "comments": 0
-    },
-    {
-      "time": "5_2",
-      "interactions": 3.25831704291222,
-      "likes": 3.25831704291222,
-      "comments": 0
-    },
-    {
-      "time": "5_3",
-      "interactions": 1.5335546920996872,
-      "likes": 1.5335546920996872,
-      "comments": 0
-    },
-    {
-      "time": "5_4",
-      "interactions": 1.9342172370310593,
-      "likes": 1.9342172370310593,
-      "comments": 0
-    },
-    {
-      "time": "5_5",
-      "interactions": 4.98631639009844,
-      "likes": 4.98631639009844,
-      "comments": 0
-    },
-    {
-      "time": "5_6",
-      "interactions": 6.6510534036761015,
-      "likes": 6.6510534036761015,
-      "comments": 0
-    },
-    {
-      "time": "5_7",
-      "interactions": 5.0937200667165365,
-      "likes": 5.0937200667165365,
-      "comments": 0
-    },
-    {
-      "time": "5_8",
-      "interactions": 8.077609777046804,
-      "likes": 8.077609777046804,
-      "comments": 0
-    },
-    {
-      "time": "5_9",
-      "interactions": 10.160132302794544,
-      "likes": 10.160132302794544,
-      "comments": 0
-    },
-    {
-      "time": "5_10",
-      "interactions": 11.44021949238314,
-      "likes": 11.44021949238314,
-      "comments": 0
-    },
-    {
-      "time": "5_11",
-      "interactions": 9.365500394297857,
-      "likes": 9.365500394297857,
-      "comments": 0
-    },
-    {
-      "time": "5_12",
-      "interactions": 8.84411067348599,
-      "likes": 8.84411067348599,
-      "comments": 0
-    },
-    {
-      "time": "5_13",
-      "interactions": 9.5783603020198,
-      "likes": 9.5783603020198,
-      "comments": 0
-    },
-    {
-      "time": "5_14",
-      "interactions": 9.838218768477732,
-      "likes": 9.838218768477732,
-      "comments": 0
-    },
-    {
-      "time": "5_15",
-      "interactions": 8.86376431212153,
-      "likes": 8.86376431212153,
-      "comments": 0
-    },
-    {
-      "time": "5_16",
-      "interactions": 8.188740207237867,
-      "likes": 8.188740207237867,
-      "comments": 0
-    },
-    {
-      "time": "5_17",
-      "interactions": 9.064796412538595,
-      "likes": 9.064796412538595,
-      "comments": 0
-    },
-    {
-      "time": "5_18",
-      "interactions": 8.864067758316274,
-      "likes": 8.864067758316274,
-      "comments": 0
-    },
-    {
-      "time": "5_19",
-      "interactions": 7.061911659647521,
-      "likes": 7.061911659647521,
-      "comments": 0
-    },
-    {
-      "time": "5_20",
-      "interactions": 6.527608512775084,
-      "likes": 6.527608512775084,
-      "comments": 0
-    },
-    {
-      "time": "5_21",
-      "interactions": 5.9520959327760234,
-      "likes": 5.9520959327760234,
-      "comments": 0
-    },
-    {
-      "time": "5_22",
-      "interactions": 6.478856580211223,
-      "likes": 6.478856580211223,
-      "comments": 0
-    },
-    {
-      "time": "5_23",
-      "interactions": 6.13759427940835,
-      "likes": 6.13759427940835,
-      "comments": 0
-    },
-    {
-      "time": "6_0",
-      "interactions": 3.0263803046404507,
-      "likes": 3.0263803046404507,
-      "comments": 0
-    },
-    {
-      "time": "6_1",
-      "interactions": 1.6291847072997958,
-      "likes": 1.6291847072997958,
-      "comments": 0
-    },
-    {
-      "time": "6_2",
-      "interactions": 3.61736501815145,
-      "likes": 3.61736501815145,
-      "comments": 0
-    },
-    {
-      "time": "6_3",
-      "interactions": 1.172772505479323,
-      "likes": 1.172772505479323,
-      "comments": 0
-    },
-    {
-      "time": "6_4",
-      "interactions": 1.3349086425443586,
-      "likes": 1.3349086425443586,
-      "comments": 0
-    },
-    {
-      "time": "6_5",
-      "interactions": 5.301473674939447,
-      "likes": 5.301473674939447,
-      "comments": 0
-    },
-    {
-      "time": "6_6",
-      "interactions": 6.695506089793155,
-      "likes": 6.695506089793155,
-      "comments": 0
-    },
-    {
-      "time": "6_7",
-      "interactions": 5.636854680352676,
-      "likes": 5.636854680352676,
-      "comments": 0
-    },
-    {
-      "time": "6_8",
-      "interactions": 5.929069458416505,
-      "likes": 5.929069458416505,
-      "comments": 0
-    },
-    {
-      "time": "6_9",
-      "interactions": 9.393372080121413,
-      "likes": 9.393372080121413,
-      "comments": 0
-    },
-    {
-      "time": "6_10",
-      "interactions": 10.443388646307524,
-      "likes": 10.443388646307524,
-      "comments": 0
-    },
-    {
-      "time": "6_11",
-      "interactions": 8.500506778476812,
-      "likes": 8.500506778476812,
-      "comments": 0
-    },
-    {
-      "time": "6_12",
-      "interactions": 8.003744672829754,
-      "likes": 8.003744672829754,
-      "comments": 0
-    },
-    {
-      "time": "6_13",
-      "interactions": 7.385770126917455,
-      "likes": 7.385770126917455,
-      "comments": 0
-    },
-    {
-      "time": "6_14",
-      "interactions": 8.12353482639669,
-      "likes": 8.12353482639669,
-      "comments": 0
-    },
-    {
-      "time": "6_15",
-      "interactions": 7.022118638779902,
-      "likes": 7.022118638779902,
-      "comments": 0
-    },
-    {
-      "time": "6_16",
-      "interactions": 6.600210277327992,
-      "likes": 6.600210277327992,
-      "comments": 0
-    },
-    {
-      "time": "6_17",
-      "interactions": 5.267652632251737,
-      "likes": 5.267652632251737,
-      "comments": 0
-    },
-    {
-      "time": "6_18",
-      "interactions": 7.6933303620919045,
-      "likes": 7.6933303620919045,
-      "comments": 0
-    },
-    {
-      "time": "6_19",
-      "interactions": 5.449112080588025,
-      "likes": 5.449112080588025,
-      "comments": 0
-    },
-    {
-      "time": "6_20",
-      "interactions": 4.933695517790262,
-      "likes": 4.933695517790262,
-      "comments": 0
-    },
-    {
-      "time": "6_21",
-      "interactions": 4.575599434112183,
-      "likes": 4.575599434112183,
-      "comments": 0
-    },
-    {
-      "time": "6_22",
-      "interactions": 6.363575950558534,
-      "likes": 6.363575950558534,
-      "comments": 0
-    },
-    {
-      "time": "6_23",
-      "interactions": 3.9956101009468963,
-      "likes": 3.9956101009468963,
-      "comments": 0
-    },
-    {
-      "time": "7_0",
-      "interactions": 3.4080858850299345,
-      "likes": 3.4080858850299345,
-      "comments": 0
-    },
-    {
-      "time": "7_1",
-      "interactions": 1.6423973226813093,
-      "likes": 1.6423973226813093,
-      "comments": 0
-    },
-    {
-      "time": "7_2",
-      "interactions": 2.0485490448101222,
-      "likes": 2.0485490448101222,
-      "comments": 0
-    },
-    {
-      "time": "7_3",
-      "interactions": 1.60038230415521,
-      "likes": 1.60038230415521,
-      "comments": 0
-    },
-    {
-      "time": "7_4",
-      "interactions": 8.026333394965379,
-      "likes": 8.026333394965379,
-      "comments": 0
-    },
-    {
-      "time": "7_5",
-      "interactions": 9.098892223821744,
-      "likes": 9.098892223821744,
-      "comments": 0
-    },
-    {
-      "time": "7_6",
-      "interactions": 16.058890742551313,
-      "likes": 16.058890742551313,
-      "comments": 0
-    },
-    {
-      "time": "7_7",
-      "interactions": 14.445227109880769,
-      "likes": 14.445227109880769,
-      "comments": 0
-    },
-    {
-      "time": "7_8",
-      "interactions": 28.82311588919404,
-      "likes": 28.82311588919404,
-      "comments": 0
-    },
-    {
-      "time": "7_9",
-      "interactions": 29.76688263659493,
-      "likes": 29.76688263659493,
-      "comments": 0
-    },
-    {
-      "time": "7_10",
-      "interactions": 32.281537088218315,
-      "likes": 32.281537088218315,
-      "comments": 0
-    },
-    {
-      "time": "7_11",
-      "interactions": 30.515508934454516,
-      "likes": 30.515508934454516,
-      "comments": 0
-    },
-    {
-      "time": "7_12",
-      "interactions": 27.31437627921452,
-      "likes": 27.31437627921452,
-      "comments": 0
-    },
-    {
-      "time": "7_13",
-      "interactions": 26.82784330834171,
-      "likes": 26.82784330834171,
-      "comments": 0
-    },
-    {
-      "time": "7_14",
-      "interactions": 27.18345307674202,
-      "likes": 27.18345307674202,
-      "comments": 0
-    },
-    {
-      "time": "7_15",
-      "interactions": 25.14875104562488,
-      "likes": 25.14875104562488,
-      "comments": 0
-    },
-    {
-      "time": "7_16",
-      "interactions": 21.15188033698441,
-      "likes": 21.15188033698441,
-      "comments": 0
-    },
-    {
-      "time": "7_17",
-      "interactions": 21.190036571854478,
-      "likes": 21.190036571854478,
-      "comments": 0
-    },
-    {
-      "time": "7_18",
-      "interactions": 22.184736578619404,
-      "likes": 22.184736578619404,
-      "comments": 0
-    },
-    {
-      "time": "7_19",
-      "interactions": 20.259145332464577,
-      "likes": 20.259145332464577,
-      "comments": 0
-    },
-    {
-      "time": "7_20",
-      "interactions": 17.37285718138793,
-      "likes": 17.37285718138793,
-      "comments": 0
-    },
-    {
-      "time": "7_21",
-      "interactions": 18.512064418599437,
-      "likes": 18.512064418599437,
-      "comments": 0
-    },
-    {
-      "time": "7_22",
-      "interactions": 16.84859343491496,
-      "likes": 16.84859343491496,
-      "comments": 0
-    },
-    {
-      "time": "7_23",
-      "interactions": 13.212777212563084,
-      "likes": 13.212777212563084,
-      "comments": 0
-    }
-  ],
-  "timestamp": "2025-10-21T14:11:14.183Z"
-}
-🔍 Final competitorSite.contentChanges in response: MISSING
+🔍 Final yourSite.contentChanges in response: EXISTS
+🔍 Final yourSite.instagram in response: MISSING
+🔍 Final competitorSite.instagram in response: MISSING
+🔍 Final competitorSite.contentChanges in response: EXISTS
 🔍 Generated comparison.seo: {
   "yours": 100,
   "competitor": 79,
@@ -1802,7 +642,840 @@ FRONTEND_URL: http://localhost:3002
   }
 }
 🔍 Ads data included - Google: true Meta: true
+
+🔍 Cache Status Check:
+   Email: mush4rr4f@gmail.com
+   Your Site: agenticforge.tech
+   Competitor: pes.edu
+🔍 [CompetitorCache] Looking up user by email: mush4rr4f@gmail.com
+✅ [CompetitorCache] Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+🔍 [CompetitorCache] Checking cache: agenticforge.tech vs pes.edu
+✅ [CompetitorCache] Cache hit! Age: 0 hours
+⚠️ [CompetitorCache] Using legacy cache format (competitor only)
+
+🔍 RAW REQUEST BODY: {
+  "email": "mush4rr4f@gmail.com",
+  "yourSite": "agenticforge.tech",
+  "competitorSite": "pes.edu",
+  "yourInstagram": "rvcollegeofengineering",
+  "competitorInstagram": "pesuniversity",
+  "yourFacebook": "RVCEngineering",
+  "competitorFacebook": "pesuniversity",
+  "forceRefresh": false
+}
+
+📊 Competitor Analysis Request:
+   Your Site: agenticforge.tech
+   Competitor: pes.edu
+   Email: mush4rr4f@gmail.com
+   Force Refresh: false
+   Your Instagram: rvcollegeofengineering
+   Competitor Instagram: pesuniversity
+   Your Facebook: RVCEngineering
+   Competitor Facebook: pesuniversity
+   Has Instagram? true
+   Has Facebook? true
+🔍 [CompetitorCache] Looking up user by email: mush4rr4f@gmail.com
+✅ [CompetitorCache] Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+🔍 [CompetitorCache] Checking cache: agenticforge.tech vs pes.edu
+✅ [CompetitorCache] Cache hit! Age: 0 hours
+⚠️ [CompetitorCache] Using legacy cache format (competitor only)
+✅ Returning cached competitor analysis (legacy format)
+⚠️ Your site data not cached, fetching fresh...
+🔍 Cached competitor puppeteer.seo.headings: {
+  h1: [ 'Pesuvians for Life' ],
+  h2: [
+    'Academics',
+    'Meet our Faculty',
+    'Academics',
+    'Meet our Faculty',
+    'Placements',
+    'Placements',
+    'Pesuvians for Life',
+    'Research',
+    'Research',
+    'Campus Life'
+  ],
+  h3: [
+    'Admissions 2026 Now Open',
+    'Ph.D. and M.Tech by Research',
+    'Scholarships',
+    'Research Driven Learning',
+    'Placements',
+    'International Internships',
+    'ADMISSIONS 2026 NOW OPEN',
+    'Our Campuses',
+    'PES University',
+    'PES University',
+    'PES University',
+    'PES IMSR',
+    'The Amaatra Academy',
+    'PES Public School',
+    'SSM Public School',
+    'Our Campuses',
+    'SSM Public School',
+    'PES University',
+    'PES University',
+    'PES University',
+    'PES IMSR',
+    'The Amaatra Academy',
+    'PES Public School',
+    'SSM Public School',
+    'PES University',
+    'Undergraduate Education',
+    'Postgraduate Education',
+    'Lifelong Learning',
+    'Dr. Shailashree Haridas',
+    'Dr. V Krishna',
+    'Dr. Shylaja S S',
+    'Undergraduate Education',
+    'Postgraduate Education',
+    'Lifelong Learning',
+    'Dr. Shailashree Haridas',
+    'Dr. V Krishna',
+    'Dr. Shylaja S S',
+    'You may also be interested in',
+    'Giving to PES',
+    'Staying in Touch',
+    'Discovering our Newsletters',
+    'Information For',
+    'Information About',
+    'Important Info',
+    'PESU Bot'
+  ],
+  h1Count: 1,
+  h2Count: 10,
+  h3Count: 45
+}
+   📦 Fetching cached data for user site: agenticforge.tech
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+✅ Using expired Lighthouse cache (fallback mode)
+   🔍 Lighthouse cache structure: ["url","chartData","timestamp","seoAnalysis","coreWebVitals","opportunities","categoryScores","resourceMetrics","scoreComparison","lighthouseVersion","performanceTimeline","accessibilityBreakdown","bestPracticesBreakdown"]
+   🔍 Has categoryScores? true
+   🔍 CategoryScores: {"seo":100,"performance":49,"accessibility":85,"bestPractices":96}
+   ✅ Found cached Lighthouse data (Performance: 49)
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+✅ Using expired Search Console cache (fallback mode)
+✅ Using cached Search Console data
+   ℹ️ No PageSpeed data in Search Console cache
+   ℹ️ No Technical SEO data in Search Console cache
+   ℹ️ No Puppeteer data in Search Console cache
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+🔍 Checking SE Ranking cache for domain: agenticforge.tech
+✅ SE Ranking cache hit! Age: 1413 minutes
+   🔍 SE Ranking cache result: Found
+   🔍 SE Ranking cache keys: [
+  'note',            'source',
+  'metrics',         'topTlds',
+  'available',       'topAnchors',
+  'topCountries',    'domainMetrics',
+  'totalBacklinks',  'topLinkingPages',
+  'topLinkingSites', 'totalRefDomains',
+  'cached',          'cacheAge',
+  'lastUpdated'
+]
+   🔍 Has backlinks_data? false
+   🔍 Has totalBacklinks? true
+   ✅ Found cached SE Ranking backlinks
+   📊 Fetching traffic data for user site...
+📊 Fetching user GA data for: mush4rr4f@gmail.com
+🔍 Fetching OAuth tokens for: mush4rr4f@gmail.com (google)
+✅ OAuth tokens retrieved for: mush4rr4f@gmail.com (google)
+✅ OAuth client ready for: mush4rr4f@gmail.com
+✅ OAuth client ready
+📊 Fetching GA properties for: mush4rr4f@gmail.com
+🔍 Fetching OAuth tokens for: mush4rr4f@gmail.com (google)
+✅ OAuth tokens retrieved for: mush4rr4f@gmail.com (google)
+✅ OAuth client ready for: mush4rr4f@gmail.com
+✅ OAuth client ready, fetching properties...
+✅ Found 1 GA4 properties
+📌 Using first available property: 507800388
+✅ User Analytics data received
+   ✅ Got traffic data from Google Analytics (288 sessions)
+   📝 Fetching content changes monitoring for user site...
+   🔧 ChangeDetection service loaded successfully
+📊 Analyzing content changes for: agenticforge.tech
+🔍 Searching for watch with URL: agenticforge.tech
+📋 Fetching all watches...
+✅ Found 4 watches
+✅ Found existing watch for https://agenticforge.tech: 318e5971-bbe5-4d04-821b-185250ec9164
+🔍 Fetching details for watch: 318e5971-bbe5-4d04-821b-185250ec9164
+📜 Fetching history for watch: 318e5971-bbe5-4d04-821b-185250ec9164
+   📊 ChangeDetection response: {
+  "success": true,
+  "domain": "agenticforge.tech",
+  "uuid": "318e5971-bbe5-4d04-821b-185250ec9164",
+  "url": "https://agenticforge.tech",
+  "monitoring": {
+    "lastChecked": "2025-10-22T13:11:45.000Z",
+    "lastChanged": null,
+    "checkCount": 1,
+    "changeCount": 0,
+    "status": null,
+    "paused": false
+  },
+  "triggers": [
+    "price",
+    "pricing",
+    "new",
+    "feature",
+    "launch",
+    "update",
+    "release"
+  ],
+  "history": {},
+  "activity": {
+    "isActive": false,
+    "daysSinceLastCheck": 0,
+    "daysSinceLastChange": null,
+    "totalChecks": 1,
+    "totalChanges": 0,
+    "changeFrequency": "no changes detected",
+    "activityLevel": "inactive"
+  },
+  "comparison": "dormant"
+}
+   ✅ Got ChangeDetection monitoring data (1 checks, 0 changes)
+   📌 Activity Level: inactive
+   📸 Fetching Instagram engagement for: rvcollegeofengineering
+
+📱 Starting Instagram engagement analysis for: rvcollegeofengineering
+📸 Fetching Instagram CID for: rvcollegeofengineering
+❌ Error fetching Instagram CID for rvcollegeofengineering: Request failed with status code 429
+   📘 Fetching Facebook engagement for: RVCEngineering
+
+📱 Analyzing Facebook page: RVCEngineering
+═══════════════════════════════════════════════════
+
+
+🔍 Fetching Facebook page info for: RVCEngineering
+❌ Error fetching Facebook page info: Request failed with status code 429
+❌ Analysis failed: Request failed with status code 429
+   ⚠️ Failed to fetch Facebook data: Request failed with status code 429
+   📊 Cached data summary:
+      - Lighthouse: ✅
+      - PageSpeed: ❌
+      - Technical SEO: ❌
+      - Puppeteer: ❌
+      - Backlinks: ✅
+      - Traffic: ✅
+      - Content Changes (ChangeDetection): ✅
+      - Content Updates (RSS/Sitemap): ❌
+      - Instagram: ❌
+      - Facebook: ❌
+   🔍 Puppeteer data missing, fetching separately...
+🔍 Starting Puppeteer analysis for: https://agenticforge.tech
+📄 Loading page: https://agenticforge.tech
+✅ Puppeteer analysis completed for: agenticforge.tech
+🔴 Browser closed for agenticforge.tech
+   ✅ Puppeteer analysis completed for user site
+   🔍 PageSpeed data missing, fetching separately...
+📱 Fetching PageSpeed data for: https://agenticforge.tech
+📱 Fetching mobile and desktop PageSpeed data...
+✅ PageSpeed data retrieved for agenticforge.tech
+   Desktop: 69% | Mobile: 55%
+   ✅ PageSpeed analysis completed for user site
+🔍 Your site puppeteer.seo.headings: {
+  h1: [
+    'Scale Your Business with AI Automation',
+    'Transforming Businesses\n with\nAI Automation'
+  ],
+  h2: [
+    'Revolutionary AI\nBusiness Solutions',
+    'See Our AI Agents in Action',
+    'Why Choose AgenticForge',
+    'Pioneering the Future of\nIntelligent Automation',
+    'Ready to Transform\n Your Business?'
+  ],
+  h3: [
+    'Intelligent Process Automation',
+    'Advanced Customer Support AI',
+    'Hyper-Personalized Marketing',
+    'Enterprise Voice AI Agents',
+    'Ready to Transform Your Business?',
+    'Intelligent AI Architecture',
+    'Smooth System Integration',
+    'Data Privacy & Security',
+    'Tailored AI Solutions',
+    'Intelligent Voice Appointment System',
+    'Live Demo Available',
+    'BandhanAI Marketing Campaign Engine',
+    'Interactive Platform',
+    'About AgenticForge',
+    'Smart AI Systems',
+    'Fast Implementation',
+    'Dedicated Support',
+    'Democratizing Intelligence',
+    'Get Your Free AI Audit',
+    'AI ROI Calculator',
+    'Services',
+    'Company'
+  ],
+  h1Count: 2,
+  h2Count: 5,
+  h3Count: 22
+}
+🔍 Your site pagespeed data: EXISTS
+🔍 Your site pagespeed structure: {
+  "dataAvailable": true,
+  "url": "https://agenticforge.tech",
+  "desktop": {
+    "strategy": "desktop",
+    "performanceScore": 69,
+    "category": "AVERAGE",
+    "fieldData": {
+      "lcp": null,
+      "fid": null,
+      "cls": null,
+      "overall_category": "UNKNOWN"
+    },
+    "labData": {
+      "lcp": 2846.047438256629,
+      "fid": 398,
+      "cls": 0.0010208138323906533,
+      "fcp": 1212.506775102814,
+      "tti": 2993.236376189954,
+      "tbt": 254,
+      "speedIndex": 1812.1988618024025
+    }
+  },
+  "mobile": {
+    "strategy": "mobile",
+    "performanceScore": 55,
+    "category": "AVERAGE",
+    "fieldData": {
+      "lcp": null,
+      "fid": null,
+      "cls": null,
+      "overall_category": "UNKNOWN"
+    },
+    "labData": {
+      "lcp": 13865.47481443498,
+      "fid": 367,
+      "cls": 0.002695607462246732,
+      "fcp": 4767.910550629263,
+      "tti": 14150.976698029286,
+      "tbt": 308,
+      "speedIndex": 5317.256832733669
+    }
+  }
+}
+   ✅ Using cached Google Ads data for competitor
+   🟢 Fetching Google Ads monitoring for your cached site: agenticforge.tech
+   ✅ Got your site Google Ads data (Total Ads: 0)
+   ✅ Using cached ChangeDetection data for competitor
+   ✅ Using cached Meta Ads data for competitor
+   🟣 Fetching Meta Ads monitoring for your cached site: RVCEngineering
+[MetaAds] getMetaAdsMonitoring called with username: RVCEngineering
+[MetaAds] Username received for Page ID lookup: RVCEngineering
+[MetaAds] Querying RapidAPI for Page ID with URL: https://www.facebook.com/RVCEngineering
+[MetaAds] Error fetching Facebook page ID: {
+  message: 'You have exceeded the MONTHLY quota for Requests on your current plan, BASIC. Upgrade your plan at https://rapidapi.com/ousema.frikha/api/facebook-pages-scraper2'
+}
+[MetaAds] Could not resolve Facebook page ID for username: RVCEngineering
+   ⚠️ Failed to fetch your site Meta Ads data: Could not resolve Facebook page ID for username.
+   📸 Fetching Instagram engagement for cached competitor: pesuniversity
+
+📱 Starting Instagram engagement analysis for: pesuniversity
+📸 Fetching Instagram CID for: pesuniversity
+❌ Error fetching Instagram CID for pesuniversity: Request failed with status code 429
+   📘 Fetching Facebook engagement for cached competitor: pesuniversity
+
+📱 Analyzing Facebook page: pesuniversity
+═══════════════════════════════════════════════════
+
+
+🔍 Fetching Facebook page info for: pesuniversity
+❌ Error fetching Facebook page info: Request failed with status code 429
+❌ Analysis failed: Request failed with status code 429
+   ⚠️ Failed to fetch competitor Facebook data: Request failed with status code 429
+   ✅ Using cached traffic data for competitor
+   ✅ Using cached traffic data for your site
+🔍 SEO Comparison - yourSeoData.headings: {
+  h1: [
+    'Scale Your Business with AI Automation',
+    'Transforming Businesses\n with\nAI Automation'
+  ],
+  h2: [
+    'Revolutionary AI\nBusiness Solutions',
+    'See Our AI Agents in Action',
+    'Why Choose AgenticForge',
+    'Pioneering the Future of\nIntelligent Automation',
+    'Ready to Transform\n Your Business?'
+  ],
+  h3: [
+    'Intelligent Process Automation',
+    'Advanced Customer Support AI',
+    'Hyper-Personalized Marketing',
+    'Enterprise Voice AI Agents',
+    'Ready to Transform Your Business?',
+    'Intelligent AI Architecture',
+    'Smooth System Integration',
+    'Data Privacy & Security',
+    'Tailored AI Solutions',
+    'Intelligent Voice Appointment System',
+    'Live Demo Available',
+    'BandhanAI Marketing Campaign Engine',
+    'Interactive Platform',
+    'About AgenticForge',
+    'Smart AI Systems',
+    'Fast Implementation',
+    'Dedicated Support',
+    'Democratizing Intelligence',
+    'Get Your Free AI Audit',
+    'AI ROI Calculator',
+    'Services',
+    'Company'
+  ],
+  h1Count: 2,
+  h2Count: 5,
+  h3Count: 22
+}
+🔍 SEO Comparison - compSeoData.headings: {
+  h1: [ 'Pesuvians for Life' ],
+  h2: [
+    'Academics',
+    'Meet our Faculty',
+    'Academics',
+    'Meet our Faculty',
+    'Placements',
+    'Placements',
+    'Pesuvians for Life',
+    'Research',
+    'Research',
+    'Campus Life'
+  ],
+  h3: [
+    'Admissions 2026 Now Open',
+    'Ph.D. and M.Tech by Research',
+    'Scholarships',
+    'Research Driven Learning',
+    'Placements',
+    'International Internships',
+    'ADMISSIONS 2026 NOW OPEN',
+    'Our Campuses',
+    'PES University',
+    'PES University',
+    'PES University',
+    'PES IMSR',
+    'The Amaatra Academy',
+    'PES Public School',
+    'SSM Public School',
+    'Our Campuses',
+    'SSM Public School',
+    'PES University',
+    'PES University',
+    'PES University',
+    'PES IMSR',
+    'The Amaatra Academy',
+    'PES Public School',
+    'SSM Public School',
+    'PES University',
+    'Undergraduate Education',
+    'Postgraduate Education',
+    'Lifelong Learning',
+    'Dr. Shailashree Haridas',
+    'Dr. V Krishna',
+    'Dr. Shylaja S S',
+    'Undergraduate Education',
+    'Postgraduate Education',
+    'Lifelong Learning',
+    'Dr. Shailashree Haridas',
+    'Dr. V Krishna',
+    'Dr. Shylaja S S',
+    'You may also be interested in',
+    'Giving to PES',
+    'Staying in Touch',
+    'Discovering our Newsletters',
+    'Information For',
+    'Information About',
+    'Important Info',
+    'PESU Bot'
+  ],
+  h1Count: 1,
+  h2Count: 10,
+  h3Count: 45
+}
+🔍 formatHeadings result: { h1Count: 2, h2Count: 5, h3Count: 22 }
+🔍 formatHeadings result: { h1Count: 1, h2Count: 10, h3Count: 45 }
+🔍 Final yourHeadings: { h1Count: 2, h2Count: 5, h3Count: 22 }
+🔍 Final compHeadings: { h1Count: 1, h2Count: 10, h3Count: 45 }
+🔍 Final yourSite.pagespeed in response: EXISTS
+🔍 Final yourSite.contentChanges in response: EXISTS
+🔍 Final yourSite.instagram in response: MISSING
+🔍 Final competitorSite.instagram in response: MISSING
+🔍 Final competitorSite.contentChanges in response: EXISTS
+🔍 Generated comparison.seo: {
+  "yours": 100,
+  "competitor": 79,
+  "difference": 21,
+  "winner": "yours",
+  "scores": {
+    "your": 100,
+    "competitor": 79
+  },
+  "metaTags": {
+    "your": {
+      "hasTitle": true,
+      "hasDescription": true,
+      "title": "AgenticForge - AI Automation & Custom AI Agents for Business",
+      "description": "Transform your business with AgenticForge's intelligent AI automation. We build sophisticated AI agents, chatbots, voicebots, and workflow automations using cutting-edge AI technologies. 500+ AI tools mastered, 85% task automation rate."
+    },
+    "competitor": {
+      "hasTitle": true,
+      "hasDescription": false,
+      "title": "PES University",
+      "description": null
+    }
+  },
+  "headings": {
+    "your": {
+      "h1Count": 2,
+      "h2Count": 5,
+      "h3Count": 22
+    },
+    "competitor": {
+      "h1Count": 1,
+      "h2Count": 10,
+      "h3Count": 45
+    }
+  },
+  "structuredData": {
+    "your": [
+      {
+        "type": "Organization",
+        "raw": {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "AgenticForge",
+          "url": "https://agenticforge.tech",
+          "logo": "https://agenticforge.tech/heroLogo.png",
+          "description": "Professional AI automation agency building sophisticated AI agents and workflow automations using cutting-edge technologies.",
+          "sameAs": [
+            "https://www.linkedin.com/company/agentic-forge",
+            "https://twitter.com/agenticforge",
+            "https://facebook.com/agenticforge",
+            "https://www.instagram.com/agenticforge"
+          ]
+        }
+      },
+      {
+        "type": "Organization",
+        "raw": {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "AgenticForge",
+          "url": "https://agenticforge.tech",
+          "logo": "https://agenticforge.tech/heroLogo.png",
+          "sameAs": [
+            "https://www.linkedin.com/company/agentic-forge",
+            "https://twitter.com/agenticforge",
+            "https://facebook.com/agenticforge",
+            "https://www.instagram.com/agenticforge"
+          ],
+          "description": "Transform your business with AgenticForge's intelligent AI automation. We build sophisticated AI agents, chatbots, voicebots, and workflow automations using cutting-edge AI technologies.",
+          "address": {
+            "@type": "PostalAddress",
+            "addressCountry": "US"
+          },
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "contactType": "customer support",
+            "email": "agenticforge.tech@gmail.com",
+            "availableLanguage": [
+              "English"
+            ]
+          }
+        }
+      },
+      {
+        "type": "ItemList",
+        "raw": {
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          "itemListElement": [
+            {
+              "@type": "Case",
+              "position": 1,
+              "name": "Intelligent Voice Appointment System",
+              "description": "Manual appointment scheduling was consuming 15+ hours weekly, with high no-show rates and poor customer experience due to delayed responses",
+              "result": [
+                "15 hours of weekly admin work eliminated",
+                "78% reduction in no-show appointments",
+                "24/7 automated appointment booking capability",
+                "Seamless integration with existing calendar systems"
+              ],
+              "industry": "Healthcare & Professional Services",
+              "provider": {
+                "@type": "Organization",
+                "name": "Agentic Forge",
+                "url": "https://agenticforge.tech"
+              }
+            },
+            {
+              "@type": "Case",
+              "position": 2,
+              "name": "BandhanAI Marketing Campaign Engine",
+              "description": "Generic mass emails resulted in low engagement rates, manual campaign management was time-intensive, and no real-time performance tracking",
+              "result": [
+                "340% increase in email engagement rates",
+                "Automated personalized campaigns based on purchase history",
+                "Real-time campaign performance tracking via Slack",
+                "Dynamic customer segmentation and targeting"
+              ],
+              "industry": "E-commerce & Retail",
+              "provider": {
+                "@type": "Organization",
+                "name": "Agentic Forge",
+                "url": "https://agenticforge.tech"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "competitor": {
+      "score": 0,
+      "hasJsonLd": false,
+      "jsonLdCount": 0,
+      "hasMicrodata": false,
+      "microdataCount": 0
+    }
+  }
+}
+🔍 Ads data included - Google: true Meta: true
+🔍 Checking OAuth status for: mush4rr4f@gmail.com
+🔍 Fetching OAuth tokens for: mush4rr4f@gmail.com (google)
+✅ OAuth tokens retrieved for: mush4rr4f@gmail.com (google)
+🔍 Checking OAuth status for: mush4rr4f@gmail.com
+🔍 Fetching OAuth tokens for: mush4rr4f@gmail.com (google)
+📊 Fetching Search Console data for: mush4rr4f@gmail.com
+🔍 Looking up user by email: mush4rr4f@gmail.com
+📊 Fetching analytics with range: 30days
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+✅ OAuth tokens retrieved for: mush4rr4f@gmail.com (google)
+⏰ Search Console cache expired
+📡 Fetching fresh data from Google Search Console...
+🔍 Fetching OAuth tokens for: mush4rr4f@gmail.com (google)
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+⏰ Google Analytics cache expired
+📡 Fetching fresh data from Google Analytics...
+📊 Fetching user GA data for: mush4rr4f@gmail.com
+🔍 Fetching OAuth tokens for: mush4rr4f@gmail.com (google)
+✅ OAuth tokens retrieved for: mush4rr4f@gmail.com (google)
+✅ OAuth client ready for: mush4rr4f@gmail.com
+✅ OAuth client ready
+✅ OAuth tokens retrieved for: mush4rr4f@gmail.com (google)
+✅ OAuth client ready for: mush4rr4f@gmail.com
+✅ OAuth client ready
+📊 Fetching GA properties for: mush4rr4f@gmail.com
+🔍 Fetching OAuth tokens for: mush4rr4f@gmail.com (google)
+✅ Found 1 sites in Search Console
+📍 Using site: sc-domain:agenticforge.tech
+✅ OAuth tokens retrieved for: mush4rr4f@gmail.com (google)
+✅ OAuth client ready for: mush4rr4f@gmail.com
+✅ OAuth client ready, fetching properties...
+📈 Retrieved 4 query rows, 1 page rows, 18 daily rows
+� Extracted domain from sc-domain format: agenticforge.tech
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+🔍 Checking SE Ranking cache for domain: agenticforge.tech
+✅ SE Ranking cache hit! Age: 1416 minutes
+✅ Using cached SE Ranking backlinks data
+✅ Search Console data retrieved successfully
+📊 Stats: 0 clicks, 11 impressions, 1 organic traffic
+🔦 Fetching Lighthouse data for domain: agenticforge.tech
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+⏰ Lighthouse cache expired
+📞 Calling lighthouseService.analyzeSite...
+🔦 Running comprehensive Lighthouse audit for: https://agenticforge.tech
+✅ Found 1 GA4 properties
+📌 Using first available property: 507800388
+✅ User Analytics data received
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+✅ Google Analytics data cached successfully
+✅ Comprehensive Lighthouse audit completed for agenticforge.tech
+📊 Category Scores: { performance: 56, accessibility: 85, bestPractices: 96, seo: 100 }
+💾 Result saved to savedResult variable
+📬 Received response from lighthouseService: DATA
+✅ Lighthouse: Performance 56%
+🔍 Looking up user by email: mush4rr4f@gmail.com
+📊 Fetching Search Console data for: mush4rr4f@gmail.com
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+📊 Fetching Search Console data for: mush4rr4f@gmail.com
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+✅ Lighthouse data cached successfully for domain: agenticforge.tech
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+⏰ Search Console cache expired
+📡 Fetching fresh data from Google Search Console...
+🔍 Fetching OAuth tokens for: mush4rr4f@gmail.com (google)
+⏰ Search Console cache expired
+📡 Fetching fresh data from Google Search Console...
+🔍 Fetching OAuth tokens for: mush4rr4f@gmail.com (google)
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+✅ Search Console data cached successfully
+✅ OAuth tokens retrieved for: mush4rr4f@gmail.com (google)
+✅ OAuth client ready for: mush4rr4f@gmail.com
+✅ OAuth client ready
+✅ OAuth tokens retrieved for: mush4rr4f@gmail.com (google)
+✅ OAuth client ready for: mush4rr4f@gmail.com
+✅ OAuth client ready
+✅ Found 1 sites in Search Console
+📍 Using site: sc-domain:agenticforge.tech
+✅ Found 1 sites in Search Console
+📍 Using site: sc-domain:agenticforge.tech
+📈 Retrieved 4 query rows, 1 page rows, 18 daily rows
+� Extracted domain from sc-domain format: agenticforge.tech
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+🔍 Checking SE Ranking cache for domain: agenticforge.tech
+✅ SE Ranking cache hit! Age: 1416 minutes
+✅ Using cached SE Ranking backlinks data
+✅ Search Console data retrieved successfully
+📊 Stats: 0 clicks, 11 impressions, 1 organic traffic
+🔦 Fetching Lighthouse data for domain: agenticforge.tech
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+📈 Retrieved 4 query rows, 1 page rows, 18 daily rows
+� Extracted domain from sc-domain format: agenticforge.tech
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+🔍 Checking SE Ranking cache for domain: agenticforge.tech
+✅ Using cached Lighthouse data
+✅ Using cached Lighthouse data
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+✅ SE Ranking cache hit! Age: 1416 minutes
+✅ Using cached SE Ranking backlinks data
+✅ Search Console data retrieved successfully
+📊 Stats: 0 clicks, 11 impressions, 1 organic traffic
+🔦 Fetching Lighthouse data for domain: agenticforge.tech
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+✅ Search Console data cached successfully
+✅ Using cached Lighthouse data
+✅ Using cached Lighthouse data
+🔍 Looking up user by email: mush4rr4f@gmail.com
+✅ Found user ID: 253da6c3-dac8-48b8-8254-700890f2b7fc
+✅ Search Console data cached successfully
 [32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+🔧 Services loaded: {
+  lighthouse: true,
+  pagespeed: true,
+  analytics: true,
+  scoring: true,
+  searchConsole: true,
+  technicalSEO: true
+}
+🔍 Supabase Config Check:
+   SUPABASE_URL: https://krgaukhigntjdfacppbq.s...
+   SUPABASE_SERVICE_KEY: SET
+🔍 OAuth Route Environment Check:
+GOOGLE_CLIENT_ID: 5384374065...
+GOOGLE_CLIENT_SECRET: SET
+GOOGLE_REDIRECT_URI: http://localhost:3010/api/auth/google/callback
+FRONTEND_URL: http://localhost:3002
+✅ OAuth2 client initialized successfully
+🔍 Facebook OAuth Route Environment Check:
+FACEBOOK_APP_ID: 1146428707...
+FACEBOOK_APP_SECRET: SET
+FRONTEND_URL: http://localhost:3002
+✅ Facebook OAuth client initialized successfully
+   Redirect URI: http://localhost:3010/api/auth/facebook/callback
+🚀 SEO Health Score API running on port 3010
+📍 Health endpoint: http://localhost:3010/api/status
+🔐 Google Auth: http://localhost:3010/api/auth/google
+📘 Facebook Auth: http://localhost:3010/api/auth/facebook
+⚡ Lighthouse: http://localhost:3010/api/lighthouse
+📈 Analytics: http://localhost:3010/api/analytics
+🔍 Search Console: http://localhost:3010/api/search-console
+📊 Traffic: http://localhost:3010/api/traffic
+🏆 Competitor: http://localhost:3010/api/competitor
+📱 Facebook Metrics: http://localhost:3010/api/facebook
+
+🤖 AI Recommendations Request:
+   Your Site: agenticforge.tech
+   Competitor: pes.edu
+🤖 Calling Gemini AI service...
+🤖 Generating AI recommendations with Gemini (attempt 1/2)...
+❌ Attempt 1 failed: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent: [503 Service Unavailable] The model is overloaded. Please try again later.
+⏳ Waiting 2 seconds before retry...
+🤖 Generating AI recommendations with Gemini (attempt 2/2)...
+✅ AI recommendations generated successfully
+✅ Generated 3 AI recommendations
+🔍 Checking Facebook connection status for: test@example.com
+🔍 Fetching OAuth tokens for: test@example.com (facebook)
+✅ OAuth tokens retrieved for: test@example.com (facebook)
+✅ Facebook connection status: EAAQSq7vgYpUBPm5PtRwJgdlEiEBrTW6TNZBXKikj7iZAycEOfW1QRgHBxirqDdBvgLT9pCFITkIrmzEu0qvoQ7ftlZBrXrsk7piBhELXA7WEZCX4VIg7UNngpPTUvuZCFRMSZBiXVeQqBoeWJMc7w1hVde5mHDeVNOGyVZCGnyI9KvFQSZBbMbWXk5PgLXw2
+🔍 Checking Facebook connection status for: test@example.com
+🔍 Fetching OAuth tokens for: test@example.com (facebook)
+📊 Fetching Facebook metrics for: test@example.com, period: month
+📊 Fetching comprehensive Facebook metrics for: test@example.com
+   ⏱️  Period: month
+   🔄 Starting parallel fetch of engagement, posts, and follower growth...
+🔍 Fetching OAuth tokens for: test@example.com (facebook)
+🔍 Fetching OAuth tokens for: test@example.com (facebook)
+🔍 Fetching OAuth tokens for: test@example.com (facebook)
+✅ OAuth tokens retrieved for: test@example.com (facebook)
+✅ Facebook connection status: EAAQSq7vgYpUBPm5PtRwJgdlEiEBrTW6TNZBXKikj7iZAycEOfW1QRgHBxirqDdBvgLT9pCFITkIrmzEu0qvoQ7ftlZBrXrsk7piBhELXA7WEZCX4VIg7UNngpPTUvuZCFRMSZBiXVeQqBoeWJMc7w1hVde5mHDeVNOGyVZCGnyI9KvFQSZBbMbWXk5PgLXw2
+✅ OAuth tokens retrieved for: test@example.com (facebook)
+🔍 Fetching Facebook pages for user...
+✅ OAuth tokens retrieved for: test@example.com (facebook)
+🔍 Fetching Facebook pages for user...
+✅ OAuth tokens retrieved for: test@example.com (facebook)
+🔍 Fetching Facebook pages for user...
+✅ Found 1 Facebook page(s)
+   📄 Page 1: Agentic Forge (0 followers)
+📝 Fetching top posts for page: Agentic Forge
+   📥 Requesting 8 posts (will filter to top 4)
+✅ Found 1 Facebook page(s)
+   📄 Page 1: Agentic Forge (0 followers)
+📊 Fetching engagement metrics for page: Agentic Forge
+   📥 Requesting day metrics: page_impressions, page_impressions_unique, page_actions_post_reactions_total
+✅ Found 1 Facebook page(s)
+   📄 Page 1: Agentic Forge (0 followers)
+📈 Fetching follower growth for page: Agentic Forge
+   📥 Requesting 30 days of follower data
+   ✅ Received 3 day metrics
+      • page_impressions: 12 (last 30 days)
+      • page_impressions_unique: 1 (last 30 days)
+      • page_actions_post_reactions_total: 0[object Object][object Object] (last 30 days)
+   📥 Requesting lifetime metrics: page_fans
+   ✅ Received insights for 3 metrics
+      • page_fans: 2 data points
+      • page_fan_adds: 2 data points
+      • page_fan_removes: 2 data points
+   ✅ Processed 2 days of follower growth data
+   📊 Latest: 0 followers (+0, -0)
+   ✅ Retrieved 8 posts from API
+   🔄 Processing posts and fetching engagement data...
+      📄 Post 1: 1 reactions, 9 comments, 0 shares
+      📄 Post 2: 1 reactions, 1 comments, 0 shares
+      📄 Post 3: 1 reactions, 0 comments, 0 shares
+      📄 Post 4: 0 reactions, 0 comments, 0 shares
+   ✅ Received 0 lifetime metrics
+   📊 Calculated engagement rate: NaN%
+   ✅ Engagement metrics fetched successfully
+         ✓ Insights: 5 impressions, 2 reach
+         ✓ Insights: 3 impressions, 2 reach
+         ✓ Insights: 3 impressions, 2 reach
+         ✓ Insights: 3 impressions, 2 reach
+   ✅ Processed 4 posts successfully
+   🏆 Top post has 10 total engagements
+   ✅ All data fetched successfully
+   📊 Calculated reputation score: NaN/100
+   📈 Total engagements from top posts: 13
+✅ Comprehensive metrics compiled successfully
 [32m[nodemon] restarting due to changes...[39m
 [32m[nodemon] starting `node server.js`[39m
 🔧 Services loaded: {
@@ -1873,4 +1546,172 @@ FRONTEND_URL: http://localhost:3002
 📊 Traffic: http://localhost:3010/api/traffic
 🏆 Competitor: http://localhost:3010/api/competitor
 📱 Facebook Metrics: http://localhost:3010/api/facebook
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+🔧 Services loaded: {
+  lighthouse: true,
+  pagespeed: true,
+  analytics: true,
+  scoring: true,
+  searchConsole: true,
+  technicalSEO: true
+}
+🔍 Supabase Config Check:
+   SUPABASE_URL: https://krgaukhigntjdfacppbq.s...
+   SUPABASE_SERVICE_KEY: SET
+🔍 OAuth Route Environment Check:
+GOOGLE_CLIENT_ID: 5384374065...
+GOOGLE_CLIENT_SECRET: SET
+GOOGLE_REDIRECT_URI: http://localhost:3010/api/auth/google/callback
+FRONTEND_URL: http://localhost:3002
+✅ OAuth2 client initialized successfully
+🔍 Facebook OAuth Route Environment Check:
+FACEBOOK_APP_ID: 1146428707...
+FACEBOOK_APP_SECRET: SET
+FRONTEND_URL: http://localhost:3002
+✅ Facebook OAuth client initialized successfully
+   Redirect URI: http://localhost:3010/api/auth/facebook/callback
+🚀 SEO Health Score API running on port 3010
+📍 Health endpoint: http://localhost:3010/api/status
+🔐 Google Auth: http://localhost:3010/api/auth/google
+📘 Facebook Auth: http://localhost:3010/api/auth/facebook
+⚡ Lighthouse: http://localhost:3010/api/lighthouse
+📈 Analytics: http://localhost:3010/api/analytics
+🔍 Search Console: http://localhost:3010/api/search-console
+📊 Traffic: http://localhost:3010/api/traffic
+🏆 Competitor: http://localhost:3010/api/competitor
+📱 Facebook Metrics: http://localhost:3010/api/facebook
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+🔧 Services loaded: {
+  lighthouse: true,
+  pagespeed: true,
+  analytics: true,
+  scoring: true,
+  searchConsole: true,
+  technicalSEO: true
+}
+🔍 Supabase Config Check:
+   SUPABASE_URL: https://krgaukhigntjdfacppbq.s...
+   SUPABASE_SERVICE_KEY: SET
+🔍 OAuth Route Environment Check:
+GOOGLE_CLIENT_ID: 5384374065...
+GOOGLE_CLIENT_SECRET: SET
+GOOGLE_REDIRECT_URI: http://localhost:3010/api/auth/google/callback
+FRONTEND_URL: http://localhost:3002
+✅ OAuth2 client initialized successfully
+🔍 Facebook OAuth Route Environment Check:
+FACEBOOK_APP_ID: 1146428707...
+FACEBOOK_APP_SECRET: SET
+FRONTEND_URL: http://localhost:3002
+✅ Facebook OAuth client initialized successfully
+   Redirect URI: http://localhost:3010/api/auth/facebook/callback
+🚀 SEO Health Score API running on port 3010
+📍 Health endpoint: http://localhost:3010/api/status
+🔐 Google Auth: http://localhost:3010/api/auth/google
+📘 Facebook Auth: http://localhost:3010/api/auth/facebook
+⚡ Lighthouse: http://localhost:3010/api/lighthouse
+📈 Analytics: http://localhost:3010/api/analytics
+🔍 Search Console: http://localhost:3010/api/search-console
+📊 Traffic: http://localhost:3010/api/traffic
+🏆 Competitor: http://localhost:3010/api/competitor
+📱 Facebook Metrics: http://localhost:3010/api/facebook
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+🔧 Services loaded: {
+  lighthouse: true,
+  pagespeed: true,
+  analytics: true,
+  scoring: true,
+  searchConsole: true,
+  technicalSEO: true
+}
+🔍 Supabase Config Check:
+   SUPABASE_URL: https://krgaukhigntjdfacppbq.s...
+   SUPABASE_SERVICE_KEY: SET
+🔍 OAuth Route Environment Check:
+GOOGLE_CLIENT_ID: 5384374065...
+GOOGLE_CLIENT_SECRET: SET
+GOOGLE_REDIRECT_URI: http://localhost:3010/api/auth/google/callback
+FRONTEND_URL: http://localhost:3002
+✅ OAuth2 client initialized successfully
+🔍 Facebook OAuth Route Environment Check:
+FACEBOOK_APP_ID: 1146428707...
+FACEBOOK_APP_SECRET: SET
+FRONTEND_URL: http://localhost:3002
+✅ Facebook OAuth client initialized successfully
+   Redirect URI: http://localhost:3010/api/auth/facebook/callback
+🚀 SEO Health Score API running on port 3010
+📍 Health endpoint: http://localhost:3010/api/status
+🔐 Google Auth: http://localhost:3010/api/auth/google
+📘 Facebook Auth: http://localhost:3010/api/auth/facebook
+⚡ Lighthouse: http://localhost:3010/api/lighthouse
+📈 Analytics: http://localhost:3010/api/analytics
+🔍 Search Console: http://localhost:3010/api/search-console
+📊 Traffic: http://localhost:3010/api/traffic
+🏆 Competitor: http://localhost:3010/api/competitor
+📱 Facebook Metrics: http://localhost:3010/api/facebook
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+node:internal/modules/package_json_reader:266
+  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+        ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'pdfkit' imported from C:\Users\Musharraf\Documents\SaaS\backend\services\pdfReportService.js
+    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:266:9)
+    at packageResolve (node:internal/modules/esm/resolve:767:81)
+    at moduleResolve (node:internal/modules/esm/resolve:853:18)
+    at defaultResolve (node:internal/modules/esm/resolve:983:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38)
+    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38)
+    at ModuleJob._link (node:internal/modules/esm/module_job:183:49)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v22.20.0
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+node:internal/modules/package_json_reader:266
+  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+        ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'pdfkit' imported from C:\Users\Musharraf\Documents\SaaS\backend\services\pdfReportService.js
+    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:266:9)
+    at packageResolve (node:internal/modules/esm/resolve:767:81)
+    at moduleResolve (node:internal/modules/esm/resolve:853:18)
+    at defaultResolve (node:internal/modules/esm/resolve:983:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38)
+    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38)
+    at ModuleJob._link (node:internal/modules/esm/module_job:183:49)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v22.20.0
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+node:internal/modules/package_json_reader:266
+  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+        ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'pdfkit' imported from C:\Users\Musharraf\Documents\SaaS\backend\services\pdfReportService.js
+    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:266:9)
+    at packageResolve (node:internal/modules/esm/resolve:767:81)
+    at moduleResolve (node:internal/modules/esm/resolve:853:18)
+    at defaultResolve (node:internal/modules/esm/resolve:983:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:731:20)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:708:38)
+    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:310:38)
+    at ModuleJob._link (node:internal/modules/esm/module_job:183:49)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v22.20.0
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
 ^C

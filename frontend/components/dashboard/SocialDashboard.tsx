@@ -105,13 +105,92 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
   const [linkedinConnected, setLinkedinConnected] = useState(false)
   const [checkingConnection, setCheckingConnection] = useState(true)
   const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d'>('30d')
-  const [network, setNetwork] = useState<'linkedin' | 'facebook' | 'instagram' | 'twitter' | 'all'>('facebook')
+  const [network, setNetwork] = useState<'linkedin' | 'facebook'>('facebook')
   // Modal state
   const [showConnectModal, setShowConnectModal] = useState(false)
   const [linkedinUrl, setLinkedinUrl] = useState('')
   const [savingLinkedin, setSavingLinkedin] = useState(false)
   // State for client-side random data to prevent Hydration Error
-  const [followerGrowthData, setFollowerGrowthData] = useState<any[]>([]);
+  const [followerGrowthData, setFollowerGrowthData] = useState<any[]>([])
+
+  // --- Caching Functions ---
+  const getCacheKey = (platform: string, email: string, timeframe: string) => {
+    return `social_${platform}_${email}_${timeframe}`
+  }
+
+  const getCachedData = (platform: string) => {
+    try {
+      const cacheKey = getCacheKey(platform, userEmail, timeframe)
+      const cached = localStorage.getItem(cacheKey)
+      if (!cached) return null
+
+      const parsedCache = JSON.parse(cached)
+      const ageMinutes = (Date.now() - parsedCache.timestamp) / (1000 * 60)
+      
+      // Cache for 30 minutes
+      if (ageMinutes > 30) {
+        localStorage.removeItem(cacheKey)
+        return null
+      }
+
+      console.log(`📦 Using cached ${platform} data (${Math.round(ageMinutes)} minutes old)`)
+      return parsedCache.data
+    } catch (error) {
+      console.error('Error reading cache:', error)
+      return null
+    }
+  }
+
+  const setCachedData = (platform: string, data: any) => {
+    try {
+      const cacheKey = getCacheKey(platform, userEmail, timeframe)
+      const cacheData = {
+        data: data,
+        timestamp: Date.now()
+      }
+      localStorage.setItem(cacheKey, JSON.stringify(cacheData))
+      console.log(`💾 Cached ${platform} data`)
+    } catch (error) {
+      console.error('Error saving cache:', error)
+    }
+  }
+
+  const downloadReport = async () => {
+    try {
+      const currentData = network === 'facebook' ? facebookData : linkedinData
+      if (!currentData?.dataAvailable) return
+
+      const reportData = {
+        platform: network,
+        companyName: network === 'facebook' ? currentData.pageName : currentData.companyName,
+        data: currentData,
+        generatedAt: new Date().toISOString(),
+        timeframe: timeframe
+      }
+
+      const response = await fetch('http://localhost:3010/api/social/report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(reportData)
+      })
+
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${network}-social-media-report-${new Date().toISOString().split('T')[0]}.pdf`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+      }
+    } catch (error) {
+      console.error('Error downloading report:', error)
+    }
+  }
 
   // --- Functions ---
   const checkFacebookConnection = async () => {
@@ -175,8 +254,34 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
     }
   }
 
-  const fetchFacebookMetrics = async () => {
+  const fetchFacebookMetrics = async (forceRefresh = false) => {
+    // Only fetch if Facebook is the current network
+    if (network !== 'facebook') {
+      console.log('🚫 Skipping Facebook fetch - not current network')
+      return
+    }
+
+    // Check cache first unless force refresh
+    if (!forceRefresh) {
+      const cachedData = getCachedData('facebook')
+      if (cachedData) {
+        setFacebookData(cachedData)
+        setSocialData({
+          dataAvailable: true,
+          totalSocialSessions: cachedData.engagementScore?.reach || 0,
+          totalSocialUsers: cachedData.reputationBenchmark?.followers || 0,
+          totalSocialConversions: cachedData.engagementScore?.shares || 0,
+          socialConversionRate: cachedData.engagementScore?.engagementRate || 0,
+          socialTrafficPercentage: 0.25,
+          topSocialSources: [],
+          lastUpdated: cachedData.lastUpdated
+        })
+        return
+      }
+    }
+
     try {
+      console.log('📊 Fetching Facebook metrics...')
       const periodMap = {
         '7d': 'week',
         '30d': 'month',
@@ -189,8 +294,15 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
       
       const data = await response.json()
       
+      // Double-check we're still on Facebook network before setting data
+      if (network !== 'facebook') {
+        console.log('🚫 Network changed during fetch - discarding Facebook data')
+        return
+      }
+      
       if (data.dataAvailable) {
         setFacebookData(data)
+        setCachedData('facebook', data) // Cache the data
         
         // Also set socialData for backward compatibility
         setSocialData({
@@ -203,7 +315,7 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
           topSocialSources: [],
           lastUpdated: data.lastUpdated
         })
-        console.log('✅ Facebook data loaded:', data)
+        console.log('✅ Facebook data loaded and set')
       } else {
         console.log('⚠️ No Facebook data available:', data.reason)
         setFacebookData(null)
@@ -220,20 +332,65 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
       }
     } catch (error) {
       console.error('Error fetching Facebook metrics:', error)
-      setFacebookData(null)
+      if (network === 'facebook') {
+        setFacebookData(null)
+        setSocialData({
+          dataAvailable: false,
+          totalSocialSessions: 0,
+          totalSocialUsers: 0,
+          totalSocialConversions: 0,
+          socialConversionRate: 0,
+          socialTrafficPercentage: 0,
+          topSocialSources: [],
+          reason: 'Network error'
+        })
+      }
     }
   }
 
-  const fetchLinkedInMetrics = async () => {
+  const fetchLinkedInMetrics = async (forceRefresh = false) => {
+    // Only fetch if LinkedIn is the current network
+    if (network !== 'linkedin') {
+      console.log('🚫 Skipping LinkedIn fetch - not current network')
+      return
+    }
+
+    // Check cache first unless force refresh
+    if (!forceRefresh) {
+      const cachedData = getCachedData('linkedin')
+      if (cachedData) {
+        setLinkedinData(cachedData)
+        setSocialData({
+          dataAvailable: true,
+          totalSocialSessions: cachedData.engagementScore?.reach || 0,
+          totalSocialUsers: cachedData.reputationBenchmark?.followers || cachedData.companyFollowers || 0,
+          totalSocialConversions: cachedData.engagementScore?.shares || 0,
+          socialConversionRate: cachedData.engagementScore?.engagementRate || 0,
+          socialTrafficPercentage: 0.25,
+          topSocialSources: [],
+          lastUpdated: cachedData.lastUpdated
+        })
+        return
+      }
+    }
+
     try {
+      console.log('📊 Fetching LinkedIn metrics...')
       const response = await fetch(
         `http://localhost:3010/api/linkedin/metrics?email=${encodeURIComponent(userEmail)}`
       )
       
       const data = await response.json()
       
+      // Double-check we're still on LinkedIn network before setting data
+      if (network !== 'linkedin') {
+        console.log('🚫 Network changed during fetch - discarding LinkedIn data')
+        return
+      }
+      
       if (data.dataAvailable) {
         setLinkedinData(data)
+        setCachedData('linkedin', data) // Cache the data
         
         // Also set socialData for backward compatibility
         setSocialData({
@@ -246,7 +403,7 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
           topSocialSources: [],
           lastUpdated: data.lastUpdated
         })
-        console.log('✅ LinkedIn data loaded:', data)
+        console.log('✅ LinkedIn data loaded and set')
       } else {
         console.log('⚠️ No LinkedIn data available:', data.reason)
         setLinkedinData(null)
@@ -263,7 +420,19 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
       }
     } catch (error) {
       console.error('Error fetching LinkedIn metrics:', error)
-      setLinkedinData(null)
+      if (network === 'linkedin') {
+        setLinkedinData(null)
+        setSocialData({
+          dataAvailable: false,
+          totalSocialSessions: 0,
+          totalSocialUsers: 0,
+          totalSocialConversions: 0,
+          socialConversionRate: 0,
+          socialTrafficPercentage: 0,
+          topSocialSources: [],
+          reason: 'Network error'
+        })
+      }
     }
   }
 
@@ -373,51 +542,58 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
     return 0
   }, [facebookData, linkedinData, network])
 
+  // Validate that we're showing data for the correct platform
+  const validatePlatformData = (platformData: any, expectedPlatform: string) => {
+    if (!platformData?.dataAvailable) return false
+    
+    // Additional validation to ensure data consistency
+    if (expectedPlatform === 'facebook' && platformData.pageName) return true
+    if (expectedPlatform === 'linkedin' && (platformData.companyName || platformData.companyUrl)) return true
+    
+    return platformData.dataAvailable
+  }
+
   const getNetworkStats = useMemo(() => {
-    // Use real Facebook data if available
-    if (network === 'facebook' && facebookData?.dataAvailable && facebookData.engagementScore) {
+    // Use real Facebook data if available and validated
+    if (network === 'facebook' && validatePlatformData(facebookData, 'facebook')) {
       const engagement = facebookData.engagementScore
+      console.log('📊 Using Facebook data for stats:', engagement)
       return {
-        likes: (engagement.likes / 1000) || 0,
-        comments: (engagement.comments / 1000) || 0,
-        shares: (engagement.shares / 1000) || 0,
-        engagementRate: engagement.engagementRate || 0,
+        likes: Math.round((engagement.likes / 1000) * 10) / 10 || 0,
+        comments: Math.round((engagement.comments / 1000) * 10) / 10 || 0,
+        shares: Math.round((engagement.shares / 1000) * 10) / 10 || 0,
+        engagementRate: Math.round(engagement.engagementRate * 10) / 10 || 0,
         reach: engagement.reach || 0
       }
     }
 
-    // Use real LinkedIn data if available
-    if (network === 'linkedin' && linkedinData?.dataAvailable && linkedinData.engagementScore) {
+    // Use real LinkedIn data if available and validated
+    if (network === 'linkedin' && validatePlatformData(linkedinData, 'linkedin')) {
       const engagement = linkedinData.engagementScore
+      console.log('📊 Using LinkedIn data for stats:', engagement)
       return {
-        likes: (engagement.likes / 1000) || 0,
-        comments: (engagement.comments / 1000) || 0,
-        shares: (engagement.shares / 1000) || 0,
-        engagementRate: engagement.engagementRate || 0,
+        likes: Math.round((engagement.likes / 1000) * 10) / 10 || 0,
+        comments: Math.round((engagement.comments / 1000) * 10) / 10 || 0,
+        shares: Math.round((engagement.shares / 1000) * 10) / 10 || 0,
+        engagementRate: Math.round(engagement.engagementRate * 10) / 10 || 0,
         reach: engagement.reach || 0
       }
     }
     
-    // Fallback for other networks or when no data
-    const engagementScore = computeEngagementScore
-    const baseReach = facebookData?.reputationBenchmark?.followers || 
-                     linkedinData?.reputationBenchmark?.followers || 
-                     socialData?.totalSocialUsers || 0
-    
-    const stats = {
-      linkedin: { likes: 0, comments: 0, shares: 0, engagementRate: 0, reach: baseReach },
-      facebook: { likes: 0, comments: 0, shares: 0, engagementRate: engagementScore, reach: baseReach },
-      instagram: { likes: 0, comments: 0, shares: 0, engagementRate: 0, reach: baseReach },
-      twitter: { likes: 0, comments: 0, shares: 0, engagementRate: 0, reach: baseReach },
-      all: { likes: 0, comments: 0, shares: 0, engagementRate: engagementScore, reach: baseReach }
+    // Fallback for other networks or when no validated data
+    console.log('📊 Using fallback data for network:', network)
+    return {
+      likes: 0,
+      comments: 0,
+      shares: 0,
+      engagementRate: 0,
+      reach: 0
     }
-    
-    return stats[network]
-  }, [network, facebookData, linkedinData, socialData, computeEngagementScore])
+  }, [network, facebookData, linkedinData])
   
   const networkStats = getNetworkStats
 
-  const calculateFollowerGrowthData = (currentNetwork: 'linkedin' | 'facebook' | 'instagram' | 'twitter' | 'all') => {
+  const calculateFollowerGrowthData = (currentNetwork: 'linkedin' | 'facebook') => {
       // Use real Facebook follower growth data if available
       if (currentNetwork === 'facebook' && facebookData?.followerGrowth && facebookData.followerGrowth.length > 0) {
         return facebookData.followerGrowth.map((item, index) => ({
@@ -434,11 +610,8 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
         }))
       }
       
-      // Fallback to mock data for other networks
-      const baseMultiplier = {
-          linkedin: 1.0, facebook: 1.5, instagram: 2.0, twitter: 0.8, all: 1.2
-      }[currentNetwork];
-      
+      // Fallback to mock data
+      const baseMultiplier = currentNetwork === 'linkedin' ? 1.0 : 1.5;
       const data = [];
       let currentValue = 100;
       
@@ -476,32 +649,81 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
   }, [])
 
   useEffect(() => {
-    // Fetch metrics when connection state changes or network changes
-    if (network === 'facebook' && connected && !loadingData) {
+    // Fetch metrics when timeframe changes (but not when network changes - handled above)
+    if (network === 'facebook' && connected && !loadingData && facebookData) {
       fetchFacebookMetrics()
-    } else if (network === 'linkedin' && linkedinConnected && !loadingData) {
+    } else if (network === 'linkedin' && linkedinConnected && !loadingData && linkedinData) {
       fetchLinkedInMetrics()
     }
-  }, [connected, linkedinConnected, timeframe, network])
+  }, [timeframe]) // Only depend on timeframe, not network
 
   useEffect(() => {
     setFollowerGrowthData(calculateFollowerGrowthData(network));
   }, [network, facebookData, linkedinData]);
 
-  // Handle network change - show modal if platform not connected
+  // Handle network change - load cached data or fetch if needed
   useEffect(() => {
+    // Show connection modal if platform not connected
     if (network === 'facebook' && !connected && !checkingConnection) {
       setShowConnectModal(true)
+      // Clear data for disconnected platform
+      setSocialData(null)
+      setFacebookData(null)
+      setFollowerGrowthData([])
     } else if (network === 'linkedin' && !linkedinConnected && !checkingConnection) {
       setShowConnectModal(true)
+      // Clear data for disconnected platform
+      setSocialData(null)
+      setLinkedinData(null)
+      setFollowerGrowthData([])
     } else {
       setShowConnectModal(false)
+      
+      // Load data for the selected platform (from cache or fetch)
+      if (network === 'facebook' && connected) {
+        // Check if we already have Facebook data, if not fetch it
+        const cachedFacebookData = getCachedData('facebook')
+        if (cachedFacebookData && !facebookData) {
+          setFacebookData(cachedFacebookData)
+          setSocialData({
+            dataAvailable: true,
+            totalSocialSessions: cachedFacebookData.engagementScore?.reach || 0,
+            totalSocialUsers: cachedFacebookData.reputationBenchmark?.followers || 0,
+            totalSocialConversions: cachedFacebookData.engagementScore?.shares || 0,
+            socialConversionRate: cachedFacebookData.engagementScore?.engagementRate || 0,
+            socialTrafficPercentage: 0.25,
+            topSocialSources: [],
+            lastUpdated: cachedFacebookData.lastUpdated
+          })
+        } else if (!facebookData) {
+          fetchFacebookMetrics()
+        }
+      } else if (network === 'linkedin' && linkedinConnected) {
+        // Check if we already have LinkedIn data, if not fetch it
+        const cachedLinkedInData = getCachedData('linkedin')
+        if (cachedLinkedInData && !linkedinData) {
+          setLinkedinData(cachedLinkedInData)
+          setSocialData({
+            dataAvailable: true,
+            totalSocialSessions: cachedLinkedInData.engagementScore?.reach || 0,
+            totalSocialUsers: cachedLinkedInData.reputationBenchmark?.followers || cachedLinkedInData.companyFollowers || 0,
+            totalSocialConversions: cachedLinkedInData.engagementScore?.shares || 0,
+            socialConversionRate: cachedLinkedInData.engagementScore?.engagementRate || 0,
+            socialTrafficPercentage: 0.25,
+            topSocialSources: [],
+            lastUpdated: cachedLinkedInData.lastUpdated
+          })
+        } else if (!linkedinData) {
+          fetchLinkedInMetrics()
+        }
+      }
     }
   }, [network, connected, linkedinConnected, checkingConnection])
 
   // --- JSX Rendering (Content Only) ---
   return (
     <div className="p-8 space-y-6 relative">
+
       {/* Blurred Modal for Connect Facebook/LinkedIn */}
   {showConnectModal && ((network === 'facebook' && !connected) || (network === 'linkedin' && !linkedinConnected)) && !checkingConnection && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
@@ -571,27 +793,61 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
           >
             <option value="facebook">Facebook</option>
             <option value="linkedin">LinkedIn</option>
-            <option value="instagram">Instagram</option>
-            <option value="twitter">Twitter/X</option>
-            <option value="all">All Platforms</option>
           </select>
         </div>
 
-        {((network === 'facebook' && connected) || (network === 'linkedin' && linkedinConnected)) && (
-          <Button 
-            variant="outline" 
-            onClick={network === 'facebook' ? disconnectFacebook : disconnectLinkedIn}
-            className="text-sm text-red-600 border-red-300 hover:bg-red-50"
-          >
-            Disconnect {network === 'facebook' ? 'Facebook' : 'LinkedIn'}
-          </Button>
-        )}
+        <div className="flex items-center gap-4">
+          {/* Platform Status Indicator */}
+          <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-lg">
+            <div className={`w-2 h-2 rounded-full ${
+              (network === 'facebook' && facebookData?.dataAvailable) || 
+              (network === 'linkedin' && linkedinData?.dataAvailable) 
+                ? 'bg-green-500' 
+                : 'bg-gray-400'
+            }`} />
+            <span className="text-xs text-gray-600">
+              {network === 'facebook' && facebookData?.dataAvailable && facebookData.pageName 
+                ? `Facebook: ${facebookData.pageName}`
+                : network === 'linkedin' && linkedinData?.dataAvailable && linkedinData.companyName
+                ? `LinkedIn: ${linkedinData.companyName}`
+                : `${network.charAt(0).toUpperCase() + network.slice(1)}: Not Connected`
+              }
+            </span>
+          </div>
+
+          {/* Download Report Button */}
+          {((network === 'facebook' && facebookData?.dataAvailable) || (network === 'linkedin' && linkedinData?.dataAvailable)) && (
+            <Button 
+              variant="outline" 
+              onClick={() => downloadReport()}
+              className="text-sm text-orange-600 border-orange-300 hover:bg-orange-50"
+            >
+              Download Report
+            </Button>
+          )}
+
+          {((network === 'facebook' && connected) || (network === 'linkedin' && linkedinConnected)) && (
+            <Button 
+              variant="outline" 
+              onClick={network === 'facebook' ? disconnectFacebook : disconnectLinkedIn}
+              className="text-sm text-red-600 border-red-300 hover:bg-red-50"
+            >
+              Disconnect {network === 'facebook' ? 'Facebook' : 'LinkedIn'}
+            </Button>
+          )}
+        </div>
       </div>
       
       {loadingData ? (
-        <div className="flex items-center justify-center py-20 bg-white rounded-xl shadow-lg">
-          <Loader2 className="w-8 h-8 animate-spin text-orange-600" />
-          <span className="ml-3 text-gray-600">Loading social metrics...</span>
+        <div className="flex items-center justify-center py-32">
+          <div className="flex flex-col items-center">
+            <div className="relative">
+              <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin"></div>
+            </div>
+            <p className="mt-4 text-gray-600 font-medium">
+              Loading {network === 'facebook' ? 'Facebook' : network === 'linkedin' ? 'LinkedIn' : 'social'} metrics...
+            </p>
+          </div>
         </div>
       ) : socialData?.dataAvailable ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

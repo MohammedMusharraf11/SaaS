@@ -35,16 +35,52 @@ interface SocialSource {
   bounceRate: number
 }
 
+interface EngagementScore {
+  likes: number
+  comments: number
+  saves: number
+  shares: number
+  engagementRate: number
+  reach: number
+  impressions: number
+  profileViews: number
+}
+
+interface TopPost {
+  format: string
+  reach: string
+  likes: string
+  comments: string
+  saves?: string
+  shares: string
+  caption?: string
+  url?: string
+  fullCaption?: string
+}
+
 interface SocialData {
   dataAvailable: boolean
-  totalSocialSessions: number
-  totalSocialUsers: number
-  totalSocialConversions: number
-  socialConversionRate: number
-  socialTrafficPercentage: number
-  topSocialSources: SocialSource[]
+  totalSocialSessions?: number
+  totalSocialUsers?: number
+  totalSocialConversions?: number
+  socialConversionRate?: number
+  socialTrafficPercentage?: number
+  topSocialSources?: SocialSource[]
   reason?: string
   lastUpdated?: string
+  // Instagram specific fields
+  username?: string
+  accountId?: string
+  name?: string
+  engagementScore?: EngagementScore
+  followerGrowth?: any[]
+  topPosts?: TopPost[]
+  reputationBenchmark?: {
+    score: number
+    followers: number
+    avgEngagementRate: number
+    sentiment: string
+  }
 }
 // -----------------------------------------------------------
 
@@ -58,22 +94,23 @@ const NavLink = ({ icon: Icon, label, active = false }: { icon: any, label: stri
   </div>
 )
 
-// Top Performing Post Mock Data
-const topPostsMock = [
-    { format: 'Single Image', reach: '27.2K', likes: '3K', comments: '1K', shares: '2.7K' },
-    { format: 'Video', reach: '25.3K', likes: '2.4K', comments: '1K', shares: '1K' },
-    { format: 'Carousel', reach: '15.1K', likes: '2K', comments: '1K', shares: '1.1K' },
-    { format: 'Link Post', reach: '7.2K', likes: '0.8K', comments: '0.4K', shares: '0.3K' },
+// Top Performing Post Mock Data (fallback)
+const topPostsMockFallback = [
+    { format: 'Single Image', reach: '27.2K', likes: '3K', comments: '1K', shares: '2.7K', caption: 'Sample post 1', url: '#' },
+    { format: 'Video', reach: '25.3K', likes: '2.4K', comments: '1K', shares: '1K', caption: 'Sample post 2', url: '#' },
+    { format: 'Carousel', reach: '15.1K', likes: '2K', comments: '1K', shares: '1.1K', caption: 'Sample post 3', url: '#' },
+    { format: 'Link Post', reach: '7.2K', likes: '0.8K', comments: '0.4K', shares: '0.3K', caption: 'Sample post 4', url: '#' },
 ];
 
 // --- Main Component ---
 
-export default function SocialMediaMetricsPage({ userEmail = 'test@example.com' }: SocialMediaMetricsCardProps) {
+export default function SocialMediaMetricsPage({ userEmail: propUserEmail }: SocialMediaMetricsCardProps) {
   const [socialData, setSocialData] = useState<SocialData | null>(null)
   const [loadingData, setLoadingData] = useState(false)
   const [connected, setConnected] = useState(false)
   const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d'>('30d')
-  const [network, setNetwork] = useState<'linkedin' | 'facebook' | 'instagram' | 'twitter' | 'all'>('linkedin')
+  const [network, setNetwork] = useState<'linkedin' | 'facebook' | 'instagram' | 'twitter' | 'all'>('instagram')
+  const [userEmail, setUserEmail] = useState<string>(propUserEmail || '')
   
   // State for client-side random data to prevent Hydration Error
   const [followerGrowthData, setFollowerGrowthData] = useState<any[]>([]);
@@ -82,30 +119,58 @@ export default function SocialMediaMetricsPage({ userEmail = 'test@example.com' 
 
   const fetchSocialMetrics = async () => {
     setLoadingData(true)
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500)) 
     try {
-      // Mock Data structure (mimics successful fetch)
-      const mockData: SocialData = {
-        dataAvailable: true,
-        totalSocialSessions: 12000,
-        totalSocialUsers: 77780,
-        totalSocialConversions: 450,
-        socialConversionRate: 0.0375, // 3.75%
-        socialTrafficPercentage: 0.25, // 25%
-        topSocialSources: [],
-        lastUpdated: new Date().toISOString()
+      // Get API URL from environment variable or use default
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3010'
+      
+      // Determine which API to call based on network selection
+      let apiUrl = ''
+      const periodMap = { '7d': 'week', '30d': 'month', '90d': 'month' }
+      const period = periodMap[timeframe]
+
+      if (network === 'instagram') {
+        apiUrl = `${API_URL}/api/instagram/metrics?email=${encodeURIComponent(userEmail)}&period=${period}`
+      } else if (network === 'facebook') {
+        // Facebook API endpoint
+        apiUrl = `${API_URL}/api/facebook/metrics?email=${encodeURIComponent(userEmail)}&period=${period}`
+      } else {
+        // Default to Instagram for now
+        apiUrl = `${API_URL}/api/instagram/metrics?email=${encodeURIComponent(userEmail)}&period=${period}`
       }
-      setSocialData(mockData)
-      setConnected(true)
+
+      console.log('📡 Fetching social media data from:', apiUrl)
+      const response = await fetch(apiUrl)
+      const data = await response.json()
+
+      console.log('📊 Received data:', data)
+      
+      // Debug: Log engagement score
+      if (data.engagementScore) {
+        console.log('💬 Engagement Score from API:', {
+          likes: data.engagementScore.likes,
+          comments: data.engagementScore.comments,
+          shares: data.engagementScore.shares,
+          engagementRate: data.engagementScore.engagementRate
+        })
+      }
+
+      if (data.dataAvailable) {
+        setSocialData(data)
+        setConnected(true)
+      } else {
+        setSocialData({
+          dataAvailable: false,
+          reason: data.reason || 'No data available'
+        })
+        setConnected(false)
+      }
     } catch (error) {
       console.error('Error fetching social media data:', error)
       setSocialData({
         dataAvailable: false,
-        totalSocialSessions: 0, totalSocialUsers: 0, totalSocialConversions: 0,
-        socialConversionRate: 0, socialTrafficPercentage: 0, topSocialSources: [],
-        reason: 'Failed to fetch data'
+        reason: 'Failed to fetch data. Please ensure your account is connected.'
       })
+      setConnected(false)
     } finally {
       setLoadingData(false)
     }
@@ -118,28 +183,58 @@ export default function SocialMediaMetricsPage({ userEmail = 'test@example.com' 
   }
 
   const computeEngagementScore = useMemo(() => {
-    // This value is now stable on SSR (returns 82 if socialData is null)
-    if (!socialData?.dataAvailable) return 82
-    const conv = socialData.socialConversionRate || 0
-    const traffic = socialData.socialTrafficPercentage || 0
-    const sessions = socialData.totalSocialSessions || 0
-    const score = Math.min(95, Math.max(20, traffic * 0.8 * 100 + conv * 1.5 * 100 + Math.log10(Math.max(1, sessions)) * 10))
-    // To match the image, we will return 82, but the logic is sound.
-    return 82 // return Math.round(score)
+    if (!socialData?.dataAvailable || !socialData?.engagementScore) return 82
+    
+    // Calculate engagement score based on engagement rate
+    const engagementRate = socialData.engagementScore.engagementRate || 0
+    
+    // Convert engagement rate to a score out of 100
+    // Typical good engagement rates are 1-5%, excellent is 5%+
+    // We'll scale it so 5% = 100 score
+    const score = Math.min(100, Math.max(20, engagementRate * 20))
+    
+    return Math.round(score)
   }, [socialData])
 
 
   const getNetworkStats = useMemo(() => {
+    // Use real data from API if available
+    if (socialData?.dataAvailable && socialData?.engagementScore) {
+      const engagement = socialData.engagementScore
+      
+      console.log('🔢 Calculating network stats from:', engagement)
+      
+      // Format numbers with K suffix included
+      const formatNumber = (num: number) => {
+        if (num >= 1000) {
+          return (num / 1000).toFixed(1) + 'K'
+        }
+        return num.toString()
+      }
+      
+      const stats = {
+        likes: formatNumber(engagement.likes),
+        comments: formatNumber(engagement.comments),
+        shares: formatNumber(engagement.shares || 0),
+        engagementRate: engagement.engagementRate.toFixed(1),
+        reach: engagement.reach
+      }
+      
+      console.log('📊 Formatted stats:', stats)
+      
+      return stats
+    }
+    
+    // Fallback to mock data if no real data available
     const engagementScore = computeEngagementScore
     const baseReach = socialData?.totalSocialUsers || 77780
     
-    // Adjusted to match the design's shown values for "Engagement Rate" and "Reach"
     const stats = {
-      linkedin: { likes: 8.2, comments: 3.4, shares: 7.1, engagementRate: 25, reach: 77780 },
-      facebook: { likes: 12.5, comments: 5.2, shares: 4.3, engagementRate: 18, reach: baseReach * 1.5 },
-      instagram: { likes: 15.8, comments: 6.8, shares: 2.9, engagementRate: 22, reach: baseReach * 2 },
-      twitter: { likes: 6.3, comments: 2.1, shares: 8.5, engagementRate: 16, reach: baseReach * 0.8 },
-      all: { likes: 10.7, comments: 4.4, shares: 5.7, engagementRate: engagementScore/3, reach: baseReach * 1.2 }
+      linkedin: { likes: '8.2', comments: '3.4', shares: '7.1', engagementRate: '25', reach: 77780 },
+      facebook: { likes: '12.5', comments: '5.2', shares: '4.3', engagementRate: '18', reach: baseReach * 1.5 },
+      instagram: { likes: '15.8', comments: '6.8', shares: '2.9', engagementRate: '22', reach: baseReach * 2 },
+      twitter: { likes: '6.3', comments: '2.1', shares: '8.5', engagementRate: '16', reach: baseReach * 0.8 },
+      all: { likes: '10.7', comments: '4.4', shares: '5.7', engagementRate: (engagementScore/3).toFixed(1), reach: baseReach * 1.2 }
     }
     
     return stats[network]
@@ -147,8 +242,18 @@ export default function SocialMediaMetricsPage({ userEmail = 'test@example.com' 
   
   const networkStats = getNetworkStats
 
-  // Function to calculate random data (only runs on client)
+  // Function to calculate follower growth data (uses real data if available)
   const calculateFollowerGrowthData = (currentNetwork: 'linkedin' | 'facebook' | 'instagram' | 'twitter' | 'all') => {
+      // Use real data from API if available
+      if (socialData?.dataAvailable && socialData?.followerGrowth && socialData.followerGrowth.length > 0) {
+          return socialData.followerGrowth.map((item, index) => ({
+              value: item.followers,
+              label: index,
+              date: item.date
+          }));
+      }
+      
+      // Fallback to mock data
       const baseMultiplier = {
           linkedin: 1.0, facebook: 1.5, instagram: 2.0, twitter: 0.8, all: 1.2
       }[currentNetwork];
@@ -169,9 +274,31 @@ export default function SocialMediaMetricsPage({ userEmail = 'test@example.com' 
       return data;
   };
   
+  // useEffect to get user email on mount
+  useEffect(() => {
+    const getUserEmail = async () => {
+      if (!propUserEmail) {
+        try {
+          // Dynamically import to avoid SSR issues
+          const { createClient } = await import('@/utils/supabase/client')
+          const supabase = createClient()
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user?.email) {
+            setUserEmail(user.email)
+          }
+        } catch (error) {
+          console.error('Error fetching user email:', error)
+        }
+      }
+    }
+    getUserEmail()
+  }, [propUserEmail])
+
   // useEffect to fetch API data
   useEffect(() => {
-    fetchSocialMetrics()
+    if (userEmail) {
+      fetchSocialMetrics()
+    }
   }, [userEmail, timeframe, network])
 
   // useEffect to run random/mock data calculation on client only
@@ -329,15 +456,15 @@ export default function SocialMediaMetricsPage({ userEmail = 'test@example.com' 
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between items-center text-gray-700">
                             <span className="font-medium">Likes</span>
-                            <span className="font-semibold">{networkStats.likes}K</span>
+                            <span className="font-semibold">{networkStats.likes}</span>
                         </div>
                         <div className="flex justify-between items-center text-gray-700">
                             <span className="font-medium">Comments</span>
-                            <span className="font-semibold">{networkStats.comments}K</span>
+                            <span className="font-semibold">{networkStats.comments}</span>
                         </div>
                         <div className="flex justify-between items-center text-gray-700">
                             <span className="font-medium">Shares</span>
-                            <span className="font-semibold">{networkStats.shares}K</span>
+                            <span className="font-semibold">{networkStats.shares}</span>
                         </div>
                         <div className="flex justify-between items-center pt-2 text-gray-500 border-t border-gray-100">
                             <span className="text-xs">Engagement Rate</span>
@@ -410,7 +537,7 @@ export default function SocialMediaMetricsPage({ userEmail = 'test@example.com' 
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="text-left text-gray-500 border-b border-gray-200">
-                            <th className="pb-3 font-medium">Format</th>
+                            <th className="pb-3 font-medium">Post</th>
                             <th className="pb-3 font-medium text-right">Reach</th>
                             <th className="pb-3 font-medium text-right">Likes</th>
                             <th className="pb-3 font-medium text-right">Comments</th>
@@ -418,9 +545,27 @@ export default function SocialMediaMetricsPage({ userEmail = 'test@example.com' 
                           </tr>
                         </thead>
                         <tbody className="text-gray-900">
-                          {topPostsMock.map((post, index) => (
-                            <tr key={index} className="border-b border-gray-100 last:border-b-0">
-                              <td className="py-3 font-medium">{post.format}</td>
+                          {(socialData?.topPosts && socialData.topPosts.length > 0 
+                            ? socialData.topPosts 
+                            : topPostsMockFallback
+                          ).map((post, index) => (
+                            <tr key={index} className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50">
+                              <td className="py-3">
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-gray-900">{post.format}</span>
+                                  {post.caption && (
+                                    <a 
+                                      href={post.url || '#'} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-xs text-gray-500 hover:text-orange-600 truncate max-w-xs mt-1"
+                                      title={post.fullCaption || post.caption}
+                                    >
+                                      {post.caption}
+                                    </a>
+                                  )}
+                                </div>
+                              </td>
                               <td className="py-3 text-right">{post.reach}</td>
                               <td className="py-3 text-right">{post.likes}</td>
                               <td className="py-3 text-right">{post.comments}</td>
@@ -553,8 +698,12 @@ export default function SocialMediaMetricsPage({ userEmail = 'test@example.com' 
                       </svg>
                       
                       <div className="text-center">
-                        <p className="text-5xl font-extrabold text-orange-600">77%</p>
-                        <p className="text-sm text-gray-500 mt-1">Overall Score</p>
+                        <p className="text-5xl font-extrabold text-orange-600">
+                          {socialData?.reputationBenchmark?.score || 77}%
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {socialData?.reputationBenchmark?.sentiment || 'Overall Score'}
+                        </p>
                       </div>
                       
                       <Button variant="ghost" className="w-full text-orange-600 hover:text-orange-700">

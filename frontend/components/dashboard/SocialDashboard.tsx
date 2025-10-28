@@ -3,9 +3,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { 
-  AlertCircle, 
-  Loader2, 
+import {
+  AlertCircle,
+  Loader2,
   ArrowRight
 } from 'lucide-react'
 
@@ -83,6 +83,33 @@ interface LinkedInMetrics {
   lastUpdated?: string
 }
 
+interface InstagramMetrics {
+  dataAvailable: boolean
+  username?: string
+  accountId?: string
+  name?: string
+  engagementScore?: {
+    likes: number
+    comments: number
+    saves: number
+    shares: number
+    engagementRate: number
+    reach: number
+    impressions: number
+    profileViews: number
+  }
+  followerGrowth?: FollowerGrowthData[]
+  topPosts?: TopPost[]
+  reputationBenchmark?: {
+    score: number
+    followers: number
+    avgEngagementRate: number
+    sentiment: string
+  }
+  reason?: string
+  lastUpdated?: string
+}
+
 interface SocialData {
   dataAvailable: boolean
   totalSocialSessions: number
@@ -100,12 +127,14 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
   const [socialData, setSocialData] = useState<SocialData | null>(null)
   const [facebookData, setFacebookData] = useState<FacebookMetrics | null>(null)
   const [linkedinData, setLinkedinData] = useState<LinkedInMetrics | null>(null)
+  const [instagramData, setInstagramData] = useState<InstagramMetrics | null>(null)
   const [loadingData, setLoadingData] = useState(false)
   const [connected, setConnected] = useState(false)
   const [linkedinConnected, setLinkedinConnected] = useState(false)
+  const [instagramConnected, setInstagramConnected] = useState(false)
   const [checkingConnection, setCheckingConnection] = useState(true)
   const [timeframe, setTimeframe] = useState<'7d' | '30d' | '90d'>('30d')
-  const [network, setNetwork] = useState<'linkedin' | 'facebook'>('facebook')
+  const [network, setNetwork] = useState<'linkedin' | 'facebook' | 'instagram'>('facebook')
   // Modal state
   const [showConnectModal, setShowConnectModal] = useState(false)
   const [linkedinUrl, setLinkedinUrl] = useState('')
@@ -126,7 +155,7 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
 
       const parsedCache = JSON.parse(cached)
       const ageMinutes = (Date.now() - parsedCache.timestamp) / (1000 * 60)
-      
+
       // Cache for 30 minutes
       if (ageMinutes > 30) {
         localStorage.removeItem(cacheKey)
@@ -157,12 +186,16 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
 
   const downloadReport = async () => {
     try {
-      const currentData = network === 'facebook' ? facebookData : linkedinData
+      const currentData = network === 'facebook' ? facebookData : network === 'instagram' ? instagramData : linkedinData
       if (!currentData?.dataAvailable) return
 
       const reportData = {
         platform: network,
-        companyName: network === 'facebook' ? currentData.pageName : currentData.companyName,
+        companyName: network === 'facebook'
+          ? (currentData as FacebookMetrics).pageName
+          : network === 'instagram'
+            ? (currentData as InstagramMetrics).username
+            : (currentData as LinkedInMetrics).companyName,
         data: currentData,
         generatedAt: new Date().toISOString(),
         timeframe: timeframe
@@ -231,6 +264,22 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
     }
   }
 
+  const checkInstagramConnection = async () => {
+    try {
+      const response = await fetch(`http://localhost:3010/api/auth/instagram/status?email=${encodeURIComponent(userEmail)}`)
+      if (response.ok) {
+        const data = await response.json()
+        setInstagramConnected(data.connected || false)
+        console.log('✅ Instagram connection status:', data.connected)
+      } else {
+        setInstagramConnected(false)
+      }
+    } catch (error) {
+      console.error('Error checking Instagram connection:', error)
+      setInstagramConnected(false)
+    }
+  }
+
   const fetchSocialMetrics = async () => {
     if (!connected && network === 'facebook') {
       console.log('Not connected to Facebook, skipping metrics fetch')
@@ -242,12 +291,19 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
       return
     }
 
+    if (!instagramConnected && network === 'instagram') {
+      console.log('Not connected to Instagram, skipping metrics fetch')
+      return
+    }
+
     setLoadingData(true)
     try {
       if (network === 'facebook' && connected) {
         await fetchFacebookMetrics()
       } else if (network === 'linkedin' && linkedinConnected) {
         await fetchLinkedInMetrics()
+      } else if (network === 'instagram' && instagramConnected) {
+        await fetchInstagramMetrics()
       }
     } finally {
       setLoadingData(false)
@@ -287,23 +343,23 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
         '30d': 'month',
         '90d': 'month'
       }
-      
+
       const response = await fetch(
         `http://localhost:3010/api/facebook/metrics?email=${encodeURIComponent(userEmail)}&period=${periodMap[timeframe]}`
       )
-      
+
       const data = await response.json()
-      
+
       // Double-check we're still on Facebook network before setting data
       if (network !== 'facebook') {
         console.log('🚫 Network changed during fetch - discarding Facebook data')
         return
       }
-      
+
       if (data.dataAvailable) {
         setFacebookData(data)
         setCachedData('facebook', data) // Cache the data
-        
+
         // Also set socialData for backward compatibility
         setSocialData({
           dataAvailable: true,
@@ -379,19 +435,19 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
       const response = await fetch(
         `http://localhost:3010/api/linkedin/metrics?email=${encodeURIComponent(userEmail)}`
       )
-      
+
       const data = await response.json()
-      
+
       // Double-check we're still on LinkedIn network before setting data
       if (network !== 'linkedin') {
         console.log('🚫 Network changed during fetch - discarding LinkedIn data')
         return
       }
-      
+
       if (data.dataAvailable) {
         setLinkedinData(data)
         setCachedData('linkedin', data) // Cache the data
-        
+
         // Also set socialData for backward compatibility
         setSocialData({
           dataAvailable: true,
@@ -436,8 +492,106 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
     }
   }
 
+  const fetchInstagramMetrics = async (forceRefresh = false) => {
+    // Only fetch if Instagram is the current network
+    if (network !== 'instagram') {
+      console.log('🚫 Skipping Instagram fetch - not current network')
+      return
+    }
+
+    // Check cache first unless force refresh
+    if (!forceRefresh) {
+      const cachedData = getCachedData('instagram')
+      if (cachedData) {
+        setInstagramData(cachedData)
+        setSocialData({
+          dataAvailable: true,
+          totalSocialSessions: cachedData.engagementScore?.reach || 0,
+          totalSocialUsers: cachedData.reputationBenchmark?.followers || 0,
+          totalSocialConversions: cachedData.engagementScore?.shares || 0,
+          socialConversionRate: cachedData.engagementScore?.engagementRate || 0,
+          socialTrafficPercentage: 0.25,
+          topSocialSources: [],
+          lastUpdated: cachedData.lastUpdated
+        })
+        return
+      }
+    }
+
+    try {
+      console.log('📊 Fetching Instagram metrics...')
+      const periodMap = {
+        '7d': 'week',
+        '30d': 'month',
+        '90d': 'month'
+      }
+
+      const response = await fetch(
+        `http://localhost:3010/api/instagram/metrics?email=${encodeURIComponent(userEmail)}&period=${periodMap[timeframe]}`
+      )
+
+      const data = await response.json()
+
+      // Double-check we're still on Instagram network before setting data
+      if (network !== 'instagram') {
+        console.log('🚫 Network changed during fetch - discarding Instagram data')
+        return
+      }
+
+      if (data.dataAvailable) {
+        setInstagramData(data)
+        setCachedData('instagram', data) // Cache the data
+
+        // Also set socialData for backward compatibility
+        setSocialData({
+          dataAvailable: true,
+          totalSocialSessions: data.engagementScore?.reach || 0,
+          totalSocialUsers: data.reputationBenchmark?.followers || 0,
+          totalSocialConversions: data.engagementScore?.shares || 0,
+          socialConversionRate: data.engagementScore?.engagementRate || 0,
+          socialTrafficPercentage: 0.25,
+          topSocialSources: [],
+          lastUpdated: data.lastUpdated
+        })
+        console.log('✅ Instagram data loaded and set')
+      } else {
+        console.log('⚠️ No Instagram data available:', data.reason)
+        setInstagramData(null)
+        setSocialData({
+          dataAvailable: false,
+          totalSocialSessions: 0,
+          totalSocialUsers: 0,
+          totalSocialConversions: 0,
+          socialConversionRate: 0,
+          socialTrafficPercentage: 0,
+          topSocialSources: [],
+          reason: data.reason || 'Failed to fetch data'
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching Instagram metrics:', error)
+      if (network === 'instagram') {
+        setInstagramData(null)
+        setSocialData({
+          dataAvailable: false,
+          totalSocialSessions: 0,
+          totalSocialUsers: 0,
+          totalSocialConversions: 0,
+          socialConversionRate: 0,
+          socialTrafficPercentage: 0,
+          topSocialSources: [],
+          reason: 'Network error'
+        })
+      }
+    }
+  }
+
   const connectFacebook = () => {
     window.location.href = `http://localhost:3010/api/auth/facebook?email=${encodeURIComponent(userEmail)}`
+  }
+
+  const connectInstagram = () => {
+    window.location.href = `http://localhost:3010/api/auth/instagram?email=${encodeURIComponent(userEmail)}`
   }
 
   const disconnectFacebook = async () => {
@@ -446,7 +600,7 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
         `http://localhost:3010/api/auth/facebook/disconnect?email=${encodeURIComponent(userEmail)}`,
         { method: 'POST' }
       )
-      
+
       if (response.ok) {
         setConnected(false)
         setFacebookData(null)
@@ -455,6 +609,24 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
       }
     } catch (error) {
       console.error('Error disconnecting Facebook:', error)
+    }
+  }
+
+  const disconnectInstagram = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:3010/api/auth/instagram/disconnect?email=${encodeURIComponent(userEmail)}`,
+        { method: 'POST' }
+      )
+
+      if (response.ok) {
+        setInstagramConnected(false)
+        setInstagramData(null)
+        setSocialData(null)
+        setShowConnectModal(true)
+      }
+    } catch (error) {
+      console.error('Error disconnecting Instagram:', error)
     }
   }
 
@@ -478,7 +650,7 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
       })
 
       const data = await response.json()
-      
+
       if (data.success) {
         setLinkedinConnected(true)
         setShowConnectModal(false)
@@ -502,7 +674,7 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
         `http://localhost:3010/api/linkedin/disconnect?email=${encodeURIComponent(userEmail)}`,
         { method: 'DELETE' }
       )
-      
+
       if (response.ok) {
         setLinkedinConnected(false)
         setLinkedinData(null)
@@ -525,117 +697,162 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
     // Check which platform is selected
     if (network === 'facebook' && facebookData?.dataAvailable && facebookData.engagementScore) {
       const engagementRate = facebookData.engagementScore.engagementRate || 0
-      const hasActivity = (facebookData.engagementScore.likes || 0) + 
-                          (facebookData.engagementScore.comments || 0) + 
-                          (facebookData.engagementScore.shares || 0) > 0
+      const hasActivity = (facebookData.engagementScore.likes || 0) +
+        (facebookData.engagementScore.comments || 0) +
+        (facebookData.engagementScore.shares || 0) > 0
       return hasActivity ? Math.min(100, Math.round(engagementRate * 10)) : 0
     }
-    
+
     if (network === 'linkedin' && linkedinData?.dataAvailable && linkedinData.engagementScore) {
       const engagementRate = linkedinData.engagementScore.engagementRate || 0
-      const hasActivity = (linkedinData.engagementScore.likes || 0) + 
-                          (linkedinData.engagementScore.comments || 0) + 
-                          (linkedinData.engagementScore.shares || 0) > 0
+      const hasActivity = (linkedinData.engagementScore.likes || 0) +
+        (linkedinData.engagementScore.comments || 0) +
+        (linkedinData.engagementScore.shares || 0) > 0
       return hasActivity ? Math.min(100, Math.round(engagementRate * 10)) : 0
     }
-    
+
+    if (network === 'instagram' && instagramData?.dataAvailable && instagramData.engagementScore) {
+      const engagementRate = instagramData.engagementScore.engagementRate || 0
+      const hasActivity = (instagramData.engagementScore.likes || 0) +
+        (instagramData.engagementScore.comments || 0) +
+        (instagramData.engagementScore.saves || 0) > 0
+      return hasActivity ? Math.min(100, Math.round(engagementRate * 10)) : 0
+    }
+
     return 0
-  }, [facebookData, linkedinData, network])
+  }, [facebookData, linkedinData, instagramData, network])
 
   // Validate that we're showing data for the correct platform
   const validatePlatformData = (platformData: any, expectedPlatform: string) => {
     if (!platformData?.dataAvailable) return false
-    
+
     // Additional validation to ensure data consistency
     if (expectedPlatform === 'facebook' && platformData.pageName) return true
     if (expectedPlatform === 'linkedin' && (platformData.companyName || platformData.companyUrl)) return true
-    
+    if (expectedPlatform === 'instagram' && platformData.username) return true
+
     return platformData.dataAvailable
   }
 
   const getNetworkStats = useMemo(() => {
+    // Helper function to format numbers with K suffix
+    const formatNumber = (num: number) => {
+      if (num >= 1000) {
+        return (num / 1000).toFixed(1) + 'K'
+      }
+      return num.toString()
+    }
+
     // Use real Facebook data if available and validated
-    if (network === 'facebook' && validatePlatformData(facebookData, 'facebook')) {
+    if (network === 'facebook' && facebookData && validatePlatformData(facebookData, 'facebook')) {
       const engagement = facebookData.engagementScore
-      console.log('📊 Using Facebook data for stats:', engagement)
-      return {
-        likes: Math.round((engagement.likes / 1000) * 10) / 10 || 0,
-        comments: Math.round((engagement.comments / 1000) * 10) / 10 || 0,
-        shares: Math.round((engagement.shares / 1000) * 10) / 10 || 0,
-        engagementRate: Math.round(engagement.engagementRate * 10) / 10 || 0,
-        reach: engagement.reach || 0
+      if (engagement) {
+        console.log('📊 Using Facebook data for stats:', engagement)
+        return {
+          likes: formatNumber(engagement.likes),
+          comments: formatNumber(engagement.comments),
+          shares: formatNumber(engagement.shares),
+          engagementRate: (engagement.engagementRate || 0).toFixed(1),
+          reach: engagement.reach || 0
+        }
       }
     }
 
     // Use real LinkedIn data if available and validated
-    if (network === 'linkedin' && validatePlatformData(linkedinData, 'linkedin')) {
+    if (network === 'linkedin' && linkedinData && validatePlatformData(linkedinData, 'linkedin')) {
       const engagement = linkedinData.engagementScore
-      console.log('📊 Using LinkedIn data for stats:', engagement)
-      return {
-        likes: Math.round((engagement.likes / 1000) * 10) / 10 || 0,
-        comments: Math.round((engagement.comments / 1000) * 10) / 10 || 0,
-        shares: Math.round((engagement.shares / 1000) * 10) / 10 || 0,
-        engagementRate: Math.round(engagement.engagementRate * 10) / 10 || 0,
-        reach: engagement.reach || 0
+      if (engagement) {
+        console.log('📊 Using LinkedIn data for stats:', engagement)
+        return {
+          likes: formatNumber(engagement.likes),
+          comments: formatNumber(engagement.comments),
+          shares: formatNumber(engagement.shares),
+          engagementRate: (engagement.engagementRate || 0).toFixed(1),
+          reach: engagement.reach || 0
+        }
       }
     }
-    
+
+    // Use real Instagram data if available and validated
+    if (network === 'instagram' && instagramData && validatePlatformData(instagramData, 'instagram')) {
+      const engagement = instagramData.engagementScore
+      if (engagement) {
+        console.log('📊 Using Instagram data for stats:', engagement)
+        return {
+          likes: formatNumber(engagement.likes),
+          comments: formatNumber(engagement.comments),
+          shares: formatNumber(engagement.saves || 0), // Use saves for Instagram
+          engagementRate: (engagement.engagementRate || 0).toFixed(1),
+          reach: engagement.reach || 0
+        }
+      }
+    }
+
     // Fallback for other networks or when no validated data
     console.log('📊 Using fallback data for network:', network)
     return {
-      likes: 0,
-      comments: 0,
-      shares: 0,
-      engagementRate: 0,
+      likes: '0',
+      comments: '0',
+      shares: '0',
+      engagementRate: '0',
       reach: 0
     }
-  }, [network, facebookData, linkedinData])
-  
+  }, [network, facebookData, linkedinData, instagramData])
+
   const networkStats = getNetworkStats
 
-  const calculateFollowerGrowthData = (currentNetwork: 'linkedin' | 'facebook') => {
-      // Use real Facebook follower growth data if available
-      if (currentNetwork === 'facebook' && facebookData?.followerGrowth && facebookData.followerGrowth.length > 0) {
-        return facebookData.followerGrowth.map((item, index) => ({
-          value: item.followers,
-          label: index
-        }))
-      }
-      
-      // Use real LinkedIn follower growth data if available
-      if (currentNetwork === 'linkedin' && linkedinData?.followerGrowth && linkedinData.followerGrowth.length > 0) {
-        return linkedinData.followerGrowth.map((item, index) => ({
-          value: item.followers,
-          label: index
-        }))
-      }
-      
-      // Fallback to mock data
-      const baseMultiplier = currentNetwork === 'linkedin' ? 1.0 : 1.5;
-      const data = [];
-      let currentValue = 100;
-      
-      for (let i = 0; i < 12; i++) {
-          const change = (Math.random() * 50 - 20) * baseMultiplier;
-          currentValue = Math.max(currentValue + change, 50);
-          data.push({
-              value: Math.round(currentValue),
-              label: i
-          });
-      }
-      return data;
+  const calculateFollowerGrowthData = (currentNetwork: 'linkedin' | 'facebook' | 'instagram') => {
+    // Use real Facebook follower growth data if available
+    if (currentNetwork === 'facebook' && facebookData?.followerGrowth && facebookData.followerGrowth.length > 0) {
+      return facebookData.followerGrowth.map((item, index) => ({
+        value: item.followers,
+        label: index
+      }))
+    }
+
+    // Use real LinkedIn follower growth data if available
+    if (currentNetwork === 'linkedin' && linkedinData?.followerGrowth && linkedinData.followerGrowth.length > 0) {
+      return linkedinData.followerGrowth.map((item, index) => ({
+        value: item.followers,
+        label: index
+      }))
+    }
+
+    // Use real Instagram follower growth data if available
+    if (currentNetwork === 'instagram' && instagramData?.followerGrowth && instagramData.followerGrowth.length > 0) {
+      return instagramData.followerGrowth.map((item, index) => ({
+        value: item.followers,
+        label: index
+      }))
+    }
+
+    // Fallback to mock data
+    const baseMultiplier = currentNetwork === 'linkedin' ? 1.0 : currentNetwork === 'instagram' ? 1.8 : 1.5;
+    const data = [];
+    let currentValue = 100;
+
+    for (let i = 0; i < 12; i++) {
+      const change = (Math.random() * 50 - 20) * baseMultiplier;
+      currentValue = Math.max(currentValue + change, 50);
+      data.push({
+        value: Math.round(currentValue),
+        label: i
+      });
+    }
+    return data;
   };
-  
+
   useEffect(() => {
-    // Check both connections on mount
+    // Check all connections on mount
     checkFacebookConnection()
     checkLinkedInConnection()
-    
+    checkInstagramConnection()
+
     // Check for OAuth callback success/error
     const urlParams = new URLSearchParams(window.location.search)
     const success = urlParams.get('success')
     const error = urlParams.get('error')
-    
+
     if (success) {
       setConnected(true)
       setShowConnectModal(false)
@@ -654,12 +871,14 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
       fetchFacebookMetrics()
     } else if (network === 'linkedin' && linkedinConnected && !loadingData && linkedinData) {
       fetchLinkedInMetrics()
+    } else if (network === 'instagram' && instagramConnected && !loadingData && instagramData) {
+      fetchInstagramMetrics()
     }
   }, [timeframe]) // Only depend on timeframe, not network
 
   useEffect(() => {
     setFollowerGrowthData(calculateFollowerGrowthData(network));
-  }, [network, facebookData, linkedinData]);
+  }, [network, facebookData, linkedinData, instagramData]);
 
   // Handle network change - load cached data or fetch if needed
   useEffect(() => {
@@ -676,9 +895,15 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
       setSocialData(null)
       setLinkedinData(null)
       setFollowerGrowthData([])
+    } else if (network === 'instagram' && !instagramConnected && !checkingConnection) {
+      setShowConnectModal(true)
+      // Clear data for disconnected platform
+      setSocialData(null)
+      setInstagramData(null)
+      setFollowerGrowthData([])
     } else {
       setShowConnectModal(false)
-      
+
       // Load data for the selected platform (from cache or fetch)
       if (network === 'facebook' && connected) {
         // Check if we already have Facebook data, if not fetch it
@@ -716,27 +941,47 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
         } else if (!linkedinData) {
           fetchLinkedInMetrics()
         }
+      } else if (network === 'instagram' && instagramConnected) {
+        // Check if we already have Instagram data, if not fetch it
+        const cachedInstagramData = getCachedData('instagram')
+        if (cachedInstagramData && !instagramData) {
+          setInstagramData(cachedInstagramData)
+          setSocialData({
+            dataAvailable: true,
+            totalSocialSessions: cachedInstagramData.engagementScore?.reach || 0,
+            totalSocialUsers: cachedInstagramData.reputationBenchmark?.followers || 0,
+            totalSocialConversions: cachedInstagramData.engagementScore?.shares || 0,
+            socialConversionRate: cachedInstagramData.engagementScore?.engagementRate || 0,
+            socialTrafficPercentage: 0.25,
+            topSocialSources: [],
+            lastUpdated: cachedInstagramData.lastUpdated
+          })
+        } else if (!instagramData) {
+          fetchInstagramMetrics()
+        }
       }
     }
-  }, [network, connected, linkedinConnected, checkingConnection])
+  }, [network, connected, linkedinConnected, instagramConnected, checkingConnection])
 
   // --- JSX Rendering (Content Only) ---
   return (
     <div className="p-8 space-y-6 relative">
 
-      {/* Blurred Modal for Connect Facebook/LinkedIn */}
-  {showConnectModal && ((network === 'facebook' && !connected) || (network === 'linkedin' && !linkedinConnected)) && !checkingConnection && (
+      {/* Blurred Modal for Connect Facebook/LinkedIn/Instagram */}
+      {showConnectModal && ((network === 'facebook' && !connected) || (network === 'linkedin' && !linkedinConnected) || (network === 'instagram' && !instagramConnected)) && !checkingConnection && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md mx-auto text-center relative">
             <h2 className="text-2xl font-bold mb-2 text-gray-900">
-              {network === 'facebook' ? 'Connect Facebook' : 'Connect LinkedIn'}
+              {network === 'facebook' ? 'Connect Facebook' : network === 'instagram' ? 'Connect Instagram' : 'Connect LinkedIn'}
             </h2>
             <p className="text-gray-500 mb-6">
-              {network === 'facebook' 
-                ? 'To view your Facebook metrics, please connect your Facebook account.' 
-                : 'To view your LinkedIn metrics, please enter your LinkedIn company URL.'}
+              {network === 'facebook'
+                ? 'To view your Facebook metrics, please connect your Facebook account.'
+                : network === 'instagram'
+                  ? 'To view your Instagram metrics, please connect your Instagram Business Account. Make sure your Instagram is connected to a Facebook Page.'
+                  : 'To view your LinkedIn metrics, please enter your LinkedIn company URL.'}
             </p>
-            
+
             {network === 'facebook' && (
               <div className="flex flex-col gap-4">
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={connectFacebook}>
@@ -744,7 +989,22 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
                 </Button>
               </div>
             )}
-            
+
+            {network === 'instagram' && (
+              <div className="flex flex-col gap-4">
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-sm text-purple-800">
+                  <p className="font-medium mb-2">📸 Instagram Business Account Required</p>
+                  <p className="text-xs">You'll need an Instagram Business or Creator account connected to a Facebook Page.</p>
+                </div>
+                <Button
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  onClick={connectInstagram}
+                >
+                  Connect Instagram
+                </Button>
+              </div>
+            )}
+
             {network === 'linkedin' && (
               <div className="flex flex-col gap-4">
                 <input
@@ -754,8 +1014,8 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
                   placeholder="https://www.linkedin.com/company/yourcompany"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <Button 
-                  className="bg-blue-800 hover:bg-blue-900 text-white" 
+                <Button
+                  className="bg-blue-800 hover:bg-blue-900 text-white"
                   onClick={saveLinkedInUrl}
                   disabled={savingLinkedin || !linkedinUrl}
                 >
@@ -763,15 +1023,15 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
                 </Button>
               </div>
             )}
-            
+
             <button className="absolute top-3 right-3 text-gray-400 hover:text-gray-600" onClick={() => setShowConnectModal(false)}>
               ✕
             </button>
           </div>
         </div>
       )}
-      
-  {/* Filters Row */}
+
+      {/* Filters Row */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <select
@@ -784,7 +1044,7 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
             <option value="30d">Last 30 days</option>
             <option value="90d">Last 90 days</option>
           </select>
-          
+
           <select
             value={network}
             onChange={(e) => setNetwork(e.target.value as any)}
@@ -792,6 +1052,7 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
             style={{ backgroundImage: "url(\"data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%239CA3AF%22%20d%3D%22M7%2010l5%205l5-5H7z%22%2F%3E%3C%2Fsvg%3E\")" }}
           >
             <option value="facebook">Facebook</option>
+            <option value="instagram">Instagram</option>
             <option value="linkedin">LinkedIn</option>
           </select>
         </div>
@@ -799,26 +1060,28 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
         <div className="flex items-center gap-4">
           {/* Platform Status Indicator */}
           <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-lg">
-            <div className={`w-2 h-2 rounded-full ${
-              (network === 'facebook' && facebookData?.dataAvailable) || 
-              (network === 'linkedin' && linkedinData?.dataAvailable) 
-                ? 'bg-green-500' 
+            <div className={`w-2 h-2 rounded-full ${(network === 'facebook' && facebookData?.dataAvailable) ||
+                (network === 'linkedin' && linkedinData?.dataAvailable) ||
+                (network === 'instagram' && instagramData?.dataAvailable)
+                ? 'bg-green-500'
                 : 'bg-gray-400'
-            }`} />
+              }`} />
             <span className="text-xs text-gray-600">
-              {network === 'facebook' && facebookData?.dataAvailable && facebookData.pageName 
+              {network === 'facebook' && facebookData?.dataAvailable && facebookData.pageName
                 ? `Facebook: ${facebookData.pageName}`
                 : network === 'linkedin' && linkedinData?.dataAvailable && linkedinData.companyName
-                ? `LinkedIn: ${linkedinData.companyName}`
-                : `${network.charAt(0).toUpperCase() + network.slice(1)}: Not Connected`
+                  ? `LinkedIn: ${linkedinData.companyName}`
+                  : network === 'instagram' && instagramData?.dataAvailable && instagramData.username
+                    ? `Instagram: @${instagramData.username}`
+                    : `${network.charAt(0).toUpperCase() + network.slice(1)}: Not Connected`
               }
             </span>
           </div>
 
           {/* Download Report Button */}
-          {((network === 'facebook' && facebookData?.dataAvailable) || (network === 'linkedin' && linkedinData?.dataAvailable)) && (
-            <Button 
-              variant="outline" 
+          {((network === 'facebook' && facebookData?.dataAvailable) || (network === 'linkedin' && linkedinData?.dataAvailable) || (network === 'instagram' && instagramData?.dataAvailable)) && (
+            <Button
+              variant="outline"
               onClick={() => downloadReport()}
               className="text-sm text-orange-600 border-orange-300 hover:bg-orange-50"
             >
@@ -826,18 +1089,18 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
             </Button>
           )}
 
-          {((network === 'facebook' && connected) || (network === 'linkedin' && linkedinConnected)) && (
-            <Button 
-              variant="outline" 
-              onClick={network === 'facebook' ? disconnectFacebook : disconnectLinkedIn}
+          {((network === 'facebook' && connected) || (network === 'instagram' && instagramConnected) || (network === 'linkedin' && linkedinConnected)) && (
+            <Button
+              variant="outline"
+              onClick={network === 'facebook' ? disconnectFacebook : network === 'instagram' ? disconnectInstagram : disconnectLinkedIn}
               className="text-sm text-red-600 border-red-300 hover:bg-red-50"
             >
-              Disconnect {network === 'facebook' ? 'Facebook' : 'LinkedIn'}
+              Disconnect {network === 'facebook' ? 'Facebook' : network === 'instagram' ? 'Instagram' : 'LinkedIn'}
             </Button>
           )}
         </div>
       </div>
-      
+
       {loadingData ? (
         <div className="flex items-center justify-center py-32">
           <div className="flex flex-col items-center">
@@ -845,16 +1108,16 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
               <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-600 rounded-full animate-spin"></div>
             </div>
             <p className="mt-4 text-gray-600 font-medium">
-              Loading {network === 'facebook' ? 'Facebook' : network === 'linkedin' ? 'LinkedIn' : 'social'} metrics...
+              Loading {network === 'facebook' ? 'Facebook' : network === 'instagram' ? 'Instagram' : network === 'linkedin' ? 'LinkedIn' : 'social'} metrics...
             </p>
           </div>
         </div>
       ) : socialData?.dataAvailable ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+
           {/* Left Column (2/3 width) */}
           <div className="lg:col-span-2 space-y-6">
-            
+
             {/* A. Engagement Score & Follower Growth (Row 1) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Engagement Score Card */}
@@ -892,20 +1155,20 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
                   {/* Key Metrics */}
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between items-center text-gray-700">
-                        <span className="font-medium">Likes</span>
-                        <span className="font-semibold">{networkStats.likes}K</span>
+                      <span className="font-medium">Likes</span>
+                      <span className="font-semibold">{networkStats.likes}</span>
                     </div>
                     <div className="flex justify-between items-center text-gray-700">
-                        <span className="font-medium">Comments</span>
-                        <span className="font-semibold">{networkStats.comments}K</span>
+                      <span className="font-medium">Comments</span>
+                      <span className="font-semibold">{networkStats.comments}</span>
                     </div>
                     <div className="flex justify-between items-center text-gray-700">
-                        <span className="font-medium">Shares</span>
-                        <span className="font-semibold">{networkStats.shares}K</span>
+                      <span className="font-medium">Shares</span>
+                      <span className="font-semibold">{networkStats.shares}</span>
                     </div>
                     <div className="flex justify-between items-center pt-2 text-gray-500 border-t border-gray-100">
-                        <span className="text-xs">Engagement Rate</span>
-                        <span className="text-sm font-semibold text-gray-900">{networkStats.engagementRate}%</span>
+                      <span className="text-xs">Engagement Rate</span>
+                      <span className="text-sm font-semibold text-gray-900">{networkStats.engagementRate}%</span>
                     </div>
                   </div>
                 </CardContent>
@@ -924,7 +1187,7 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
                         {[0, 30, 60, 90, 120].map((y, i) => (
                           <line key={i} x1="0" y1={y} x2="300" y2={y} stroke="#F3F4F6" strokeWidth="1" />
                         ))}
-                        
+
                         {/* Y-axis labels */}
                         <text x="5" y="15" fontSize="8" fill="#9CA3AF" textAnchor="start">300</text>
                         <text x="5" y="70" fontSize="8" fill="#9CA3AF" textAnchor="start">150</text>
@@ -944,8 +1207,8 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
                         />
                       </svg>
                       <div className="absolute bottom-0 w-full flex justify-between px-5 text-xs text-gray-400">
-                          <span>1/25</span>
-                          <span>10/25</span>
+                        <span>1/25</span>
+                        <span>10/25</span>
                       </div>
                     </div>
                   ) : (
@@ -956,7 +1219,7 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
                 </CardContent>
               </Card>
             </div>
-            
+
             {/* B. Top Performing Posts (Row 2) */}
             <Card className="border-none shadow-lg">
               <CardContent className="p-6">
@@ -966,12 +1229,12 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
                     View Full Report <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
-                
+
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="text-left text-gray-500 border-b border-gray-200">
-                        <th className="pb-3 font-medium">Format</th>
+                        <th className="pb-3 font-medium">Post</th>
                         <th className="pb-3 font-medium text-right">Reach</th>
                         <th className="pb-3 font-medium text-right">Likes</th>
                         <th className="pb-3 font-medium text-right">Comments</th>
@@ -980,11 +1243,26 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
                     </thead>
                     <tbody className="text-gray-900">
                       {(() => {
-                        const currentData = network === 'facebook' ? facebookData : linkedinData;
+                        const currentData = network === 'facebook' ? facebookData : network === 'instagram' ? instagramData : linkedinData;
                         return currentData?.topPosts && currentData.topPosts.length > 0 ? (
                           currentData.topPosts.map((post, index) => (
-                            <tr key={index} className="border-b border-gray-100 last:border-b-0">
-                              <td className="py-3 font-medium">{post.format}</td>
+                            <tr key={index} className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50">
+                              <td className="py-3">
+                                <div className="flex flex-col">
+                                  <span className="font-medium text-gray-900">{post.format}</span>
+                                  {(post.message || (post as any).caption) && (
+                                    <a
+                                      href={post.url || '#'}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs text-gray-500 hover:text-orange-600 truncate max-w-xs mt-1"
+                                      title={(post as any).fullCaption || post.message}
+                                    >
+                                      {post.message || (post as any).caption}
+                                    </a>
+                                  )}
+                                </div>
+                              </td>
                               <td className="py-3 text-right">{post.reach}</td>
                               <td className="py-3 text-right">{post.likes}</td>
                               <td className="py-3 text-right">{post.comments}</td>
@@ -1008,20 +1286,20 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
 
           {/* Right Column (1/3 width) */}
           <div className="space-y-6">
-            
+
             {/* C. Competitor Comparison */}
             <Card className="border-none shadow-lg">
               <CardContent className="p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Competitor Comparison</h3>
-                
+
                 <select
                   className="w-full text-sm border border-gray-300 rounded-lg px-4 py-2 bg-white mb-4 focus:outline-none focus:ring-2 focus:ring-orange-500 appearance-none bg-no-repeat bg-[length:14px_14px] bg-[right_10px_center]"
                   style={{ backgroundImage: "url(\"data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%239CA3AF%22%20d%3D%22M7%2010l5%205l5-5H7z%22%2F%3E%3C%2Fsvg%3E\")" }}
                 >
-                    <option>Competitor A</option>
-                    <option>Competitor B</option>
+                  <option>Competitor A</option>
+                  <option>Competitor B</option>
                 </select>
-                
+
                 <div className="space-y-4">
                   {/* Your Account */}
                   <div className="flex items-center justify-between pb-3 border-b border-gray-100">
@@ -1034,7 +1312,7 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
                     </div>
                     <span className="text-sm font-bold text-green-600">Engagement: 27K</span>
                   </div>
-                  
+
                   {/* Competitor A */}
                   <div className="flex items-center justify-between pb-3 border-b border-gray-100">
                     <div className="flex items-center gap-2">
@@ -1046,7 +1324,7 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
                     </div>
                     <span className="text-sm font-bold text-gray-900">Engagement: 27K</span>
                   </div>
-                  
+
                   {/* Competitor B */}
                   <div className="flex items-center justify-between pb-3">
                     <div className="flex items-center gap-2">
@@ -1066,45 +1344,45 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
             <Card className="border-none shadow-lg">
               <CardContent className="p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Reputation Benchmark</h3>
-                
+
                 <div className="flex flex-col items-center gap-4">
                   <svg viewBox="0 0 240 200" className="w-full" style={{ maxWidth: '280px' }}>
                     {/* Pentagon background layers */}
                     <polygon points="120,25 200,75 175,160 65,160 40,75" fill="#FFFBEB" stroke="#FEF3C7" strokeWidth="1.5" />
                     <polygon points="120,50 185,87 165,145 75,145 55,87" fill="none" stroke="#FDE68A" strokeWidth="1" />
                     <polygon points="120,75 170,99 155,130 85,130 70,99" fill="none" stroke="#FCD34D" strokeWidth="1" />
-                    
+
                     {/* Data pentagon (orange fill) */}
                     {(() => {
-                      // Calculate scores from real platform data (Facebook or LinkedIn)
+                      // Calculate scores from real platform data (Facebook, Instagram, or LinkedIn)
                       const calculateReputationScores = () => {
-                        const currentData = network === 'facebook' ? facebookData : linkedinData;
-                        
+                        const currentData = network === 'facebook' ? facebookData : network === 'instagram' ? instagramData : linkedinData;
+
                         if (!currentData || !currentData.engagementScore) {
                           return [50, 50, 50, 50, 50]; // Default neutral scores
                         }
 
                         const engagement = currentData.engagementScore;
-                        
+
                         // 1. Review Score (based on engagement rate)
                         const reviewScore = Math.min(100, engagement.engagementRate * 10);
-                        
+
                         // 2. Brand Mentions (based on likes/reactions)
                         const brandScore = engagement.likes > 0 ? Math.min(100, (engagement.likes / 100) * 100) : 50;
-                        
+
                         // 3. Consistency (based on post frequency)
-                        const consistencyScore = currentData.topPosts && currentData.topPosts.length > 0 
-                          ? Math.min(100, (currentData.topPosts.length / 10) * 100) 
+                        const consistencyScore = currentData.topPosts && currentData.topPosts.length > 0
+                          ? Math.min(100, (currentData.topPosts.length / 10) * 100)
                           : 50;
-                        
+
                         // 4. Responsiveness (based on comments - indicates interaction)
-                        const responsivenessScore = engagement.comments > 0 
-                          ? Math.min(100, (engagement.comments / 50) * 100) 
+                        const responsivenessScore = engagement.comments > 0
+                          ? Math.min(100, (engagement.comments / 50) * 100)
                           : 50;
-                        
+
                         // 5. Engagement Quality (based on shares and overall engagement)
-                        const engagementQuality = engagement.shares > 0 
-                          ? Math.min(100, (engagement.shares / 20) * 100) 
+                        const engagementQuality = engagement.shares > 0
+                          ? Math.min(100, (engagement.shares / 20) * 100)
                           : Math.min(100, engagement.engagementRate * 8);
 
                         return [reviewScore, brandScore, consistencyScore, responsivenessScore, engagementQuality];
@@ -1114,27 +1392,27 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
                       const centerX = 120
                       const centerY = 100
                       const maxRadius = 70
-                      
+
                       // Pentagon points (starting from top, going clockwise)
                       const angles = [
-                          -Math.PI / 2,           // Top (Review Score)
-                          -Math.PI / 2 + (2 * Math.PI / 5),     // Top-right (Brand Mentions)
-                          -Math.PI / 2 + (4 * Math.PI / 5),     // Bottom-right (Consistency)
-                          -Math.PI / 2 + (6 * Math.PI / 5),     // Bottom-left (Responsiveness)
-                          -Math.PI / 2 + (8 * Math.PI / 5),     // Top-left (Engagement Quality)
+                        -Math.PI / 2,           // Top (Review Score)
+                        -Math.PI / 2 + (2 * Math.PI / 5),     // Top-right (Brand Mentions)
+                        -Math.PI / 2 + (4 * Math.PI / 5),     // Bottom-right (Consistency)
+                        -Math.PI / 2 + (6 * Math.PI / 5),     // Bottom-left (Responsiveness)
+                        -Math.PI / 2 + (8 * Math.PI / 5),     // Top-left (Engagement Quality)
                       ]
-                      
+
                       const points = scores.map((score, i) => {
-                          const normalizedScore = score / 100
-                          const r = maxRadius * normalizedScore
-                          const x = centerX + r * Math.cos(angles[i])
-                          const y = centerY + r * Math.sin(angles[i])
-                          return `${x},${y}`
+                        const normalizedScore = score / 100
+                        const r = maxRadius * normalizedScore
+                        const x = centerX + r * Math.cos(angles[i])
+                        const y = centerY + r * Math.sin(angles[i])
+                        return `${x},${y}`
                       }).join(' ')
 
                       return <polygon points={points} fill="#FB923C" opacity="0.7" stroke="#F97316" strokeWidth="2.5" strokeLinejoin="round" />
                     })()}
-                    
+
                     {/* Labels positioned around pentagon */}
                     <text x="120" y="18" textAnchor="middle" fontSize="11" fill="#6B7280" fontWeight="600">Review Score®</text>
                     <text x="208" y="80" textAnchor="start" fontSize="11" fill="#6B7280" fontWeight="600">Brand Mentions®</text>
@@ -1142,19 +1420,19 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
                     <text x="58" y="175" textAnchor="middle" fontSize="11" fill="#6B7280" fontWeight="600">Responsiveness®</text>
                     <text x="32" y="80" textAnchor="end" fontSize="11" fill="#6B7280" fontWeight="600">Engagement Quality®</text>
                   </svg>
-                  
+
                   <div className="text-center mt-2">
                     <p className="text-5xl font-extrabold text-orange-600">
                       {(() => {
-                        const currentData = network === 'facebook' ? facebookData : linkedinData;
-                        return currentData?.reputationBenchmark?.score 
+                        const currentData = network === 'facebook' ? facebookData : network === 'instagram' ? instagramData : linkedinData;
+                        return currentData?.reputationBenchmark?.score
                           ? `${currentData.reputationBenchmark.score}%`
                           : '50%';
                       })()}
                     </p>
                     <p className="text-sm text-gray-500 mt-1">Overall Score</p>
                   </div>
-                  
+
                   <Button variant="ghost" className="w-full text-orange-600 hover:text-orange-700 mt-2">
                     View Full Report <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>

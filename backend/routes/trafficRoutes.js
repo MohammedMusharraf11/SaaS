@@ -32,6 +32,16 @@ router.get('/traffic/data', async (req, res) => {
       parseInt(days)
     );
 
+    // If no real data available, return error
+    if (!trafficData) {
+      return res.status(404).json({
+        success: false,
+        error: 'No real traffic data available',
+        message: 'Please connect Google Analytics or configure SimilarWeb API to see real traffic data',
+        domain: cleanDomain
+      });
+    }
+
     res.json({
       success: true,
       domain: cleanDomain,

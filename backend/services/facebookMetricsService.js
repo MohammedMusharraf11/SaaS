@@ -32,12 +32,12 @@ class FacebookMetricsService {
 
       const pages = response.data.data || [];
       console.log(`✅ Found ${pages.length} Facebook page(s)`);
-      
+
       // Log page details
       pages.forEach((page, index) => {
         console.log(`   📄 Page ${index + 1}: ${page.name} (${page.fan_count || 0} followers)`);
       });
-      
+
       return pages;
     } catch (error) {
       console.error('❌ Error fetching Facebook pages:', error.response?.data || error.message);
@@ -77,7 +77,7 @@ class FacebookMetricsService {
       ];
 
       const lifetimeMetrics = ['page_fans'];
-      
+
       let metricsData = {};
 
       // Fetch day metrics (last 30 data points)
@@ -93,7 +93,7 @@ class FacebookMetricsService {
 
         const dayInsights = dayInsightsResponse.data.data || [];
         console.log(`   ✅ Received ${dayInsights.length} day metrics`);
-        
+
         dayInsights.forEach(metric => {
           // Get the last 30 days worth of data
           const last30Days = metric.values.slice(-30);
@@ -118,7 +118,7 @@ class FacebookMetricsService {
 
         const lifetimeInsights = lifetimeInsightsResponse.data.data || [];
         console.log(`   ✅ Received ${lifetimeInsights.length} lifetime metrics`);
-        
+
         lifetimeInsights.forEach(metric => {
           const latestValue = metric.values[metric.values.length - 1]?.value || 0;
           metricsData[metric.name] = latestValue;
@@ -132,9 +132,9 @@ class FacebookMetricsService {
       const impressions = metricsData.page_impressions || 1;
       const reactions = metricsData.page_actions_post_reactions_total || 0;
       const uniqueImpressions = metricsData.page_impressions_unique || impressions;
-      
-      const engagementRate = uniqueImpressions > 0 
-        ? ((reactions / uniqueImpressions) * 100).toFixed(2) 
+
+      const engagementRate = uniqueImpressions > 0
+        ? ((reactions / uniqueImpressions) * 100).toFixed(2)
         : '0';
 
       console.log(`   📊 Calculated engagement rate: ${engagementRate}%`);
@@ -316,22 +316,22 @@ class FacebookMetricsService {
 
         const insights = response.data.data || [];
         console.log(`   ✅ Received insights for ${insights.length} metrics`);
-        
+
         // Organize data by date
         const growthMap = new Map();
-        
+
         insights.forEach(metric => {
           if (metric.values) {
             const dataPoints = metric.values.slice(-Math.min(days, 90));
             console.log(`      • ${metric.name}: ${dataPoints.length} data points`);
-            
+
             dataPoints.forEach(value => {
               const date = value.end_time.split('T')[0];
               if (!growthMap.has(date)) {
                 growthMap.set(date, { date, followers: 0, gained: 0, lost: 0, net: 0 });
               }
               const entry = growthMap.get(date);
-              
+
               if (metric.name === 'page_fans') {
                 entry.followers = value.value || 0;
               } else if (metric.name === 'page_fan_adds') {
@@ -339,7 +339,7 @@ class FacebookMetricsService {
               } else if (metric.name === 'page_fan_removes') {
                 entry.lost = value.value || 0;
               }
-              
+
               entry.net = entry.gained - entry.lost;
             });
           }
@@ -349,7 +349,7 @@ class FacebookMetricsService {
           .sort((a, b) => new Date(a.date) - new Date(b.date));
 
         console.log(`   ✅ Processed ${growthArray.length} days of follower growth data`);
-        
+
         if (growthArray.length > 0) {
           const latest = growthArray[growthArray.length - 1];
           console.log(`   📊 Latest: ${latest.followers} followers (+${latest.gained}, -${latest.lost})`);
@@ -359,7 +359,7 @@ class FacebookMetricsService {
 
       } catch (error) {
         console.warn('   ⚠️ Error fetching follower growth from API, generating estimate:', error.response?.data?.error?.message || error.message);
-        
+
         // Generate estimated growth data based on current follower count
         const currentFollowers = page.fan_count || 1000;
         const growthArray = [];
@@ -371,10 +371,10 @@ class FacebookMetricsService {
           const date = new Date();
           date.setDate(date.getDate() - i);
           const dateStr = date.toISOString().split('T')[0];
-          
+
           const variation = Math.floor(Math.random() * 20) - 10;
           const followers = Math.max(0, currentFollowers - (i * 5) + variation);
-          
+
           growthArray.push({
             date: dateStr,
             followers: followers,
@@ -444,8 +444,9 @@ class FacebookMetricsService {
           likes: this.formatNumber(post.engagement.likes),
           comments: this.formatNumber(post.engagement.comments),
           shares: this.formatNumber(post.engagement.shares),
-          message: post.message.substring(0, 100),
-          url: post.url
+          caption: post.message ? post.message.substring(0, 100) : '(No message)',
+          url: post.url,
+          fullCaption: post.message || '(No message)'
         })),
         reputationBenchmark: {
           score: reputationScore,

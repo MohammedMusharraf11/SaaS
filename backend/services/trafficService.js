@@ -4,86 +4,217 @@ import userAnalyticsService from './userAnalyticsService.js';
 class TrafficService {
   /**
    * Get website traffic data from multiple sources
-   * Priority: Google Analytics > SimilarWeb > Estimated data
+   * Priority: Google Analytics > Search Console > SimilarWeb
+   * Shows Search Console data as fallback when GA4 is empty
    */
   async getTrafficData(email, domain, days = 14) {
-    const trafficData = {
-      source: null,
-      data: [],
-      summary: {
-        totalVisitors: 0,
-        avgDailyVisitors: 0,
-        trend: 'stable',
-        changePercent: 0
-      }
-    };
-
     try {
       // Try Google Analytics first (if connected)
       const gaData = await this.getGoogleAnalyticsTraffic(email, days);
       if (gaData && gaData.length > 0) {
-        trafficData.source = 'google_analytics';
-        trafficData.data = gaData;
-        trafficData.summary = this.calculateSummary(gaData);
-        return trafficData;
+        return {
+          source: 'google_analytics',
+          data: gaData,
+          summary: this.calculateSummary(gaData)
+        };
       }
     } catch (error) {
       console.log('Google Analytics not available, trying alternatives...');
     }
 
     try {
+      // Try Search Console data as fallback
+      const searchConsoleData = await this.getSearchConsoleTraffic(email, domain, days);
+      if (searchConsoleData && searchConsoleData.length > 0) {
+        return {
+          source: 'search_console',
+          data: searchConsoleData,
+          summary: this.calculateSummary(searchConsoleData)
+        };
+      }
+    } catch (error) {
+      console.log('Search Console not available, trying SimilarWeb...');
+    }
+
+    try {
       // Try SimilarWeb API (requires API key)
       const similarWebData = await this.getSimilarWebTraffic(domain, days);
       if (similarWebData && similarWebData.length > 0) {
-        trafficData.source = 'similarweb_estimate';
-        trafficData.data = similarWebData;
-        trafficData.summary = this.calculateSummary(similarWebData);
-        return trafficData;
+        return {
+          source: 'similarweb_estimate',
+          data: similarWebData,
+          summary: this.calculateSummary(similarWebData)
+        };
       }
     } catch (error) {
-      console.log('SimilarWeb not available, using estimated data...');
+      console.log('SimilarWeb not available');
     }
 
-    // Fallback: Generate estimated traffic based on domain metrics
-    trafficData.source = 'estimated';
-    trafficData.data = await this.getEstimatedTraffic(domain, days);
-    trafficData.summary = this.calculateSummary(trafficData.data);
-    
-    return trafficData;
+    // Return null if no real data available - DO NOT generate fake data
+    console.log('⚠️ No real traffic data available. User needs to connect Google Analytics or configure SimilarWeb API.');
+    return null;
   }
 
   /**
-   * Get traffic from Google Analytics
+   * Get traffic from Google Analytics - REAL DATA ONLY
+   * Fetches daily breakdown from GA4 API
    */
   async getGoogleAnalyticsTraffic(email, days = 14) {
     try {
-      const analyticsData = await userAnalyticsService.getUserAnalyticsData(email);
-      
-      if (!analyticsData || !analyticsData.sessions) {
+      if (!email) {
+        console.log('No email provided - cannot fetch Google Analytics data');
         return null;
       }
 
-      // Transform GA data to our format
-      const trafficData = [];
-      const sessionsData = analyticsData.sessions || {};
+      console.log(`📊 Fetching GA4 daily traffic for ${email}...`);
+
+      // Get OAuth client
+      const oauthTokenService = (await import('./oauthTokenService.js')).default;
+      const oauth2Client = await oauthTokenService.getOAuthClient(email);
       
-      for (let i = days - 1; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
-        
-        trafficData.push({
-          date: dateStr,
-          day: days - i,
-          visitors: sessionsData[dateStr] || Math.floor(Math.random() * 1000) + 500,
-          sessions: sessionsData[dateStr] || Math.floor(Math.random() * 1200) + 600,
-          pageViews: (sessionsData[dateStr] || 0) * (1.5 + Math.random() * 0.5)
-        });
+      if (!oauth2Client) {
+        console.log('❌ User not authenticated');
+        return null;
       }
 
+      // Get property ID
+      const propertiesResult = await userAnalyticsService.getUserProperties(email);
+      if (!propertiesResult.success || propertiesResult.properties.length === 0) {
+        console.log('❌ No GA4 properties found');
+        return null;
+      }
+
+      const propertyId = propertiesResult.properties[0].id;
+      console.log('📌 Using property:', propertyId);
+
+      // Get credentials
+      const credentials = oauth2Client.credentials;
+      if (!credentials || !credentials.access_token) {
+        console.log('❌ No access token available');
+        return null;
+      }
+
+      // Fetch daily data from GA4
+      const reportUrl = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
+      
+      const requestBody = {
+        dateRanges: [{ 
+          startDate: `${days}daysAgo`, 
+          endDate: 'yesterday' 
+        }],
+        metrics: [
+          { name: 'activeUsers' },
+          { name: 'sessions' },
+          { name: 'screenPageViews' }
+        ],
+        dimensions: [
+          { name: 'date' }
+        ],
+        orderBys: [
+          { dimension: { dimensionName: 'date' }, desc: false }
+        ]
+      };
+
+      const response = await fetch(reportUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${credentials.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ GA API error:', response.status, errorText);
+        return null;
+      }
+
+      const data = await response.json();
+
+      if (!data.rows || data.rows.length === 0) {
+        console.log('❌ No GA4 data rows returned');
+        return null;
+      }
+
+      // Transform GA4 data to our format
+      const trafficData = [];
+      
+      data.rows.forEach((row, index) => {
+        const dateStr = row.dimensionValues[0].value; // Format: YYYYMMDD
+        const visitors = parseInt(row.metricValues[0].value) || 0;
+        const sessions = parseInt(row.metricValues[1].value) || 0;
+        const pageViews = parseInt(row.metricValues[2].value) || 0;
+
+        // Convert YYYYMMDD to YYYY-MM-DD
+        const formattedDate = `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
+
+        trafficData.push({
+          date: formattedDate,
+          day: index + 1,
+          visitors: visitors,
+          sessions: sessions,
+          pageViews: pageViews
+        });
+      });
+
+      console.log(`✅ Retrieved ${trafficData.length} days of GA4 traffic data`);
       return trafficData;
+
     } catch (error) {
-      console.error('Error fetching GA traffic:', error);
+      console.error('❌ Error fetching GA traffic:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get traffic from Search Console as fallback
+   * Uses clicks as proxy for visitors/sessions
+   */
+  async getSearchConsoleTraffic(email, domain, days = 14) {
+    try {
+      if (!email) {
+        console.log('No email provided - cannot fetch Search Console data');
+        return null;
+      }
+
+      console.log(`📊 Fetching Search Console traffic for ${email} and ${domain}...`);
+
+      // Import the search console service
+      const searchConsoleService = (await import('./searchConsoleService.js')).default;
+      
+      // Fetch search console data
+      const searchData = await searchConsoleService.getUserSearchConsoleData(email);
+      
+      if (!searchData || !searchData.dailyData || searchData.dailyData.length === 0) {
+        console.log('❌ No Search Console data available');
+        return null;
+      }
+
+      // Transform Search Console daily data to traffic format
+      const trafficData = [];
+      const recentData = searchData.dailyData.slice(-days); // Get last N days
+      
+      recentData.forEach((day, index) => {
+        trafficData.push({
+          date: day.date,
+          day: index + 1,
+          visitors: day.clicks * 2, // Estimate: 2 page views per click
+          sessions: day.clicks, // Use clicks as sessions
+          pageViews: day.clicks * 2.5 // Estimate: 2.5 page views per session
+        });
+      });
+
+      if (trafficData.length === 0) {
+        console.log('❌ No Search Console traffic data found');
+        return null;
+      }
+
+      console.log(`✅ Retrieved ${trafficData.length} days of Search Console traffic data`);
+      return trafficData;
+
+    } catch (error) {
+      console.error('❌ Error fetching Search Console traffic:', error);
       return null;
     }
   }

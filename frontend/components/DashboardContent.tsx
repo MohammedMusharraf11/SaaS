@@ -24,6 +24,7 @@ import {
 // import GoogleAnalyticsCard from './GoogleAnalyticsCard'
 // import SocialMediaMetricsCard from './SocialMediaMetricsCard'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/utils/supabase/client'
 
 interface DashboardContentProps {
   userEmail?: string
@@ -57,6 +58,13 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
   const [error, setError] = useState('')
   const [trafficData, setTrafficData] = useState<TrafficData | null>(null)
   const [loadingTraffic, setLoadingTraffic] = useState(false)
+  const [userEmailState, setUserEmailState] = useState<string | null>(null)
+  const [isGAConnected, setIsGAConnected] = useState<boolean | null>(null)
+
+  // Competitor quick-analyze state
+  const [competitorDomainInput, setCompetitorDomainInput] = useState<string>('')
+  const [competitorResults, setCompetitorResults] = useState<any>(null)
+  const [loadingCompetitor, setLoadingCompetitor] = useState(false)
 
   // Extract first name
   const getDisplayName = () => {
@@ -105,7 +113,11 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
       }
 
       // Fetch traffic data
-      fetchTrafficData(cleanUrl)
+      console.log('🔍 About to fetch traffic data for:', cleanUrl)
+      await fetchTrafficData(cleanUrl)
+
+      // clear previous competitor results when analyzing a new site
+      setCompetitorResults(null)
 
     } catch (err: any) {
       setError(err.message || 'Failed to analyze website')
@@ -122,20 +134,32 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
         days: '14'
       })
 
-      if (userEmail) {
-        params.append('email', userEmail)
+      // Use userEmailState (from Supabase) or userEmail prop
+      const emailToUse = userEmailState || userEmail
+      if (emailToUse) {
+        params.append('email', emailToUse)
       }
+
+      console.log('🔍 Fetching traffic with email:', emailToUse)
 
       const response = await fetch(`http://localhost:3010/api/traffic/data?${params.toString()}`)
       
       if (response.ok) {
         const data = await response.json()
+        console.log('✅ Traffic data received:', data.source)
         setTrafficData(data)
+      } else if (response.status === 404) {
+        // No real data available
+        const errorData = await response.json()
+        console.log('⚠️ No real traffic data:', errorData.message)
+        setTrafficData(null)
       } else {
-        console.error('Failed to fetch traffic data')
+        console.error('❌ Failed to fetch traffic data')
+        setTrafficData(null)
       }
     } catch (err) {
-      console.error('Error fetching traffic:', err)
+      console.error('❌ Error fetching traffic:', err)
+      setTrafficData(null)
     } finally {
       setLoadingTraffic(false)
     }
@@ -162,6 +186,7 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
   const getSourceBadge = (source: string) => {
     const badges: Record<string, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
       google_analytics: { label: 'Real Data (GA)', variant: 'default' },
+      search_console: { label: 'Real Data (Search Console)', variant: 'default' },
       similarweb_estimate: { label: 'Estimated (SimilarWeb)', variant: 'secondary' },
       estimated: { label: 'Estimated', variant: 'outline' }
     }
@@ -178,6 +203,93 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
     return num.toString()
+  }
+
+  // Load user email for competitor analysis
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const supabase = createClient()
+        const { data } = await supabase.auth.getUser()
+        if (data?.user?.email) {
+          console.log('✅ User email from Supabase:', data.user.email)
+          setUserEmailState(data.user.email)
+          
+          // Check if user has GA connected by trying to fetch their properties
+          try {
+            const response = await fetch(`http://localhost:3010/api/auth/google/status?email=${encodeURIComponent(data.user.email)}`)
+            if (response.ok) {
+              const statusData = await response.json()
+              console.log('📊 GA connection status:', statusData)
+              setIsGAConnected(statusData.connected)
+            }
+          } catch (err) {
+            console.log('⚠️ Could not check GA status:', err)
+            setIsGAConnected(false)
+          }
+        } else {
+          console.log('⚠️ No user email from Supabase')
+          setIsGAConnected(false)
+        }
+      } catch (err) {
+        console.error('❌ Error getting user from Supabase:', err)
+        setIsGAConnected(false)
+      }
+    }
+    init()
+  }, [])
+
+  // Auto-populate competitor field with a real competitor when website is analyzed
+  useEffect(() => {
+    if (healthScore && !competitorDomainInput) {
+      // Suggest a competitor based on the domain
+      const domain = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      if (domain.includes('agenticforge')) {
+        setCompetitorDomainInput('zapier.com'); // AI automation competitor
+      } else if (domain.includes('ecommerce') || domain.includes('shop')) {
+        setCompetitorDomainInput('shopify.com');
+      } else {
+        // Default competitor suggestion
+        setCompetitorDomainInput('competitor.com');
+      }
+    }
+  }, [healthScore, url, competitorDomainInput])
+
+  const cleanDomain = (d: string) => d.replace(/^https?:\/\//, '').replace(/\/$/, '')
+
+  const handleAnalyzeCompetitor = async () => {
+    if (!competitorDomainInput || !url) return
+    const yourSite = cleanDomain(url)
+    const competitorSite = cleanDomain(competitorDomainInput)
+    setLoadingCompetitor(true)
+    setCompetitorResults(null)
+    try {
+      const body = {
+        email: userEmailState || undefined,
+        yourSite,
+        competitorSite,
+        forceRefresh: false
+      }
+
+      const res = await fetch('http://localhost:3010/api/competitor/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Failed' }))
+        throw new Error(err.error || 'Failed to analyze competitor')
+      }
+
+      const data = await res.json()
+      setCompetitorResults(data)
+    } catch (error) {
+      console.error('Error analyzing competitor:', error)
+      setCompetitorResults({ error: error instanceof Error ? error.message : 'Error' })
+    } finally {
+      setLoadingCompetitor(false)
+    }
   }
 
   // Competitor data - replace with real data
@@ -454,9 +566,37 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
                   </>
                 ) : (
                   <div className="h-48 flex items-center justify-center text-gray-400">
-                    <div className="text-center">
-                      <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">Analyze a website to see traffic data</p>
+                    <div className="text-center max-w-md">
+                      <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      {isGAConnected === true ? (
+                        <>
+                          <p className="text-sm font-semibold text-gray-700 mb-2">No Traffic Data for This Domain</p>
+                          <p className="text-xs text-gray-600 mb-3">
+                            Google Analytics is connected, but no data is available for this domain. 
+                            Make sure the domain matches your GA property.
+                          </p>
+                        </>
+                      ) : isGAConnected === false ? (
+                        <>
+                          <p className="text-sm font-semibold text-gray-700 mb-2">Google Analytics Not Connected</p>
+                          <p className="text-xs text-gray-600 mb-3">
+                            Connect Google Analytics to see real traffic data for your websites.
+                          </p>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                            onClick={() => router.push('/dashboard/seo-performance')}
+                          >
+                            Connect Google Analytics
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm font-semibold text-gray-700 mb-2">Checking Analytics Connection...</p>
+                          <Loader2 className="w-6 h-6 mx-auto animate-spin text-orange-500" />
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
@@ -466,40 +606,95 @@ export default function DashboardContent({ userEmail, userName }: DashboardConte
             {/* Competitor Benchmarking */}
             <Card className="border-gray-200 shadow-sm">
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between w-full">
                   <CardTitle className="text-lg font-bold">Competitor Benchmarking</CardTitle>
-                  <select className="text-sm border-gray-300 rounded-md">
-                    <option>Select Competitor</option>
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="competitor.com"
+                      value={competitorDomainInput}
+                      onChange={(e) => setCompetitorDomainInput(e.target.value)}
+                      className="text-sm w-48"
+                    />
+                    <Button
+                      onClick={handleAnalyzeCompetitor}
+                      disabled={!competitorDomainInput || !url || loadingCompetitor}
+                      className="h-9"
+                    >
+                      {loadingCompetitor ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Analyzing
+                        </>
+                      ) : (
+                        'Analyze'
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 font-medium text-gray-700">Metric</th>
-                        <th className="text-center py-3 px-4 font-medium text-gray-700">Your Site</th>
-                        <th className="text-center py-3 px-4 font-medium text-gray-700">Competitor A</th>
-                        <th className="text-center py-3 px-4 font-medium text-gray-700">Competitor B</th>
-                        <th className="text-center py-3 px-4 font-medium text-gray-700">Competitor C</th>
-                        <th className="text-center py-3 px-4 font-medium text-gray-700">Competitor D</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {competitorData.map((row, index) => (
-                        <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="py-3 px-4 font-medium text-gray-900">{row.metric}</td>
-                          <td className="text-center py-3 px-4 text-gray-700">{row.yourSite}</td>
-                          <td className="text-center py-3 px-4 text-gray-700">{row.competitorA}</td>
-                          <td className="text-center py-3 px-4 text-gray-700">{row.competitorB}</td>
-                          <td className="text-center py-3 px-4 text-gray-700">{row.competitorC}</td>
-                          <td className="text-center py-3 px-4 text-gray-700">{row.competitorD}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                {loadingCompetitor ? (
+                  <div className="h-32 flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+                  </div>
+                ) : competitorResults ? (
+                  competitorResults.error ? (
+                    <div className="p-4 text-sm text-red-600">{competitorResults.error}</div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="text-left py-3 px-4 font-medium text-gray-700">Metric</th>
+                            <th className="text-center py-3 px-4 font-medium text-gray-700">Your Site</th>
+                            <th className="text-center py-3 px-4 font-medium text-gray-700">Competitor</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {/* Domain Authority */}
+                          <tr className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="py-3 px-4 font-medium text-gray-900">Domain Authority</td>
+                            <td className="text-center py-3 px-4 text-gray-700">
+                              {competitorResults?.yourSite?.domainAuthority ?? healthScore?.breakdown?.technical_seo ?? '-'}
+                            </td>
+                            <td className="text-center py-3 px-4 text-gray-700">
+                              {competitorResults?.competitorSite?.domainAuthority ?? '-'}
+                            </td>
+                          </tr>
+
+                          {/* Monthly Traffic */}
+                          <tr className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="py-3 px-4 font-medium text-gray-900">Monthly Traffic</td>
+                            <td className="text-center py-3 px-4 text-gray-700">
+                              {competitorResults?.yourSite?.traffic?.monthly || trafficData?.summary?.totalVisitors || '-'}
+                            </td>
+                            <td className="text-center py-3 px-4 text-gray-700">
+                              {competitorResults?.competitorSite?.traffic?.monthly || competitorResults?.competitorSite?.traffic?.summary?.totalVisitors || '-'}
+                            </td>
+                          </tr>
+
+                          {/* Social Followers */}
+                          <tr className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="py-3 px-4 font-medium text-gray-900">Social Followers</td>
+                            <td className="text-center py-3 px-4 text-gray-700">
+                              {competitorResults?.yourSite?.social?.followers ?? '-'}
+                            </td>
+                            <td className="text-center py-3 px-4 text-gray-700">
+                              {competitorResults?.competitorSite?.social?.followers ?? '-'}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  )
+                ) : (
+                  <div className="h-28 flex items-center justify-center text-gray-400">
+                    <div className="text-center">
+                      <p className="text-sm">Enter a competitor domain and analyze to compare metrics</p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-4">
                   <Button variant="outline" className="w-full border-orange-500 text-orange-600 hover:bg-orange-50">
                     View Full Report

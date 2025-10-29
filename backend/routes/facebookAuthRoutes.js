@@ -165,6 +165,7 @@ router.get('/auth/facebook/callback', async (req, res) => {
     console.log('   App Secret (partial):', FACEBOOK_APP_SECRET ? FACEBOOK_APP_SECRET.substring(0, 8) + '...' : 'MISSING');
     
     const tokenUrl = 'https://graph.facebook.com/v18.0/oauth/access_token';
+    // Use configured app secret and redirect URI from environment/config
     const tokenParams = {
       client_id: FACEBOOK_APP_ID,
       client_secret: FACEBOOK_APP_SECRET,

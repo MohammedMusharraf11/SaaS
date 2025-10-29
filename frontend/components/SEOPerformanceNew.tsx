@@ -248,6 +248,137 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
     return (num * 100).toFixed(1) + '%'
   }
 
+  // Generate a clean printable HTML report and open it in a new window
+  const generateReportHtml = (reportData: any) => {
+    const { searchConsoleData, analyticsData, lighthouseLastUpdated, dateRange } = reportData
+
+    const esc = (str: any) => (str === null || str === undefined) ? '' : String(str)
+
+    const formatNum = (n: any) => {
+      if (n === null || n === undefined) return '0'
+      if (typeof n === 'number') {
+        if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M'
+        if (n >= 1000) return (n / 1000).toFixed(1) + 'K'
+        return n.toLocaleString()
+      }
+      return esc(n)
+    }
+
+    const topPagesRows = (searchConsoleData?.topPages || []).slice(0, 10).map((p: any) => `
+      <tr>
+        <td style="padding:8px;border:1px solid #eee;">${esc(p.page)}</td>
+        <td style="padding:8px;border:1px solid #eee;text-align:right;">${formatNum(p.clicks)}</td>
+        <td style="padding:8px;border:1px solid #eee;text-align:right;">${formatNum(p.impressions)}</td>
+      </tr>
+    `).join('')
+
+    const topQueriesRows = (searchConsoleData?.topQueries || []).slice(0, 10).map((q: any) => `
+      <tr>
+        <td style="padding:8px;border:1px solid #eee;">${esc(q.query)}</td>
+        <td style="padding:8px;border:1px solid #eee;text-align:right;">${formatNum(q.clicks)}</td>
+        <td style="padding:8px;border:1px solid #eee;text-align:right;">${(q.ctr * 100).toFixed(2)}%</td>
+        <td style="padding:8px;border:1px solid #eee;text-align:right;">${(q.position || 0).toFixed(1)}</td>
+      </tr>
+    `).join('')
+
+    const lighthouse = searchConsoleData?.lighthouse || {}
+
+    return `
+      <!doctype html>
+      <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>SEO Performance Report</title>
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; color:#111; padding:24px; }
+          h1,h2,h3{ margin:0 0 8px 0 }
+          .header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:20px }
+          .card{ border:1px solid #e6e6e6; padding:12px; border-radius:6px; margin-bottom:12px }
+          table{ border-collapse:collapse; width:100%; margin-top:8px }
+          th{ text-align:left; padding:8px; border-bottom:1px solid #eee; background:#fafafa }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <h1>SEO Performance Report</h1>
+            <div style="color:#666;margin-top:6px;">Date range: ${esc(dateRange)} • Generated: ${new Date().toLocaleString()}</div>
+          </div>
+          <div style="text-align:right;color:#666">Last analyzed: ${lighthouseLastUpdated ? new Date(lighthouseLastUpdated).toLocaleString() : ''}</div>
+        </div>
+
+        <div class="card">
+          <h2>Summary</h2>
+          <p style="margin-top:8px;color:#333">Organic clicks: <strong>${formatNum(searchConsoleData?.totalClicks || searchConsoleData?.organicTraffic || 0)}</strong> • Impressions: <strong>${formatNum(searchConsoleData?.totalImpressions || 0)}</strong> • Avg CTR: <strong>${((searchConsoleData?.averageCTR || 0) * 100).toFixed(2)}%</strong></p>
+        </div>
+
+        <div class="card">
+          <h2>Performance Scores</h2>
+          <p style="margin-top:8px;">SEO Score: <strong>${lighthouse?.categoryScores?.seo ?? 'N/A'}%</strong> • Performance: <strong>${lighthouse?.categoryScores?.performance ?? 'N/A'}%</strong></p>
+          <div style="margin-top:8px;color:#555">Top opportunities and issues are listed below.</div>
+        </div>
+
+        <div class="card">
+          <h3>Top Pages</h3>
+          <table>
+            <thead>
+              <tr><th>Page</th><th style="text-align:right">Clicks</th><th style="text-align:right">Impressions</th></tr>
+            </thead>
+            <tbody>
+              ${topPagesRows || '<tr><td colspan="3" style="padding:8px;color:#666">No data</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3>Top Queries</h3>
+          <table>
+            <thead>
+              <tr><th>Query</th><th style="text-align:right">Clicks</th><th style="text-align:right">CTR</th><th style="text-align:right">Position</th></tr>
+            </thead>
+            <tbody>
+              ${topQueriesRows || '<tr><td colspan="4" style="padding:8px;color:#666">No data</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3>Top Opportunities (Lighthouse)</h3>
+          <ul style="margin-top:8px;color:#333">
+            ${(lighthouse.opportunities || []).slice(0,10).map((o: any) => `<li style="margin-bottom:6px"><strong>${esc(o.title)}</strong> — ${esc(o.description || o.why || '')}</li>`).join('') || '<li style="color:#666">No opportunities found</li>'}
+          </ul>
+        </div>
+
+        <div style="margin-top:24px;color:#888;font-size:12px">Report generated by SEO Dashboard</div>
+
+        <script>
+          // Auto-print when page loads
+          window.onload = function() { setTimeout(function(){ window.print(); }, 250); };
+        </script>
+      </body>
+      </html>
+    `
+  }
+
+  const handleDownload = () => {
+    try {
+      const reportData = { searchConsoleData, analyticsData, lighthouseLastUpdated, dateRange }
+      const html = generateReportHtml(reportData)
+      const win = window.open('', '_blank', 'toolbar=0,scrollbars=1,menubar=0,width=900,height=1100')
+      if (!win) {
+        alert('Please allow popups for this site to download the report')
+        return
+      }
+      win.document.write(html)
+      win.document.close()
+      win.focus()
+    } catch (error) {
+      console.error('Error generating report:', error)
+      alert('Failed to generate report')
+    }
+  }
+
   if (checkingConnection) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -313,7 +444,13 @@ export default function SEOPerformanceNew({ user }: SEOPerformanceNewProps) {
                 </Button>
               </>
             )}
-            <Button variant="outline" className="gap-2">
+            <Button 
+              variant="outline" 
+              className="gap-2" 
+              onClick={handleDownload}
+              disabled={!searchConsoleData && !analyticsData}
+              title={(!searchConsoleData && !analyticsData) ? 'No data to export' : 'Download printable report'}
+            >
               <Download className="w-4 h-4" />
               Download
             </Button>

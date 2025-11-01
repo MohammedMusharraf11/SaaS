@@ -1,15 +1,15 @@
 import express from 'express';
-import facebookMetricsService from '../services/facebookMetricsService.js';
+import socialMetricsWithCache from '../services/socialMetricsWithCache.js';
 
 const router = express.Router();
 
 /**
- * Get comprehensive Facebook metrics
- * GET /api/facebook/metrics?email=user@example.com&period=month
+ * Get comprehensive Facebook metrics with caching
+ * GET /api/facebook/metrics?email=user@example.com&period=month&forceRefresh=false
  */
 router.get('/metrics', async (req, res) => {
   try {
-    const { email, period = 'month' } = req.query;
+    const { email, period = 'month', forceRefresh = 'false' } = req.query;
 
     if (!email) {
       return res.status(400).json({
@@ -18,9 +18,10 @@ router.get('/metrics', async (req, res) => {
       });
     }
 
-    console.log(`📊 Fetching Facebook metrics for: ${email}, period: ${period}`);
+    const shouldForceRefresh = forceRefresh === 'true';
+    console.log(`📊 Fetching Facebook metrics for: ${email}, period: ${period}, forceRefresh: ${shouldForceRefresh}`);
 
-    const metrics = await facebookMetricsService.getComprehensiveMetrics(email, period);
+    const metrics = await socialMetricsWithCache.getFacebookMetrics(email, period, shouldForceRefresh);
 
     res.json(metrics);
   } catch (error) {

@@ -22,6 +22,7 @@ import competitorRoutes from './routes/competitorRoutes.js';
 import debugRoutes from './routes/debugRoutes.js';
 import pdfRoutes from './routes/pdfRoutes.js';
 import socialReportRoutes from './routes/socialReportRoutes.js';
+import socialStatusRoutes from './routes/socialStatusRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3010;
@@ -51,7 +52,8 @@ app.use('/api', trafficRoutes);
 app.use('/api/competitor', competitorRoutes);
 app.use('/api/debug', debugRoutes);
 app.use('/api/pdf', pdfRoutes);
-app.use('/api/social', socialReportRoutes);
+app.use('/api/social/report', socialReportRoutes);
+app.use('/api/social', socialStatusRoutes);
 
 // Health check endpoint
 app.get('/api/status', (req, res) => {

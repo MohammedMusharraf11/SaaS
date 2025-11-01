@@ -3,7 +3,7 @@
 
 CREATE TABLE public.competitor_cache (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
+  user_id text NOT NULL,
   user_domain character varying NOT NULL,
   competitor_domain character varying NOT NULL,
   lighthouse_data jsonb,
@@ -23,8 +23,9 @@ CREATE TABLE public.competitor_cache (
   traffic_data jsonb,
   content_changes_data jsonb,
   content_updates_data jsonb,
+  full_result jsonb,
   CONSTRAINT competitor_cache_pkey PRIMARY KEY (id),
-  CONSTRAINT fk_competitor_cache_user FOREIGN KEY (user_id) REFERENCES auth.users(id)
+  CONSTRAINT fk_competitor_cache_user FOREIGN KEY (user_id) REFERENCES public.users_table(id)
 );
 CREATE TABLE public.google_analytics_cache (
   id integer NOT NULL DEFAULT nextval('google_analytics_cache_id_seq'::regclass),

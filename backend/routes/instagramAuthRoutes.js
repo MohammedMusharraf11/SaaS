@@ -258,7 +258,7 @@ router.get('/auth/instagram/callback', async (req, res) => {
   }
 });
 
-// Check Instagram connection status
+// Check Instagram connection status (uses Facebook OAuth)
 router.get('/auth/instagram/status', async (req, res) => {
   try {
     const { email } = req.query;
@@ -272,13 +272,20 @@ router.get('/auth/instagram/status', async (req, res) => {
 
     console.log('🔍 Checking Instagram connection status for:', email);
 
-    const isConnected = await oauthTokenService.isConnected(email, 'instagram');
+    // Check if Facebook is connected (Instagram uses Facebook OAuth)
+    let isConnected = await oauthTokenService.isConnected(email, 'instagram');
+    
+    // Fallback to Facebook token
+    if (!isConnected) {
+      isConnected = await oauthTokenService.isConnected(email, 'facebook');
+    }
 
     console.log('✅ Instagram connection status:', isConnected);
 
     res.json({ 
       connected: isConnected,
-      provider: 'instagram'
+      provider: 'instagram',
+      note: 'Instagram uses Facebook OAuth. Connect Facebook to access Instagram metrics.'
     });
 
   } catch (error) {

@@ -124,6 +124,9 @@ interface SocialData {
 
 // --- Main Component ---
 export default function SocialMediaMetricsContent({ userEmail = 'test@example.com' }: SocialMediaMetricsCardProps) {
+  // Log the email being used
+  console.log('🔐 SocialDashboard initialized with email:', userEmail);
+  
   const [socialData, setSocialData] = useState<SocialData | null>(null)
   const [facebookData, setFacebookData] = useState<FacebookMetrics | null>(null)
   const [linkedinData, setLinkedinData] = useState<LinkedInMetrics | null>(null)
@@ -266,11 +269,12 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
 
   const checkInstagramConnection = async () => {
     try {
-      const response = await fetch(`http://localhost:3010/api/auth/instagram/status?email=${encodeURIComponent(userEmail)}`)
+      // Instagram uses Facebook OAuth, so check Facebook connection
+      const response = await fetch(`http://localhost:3010/api/auth/facebook/status?email=${encodeURIComponent(userEmail)}`)
       if (response.ok) {
         const data = await response.json()
         setInstagramConnected(data.connected || false)
-        console.log('✅ Instagram connection status:', data.connected)
+        console.log('✅ Instagram connection status (via Facebook):', data.connected)
       } else {
         setInstagramConnected(false)
       }
@@ -603,30 +607,15 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
 
       if (response.ok) {
         setConnected(false)
+        setInstagramConnected(false) // Also disconnect Instagram since it uses Facebook OAuth
         setFacebookData(null)
-        setSocialData(null)
-        setShowConnectModal(true)
-      }
-    } catch (error) {
-      console.error('Error disconnecting Facebook:', error)
-    }
-  }
-
-  const disconnectInstagram = async () => {
-    try {
-      const response = await fetch(
-        `http://localhost:3010/api/auth/instagram/disconnect?email=${encodeURIComponent(userEmail)}`,
-        { method: 'POST' }
-      )
-
-      if (response.ok) {
-        setInstagramConnected(false)
         setInstagramData(null)
         setSocialData(null)
         setShowConnectModal(true)
+        console.log('✅ Disconnected Facebook and Instagram')
       }
     } catch (error) {
-      console.error('Error disconnecting Instagram:', error)
+      console.error('Error disconnecting Facebook:', error)
     }
   }
 
@@ -788,13 +777,13 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
       }
     }
 
-    // Fallback for other networks or when no validated data
-    console.log('📊 Using fallback data for network:', network)
+    // No data available - return zeros
+    console.log('📊 No data available for network:', network)
     return {
       likes: '0',
       comments: '0',
       shares: '0',
-      engagementRate: '0',
+      engagementRate: '0.0',
       reach: 0
     }
   }, [network, facebookData, linkedinData, instagramData])
@@ -826,20 +815,8 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
       }))
     }
 
-    // Fallback to mock data
-    const baseMultiplier = currentNetwork === 'linkedin' ? 1.0 : currentNetwork === 'instagram' ? 1.8 : 1.5;
-    const data = [];
-    let currentValue = 100;
-
-    for (let i = 0; i < 12; i++) {
-      const change = (Math.random() * 50 - 20) * baseMultiplier;
-      currentValue = Math.max(currentValue + change, 50);
-      data.push({
-        value: Math.round(currentValue),
-        label: i
-      });
-    }
-    return data;
+    // Return empty array if no data (don't show mock data)
+    return [];
   };
 
   useEffect(() => {
@@ -855,7 +832,9 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
 
     if (success) {
       setConnected(true)
+      setInstagramConnected(true) // Facebook OAuth also enables Instagram
       setShowConnectModal(false)
+      console.log('✅ OAuth success - Facebook and Instagram connected')
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname)
     } else if (error) {
@@ -895,7 +874,8 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
       setSocialData(null)
       setLinkedinData(null)
       setFollowerGrowthData([])
-    } else if (network === 'instagram' && !instagramConnected && !checkingConnection) {
+    } else if (network === 'instagram' && !connected && !checkingConnection) {
+      // Instagram uses Facebook OAuth
       setShowConnectModal(true)
       // Clear data for disconnected platform
       setSocialData(null)
@@ -968,39 +948,31 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
     <div className="p-8 space-y-6 relative">
 
       {/* Blurred Modal for Connect Facebook/LinkedIn/Instagram */}
-      {showConnectModal && ((network === 'facebook' && !connected) || (network === 'linkedin' && !linkedinConnected) || (network === 'instagram' && !instagramConnected)) && !checkingConnection && (
+      {showConnectModal && ((network === 'facebook' && !connected) || (network === 'linkedin' && !linkedinConnected) || (network === 'instagram' && !connected)) && !checkingConnection && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md mx-auto text-center relative">
             <h2 className="text-2xl font-bold mb-2 text-gray-900">
-              {network === 'facebook' ? 'Connect Facebook' : network === 'instagram' ? 'Connect Instagram' : 'Connect LinkedIn'}
+              {network === 'facebook' ? 'Connect Facebook' : network === 'instagram' ? 'Connect Facebook for Instagram' : 'Connect LinkedIn'}
             </h2>
             <p className="text-gray-500 mb-6">
               {network === 'facebook'
-                ? 'To view your Facebook metrics, please connect your Facebook account.'
+                ? 'Connect your Facebook account to view Facebook Page metrics.'
                 : network === 'instagram'
-                  ? 'To view your Instagram metrics, please connect your Instagram Business Account. Make sure your Instagram is connected to a Facebook Page.'
+                  ? 'Connect your Facebook account to access Instagram Business metrics.'
                   : 'To view your LinkedIn metrics, please enter your LinkedIn company URL.'}
             </p>
 
-            {network === 'facebook' && (
+            {(network === 'facebook' || network === 'instagram') && (
               <div className="flex flex-col gap-4">
+                {network === 'instagram' && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800 text-left">
+                    <p className="font-medium mb-2">📘 Facebook Connection Required</p>
+                    <p className="text-xs mb-2">Instagram uses Facebook OAuth for authentication.</p>
+                    <p className="text-xs font-medium">✅ Make sure your Instagram Business Account is connected to your Facebook Page to view metrics.</p>
+                  </div>
+                )}
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={connectFacebook}>
-                  Connect Facebook
-                </Button>
-              </div>
-            )}
-
-            {network === 'instagram' && (
-              <div className="flex flex-col gap-4">
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 text-sm text-purple-800">
-                  <p className="font-medium mb-2">📸 Instagram Business Account Required</p>
-                  <p className="text-xs">You'll need an Instagram Business or Creator account connected to a Facebook Page.</p>
-                </div>
-                <Button
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                  onClick={connectInstagram}
-                >
-                  Connect Instagram
+                  {network === 'instagram' ? 'Connect Facebook to Access Instagram' : 'Connect Facebook'}
                 </Button>
               </div>
             )}
@@ -1092,7 +1064,7 @@ export default function SocialMediaMetricsContent({ userEmail = 'test@example.co
           {((network === 'facebook' && connected) || (network === 'instagram' && instagramConnected) || (network === 'linkedin' && linkedinConnected)) && (
             <Button
               variant="outline"
-              onClick={network === 'facebook' ? disconnectFacebook : network === 'instagram' ? disconnectInstagram : disconnectLinkedIn}
+              onClick={network === 'facebook' || network === 'instagram' ? disconnectFacebook : disconnectLinkedIn}
               className="text-sm text-red-600 border-red-300 hover:bg-red-50"
             >
               Disconnect {network === 'facebook' ? 'Facebook' : network === 'instagram' ? 'Instagram' : 'LinkedIn'}

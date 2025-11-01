@@ -17,10 +17,13 @@ export default async function SocialPage() {
       redirect('/login')
     }
 
+    const userEmail = data.user.email || ''
+    console.log('📧 Social page - User email:', userEmail)
+
     return (
       // DashboardLayout will show the sidebar/header; SocialDashboard is rendered as children
       <DashboardLayout user={data.user}>
-        <SocialDashboard />
+        <SocialDashboard userEmail={userEmail} />
       </DashboardLayout>
     )
   } catch (err) {
